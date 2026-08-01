@@ -55,9 +55,9 @@ Decks are directories with a mandatory `deck.toml` file at the root.
 
 ```toml
 [deck]
-[meta]
 schema_version = "1.1"           # Required: Schema version (this document)
 id = "rider-waite-smith"         # Required: Unique identifier (see Identifiers)
+identifier = "land.arcana/deck/rider-waite-smith" # Optional: qualified identifier
 name = "Rider-Waite-Smith Tarot" # Required: Human readable name
 version = "1.0"                  # Required: Deck version
 default_language = "en"          # Optional: BCP 47 tag of the deck's default names file (default "en")
@@ -75,7 +75,7 @@ website = "https://example.com/rws-deck" # Website for the deck
 tags = ["traditional", "classic", "beginner-friendly"] # Categorization tags
 ```
 
-> Note that version 1.0 of the spec did not have a [meta] section. For backwards compatibility, assume any bare property on the deck table is also a member of the [meta] section
+`[deck]` holds the deck's identity and the human-facing metadata about it. Everything that is *content* — card backs, custom cards, variants, editions, exclusions — is a top-level table of its own, and no table nests under `[deck]`.
 
 Icons are assumed to be the same aspect ratio as the cards.
 
@@ -97,29 +97,57 @@ Card backs can have different dimensions and formats from the card fronts, and m
 
 ### Optional Custom Major and Minor Arcana
 
-Custom major or minor arcana cards can be defined under `[custom_cards]`. This allows for decks with entirely new suits or additional major arcana. Custom card keys, custom suit keys and custom rank keys are custom names and MUST follow the [identifier rules](#identifiers).
+A deck may hold cards the traditional 78 do not: additional major arcana, entirely new suits, or additional ranks within a suit. Custom card keys, custom suit keys and custom rank keys are custom names and MUST follow the [identifier rules](#identifiers).
 
-```toml
-[custom_cards]
+Custom cards are [discovered from the directory structure](#file-location-based-defaults) exactly as canonical cards are. A deck that drops `h1200/major_arcana/happy_squirrel.png` into place has added a card, and need declare nothing at all. The `[custom_cards]` table supplies only what a filename cannot: a card's place in the deck's sequence, and fallback display strings. It is optional in its entirety.
 
-# Add a new suit
-[custom_cards.minor_arcana.stars]
-name = "Stars"
-ranks = ["ace", "two", ..., "page", "knight", "queen", "king"]  # or a custom sequence
-```
-
-A custom suit's ranks are keys, which resolve their display name through in `names/<tag>.toml`, if needed.
+#### Custom Major Arcana
 
 ```toml
 [custom_cards.major_arcana.happy_squirrel]
-id = "happy_squirrel"
-name = "The Happy Squirrel"
-image = "scalable/major_arcana/happy_squirrel.svg"
-alt_text = "A cheerful squirrel standing on a branch proudly holding an acorn."
-position = 22  # Optional, indicates position in sequence after traditional cards
+name = "The Happy Squirrel"  # Optional fallback; prefer names/<tag>.toml
+alt_text = "A cheerful squirrel standing on a branch proudly holding an acorn." # Optional fallback
+position = 22                # Optional; see Ordering
 ```
 
-The `name` and `alt_text` fields here are fallbacks. A deck should carry both in `names/<tag>.toml`, where they can be localized; see [Display Name Resolution](#display-name-resolution).
+The `name` and `alt_text` fields are fallbacks. A deck should carry both in `names/<tag>.toml`, where they can be localized; see [Display Name Resolution](#display-name-resolution).
+
+There is no `image` field. A custom card's images are found by the same convention as every other card's, which is what lets one card exist in several resolutions and formats at once.
+
+#### Custom Suits and Ranks
+
+A suit's rank sequence is declared by `ranks`, a list of rank keys in the order the deck reads them:
+
+```toml
+# A new suit
+[custom_cards.minor_arcana.stars]
+name = "Stars"  # Optional fallback; prefer names/<tag>.toml
+ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
+         "nine", "ten", "page", "knight", "queen", "king"]
+```
+
+`ranks` MAY also be given for one of the four canonical suits, where it replaces that suit's canonical sequence. This is how a deck adds a rank to a suit it already has:
+
+```toml
+# A fifteenth cups card, seated among the court
+[custom_cards.minor_arcana.cups]
+ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
+         "nine", "ten", "princess", "page", "knight", "queen", "king"]
+```
+
+The table key here is the canonical suit `cups`. This is the one place in this specification where a reserved key is accepted as a `[custom_cards]` table key, because the intent is to modify that suit rather than to name a new one. The rank keys themselves are custom names and remain subject to the reserved-key rule: a deck may not introduce a new rank called `page`.
+
+`ranks` is a matter of ordering only, and is optional in both forms. A rank whose files are present but which no `ranks` list mentions is still a card of that suit; see below.
+
+Rank and suit keys resolve their display names through `names/<tag>.toml`; see [Display Name Resolution](#display-name-resolution).
+
+#### Ordering
+
+Applications that present a deck in order resolve it as follows. Cards with a declared place come first, in that order: major arcana by `position`, minor arcana by their suit's `ranks`. Everything else follows, sorted by key. Suits with no canonical order follow the four canonical suits, likewise sorted by key.
+
+`position` is an integer and MAY fall anywhere in the sequence, including between two canonical cards; a deck that seats an extra card between `08` and `09` gives it `position = 9` and pushes the rest along. Where two cards claim one position, the order between them is by key.
+
+A deck that simply does not care — one extra major arcanum, no opinion about where it sits — declares nothing and gets it last.
 
 ### Optional Major Arcana Remapping
 
@@ -132,7 +160,7 @@ The `name` and `alt_text` fields here are fallbacks. A deck should carry both in
 ### Optional Excluded Cards
 
 ```toml
-[deck.excluded_cards]
+[excluded_cards]
 # List cards that are intentionally excluded from this deck
 cards = [
   "minor_arcana.pentacles.page",
@@ -222,9 +250,18 @@ Applications should be designed to automatically detect and use files placed in 
 
 This ensures that creating a deck can be as simple as placing files into the correct directory structure.
 
+Discovery defines which cards a deck has. This holds for [custom cards](#optional-custom-major-and-minor-arcana) as much as for canonical ones: dropping `h1200/major_arcana/happy_squirrel.png` into place defines `major_arcana.happy_squirrel`, and `h1200/minor_arcana/stars/ace.png` defines `minor_arcana.stars.ace` along with the suit `stars` that contains it. Declaring such a card in `deck.toml` is never required in order for it to exist; `[custom_cards]` governs only its ordering and its fallback strings.
+
+A file's stem is read as follows. Split it on the first `.`; call the part before it the *base*.
+
+- If the base names a card the deck already has — a canonical ID component, or a custom card defined elsewhere in the same directory — the remainder is a [variant key](#card-variants) and the file is a variant of that card.
+- Otherwise the base is itself a custom name, and the file defines a custom card. Any remainder is a variant key of that new card.
+
+So in `major_arcana/`, `06.two_women.png` is a variant of The Lovers, `the_morning.png` is a custom card, and `the_morning.night.png` is a variant of that custom card. A base that is neither a canonical key nor a well-formed [custom name](#custom-names) is an error.
+
 ## Identifiers
 
-This specification uses two identifier grammars.
+This specification uses two identifier grammars: custom names, which appear as keys and as path components inside a deck, and qualified identifiers, which name a whole deck across authors.
 
 ### Custom Names
 
@@ -234,15 +271,47 @@ Custom names, such as custom major arcana keys, custom suit keys, custom rank ke
 custom-name = ^[a-z_][a-z0-9_]*$
 ```
 
-That is, lowercase letters, numbers and underscores, not starting with a number. A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords`, `pentacles` or the ranks `ace`, `two`, ..., `ten`, `page`, `knight`, `queen`, `king`.
+That is, lowercase letters, numbers and underscores, not starting with a number. A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords`, `pentacles` or the ranks `ace`, `two`, ..., `ten`, `page`, `knight`, `queen`, `king`. A custom major arcana key additionally MUST NOT be a two-digit string, so that it can never collide with a canonical one.
+
+One position accepts a reserved key: a canonical suit as the table key of `[custom_cards.minor_arcana.<suit>]`, which [extends that suit's rank sequence](#custom-suits-and-ranks) rather than naming a new suit.
+
+### Qualified Identifiers
+
+Qualified identifiers name Arcana Land entities such as tarot decks or spreads unambiguously across authors. 
+- `land.arcana/deck/rider-waite-smith`
+- `land.arcana/spread/celtic-cross`
+- `my.personal.domain/deck/modern-witch-tarot`
+
+
+It is composed of two components: a realm and an object path separated by a slash.
+
+```
+qualified-id = realm "/" path
+realm        = ^[a-z0-9.-]+$
+path         = segment ("/" segment)*
+segment      = ^[a-z0-9-]+$
+```
+
+- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash.
+- The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
+
+Further, qualified identifiers MAY contain a final segment after a single `#` which represents a spec-specifc target. For example, `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the canonical "The Fool" card distributed by Arcana Land.
+
+Note: qualified identifiers are not locations. Nothing in this specification implies that one can be fetched and applications MUST NOT treat a realm as a network host to contact.
 
 ### Deck Identifiers
 
-The `id` fields of `[meta]` and of `[editions]` are deck identifiers. Unlike custom names, they do not appear as path components and can use a different grammar so that authors can namespace decks.
+The `id` fields of `[deck]` and of `[editions]` are deck identifiers: a lowercase label with dashes (`rider-waite-smith`) matching the `segment` grammar above. Version 1.0 had no other form of deck identity, so a bare `id` remains required and keeps its exact meaning of naming a deck within an implicit unqualified namespace, where two authors may collide.
 
-For simple non-namespaced cases, a simple lower-case with dashes label (e.g., `rider-waite-smith`) is valid.
+A deck SHOULD also carry an `identifier` field in `[deck]`, giving its qualified identifier:
 
-To allow for namespacing, a deck identifier MAY be a domain name the author controls, written in reverse order with the most significant label first (`land.arcana.rider-waite-smith`), following the preferred name syntax of [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1).
+```toml
+[deck]
+id = "rider-waite-smith"                          # Required, unchanged from 1.0
+identifier = "land.arcana/deck/rider-waite-smith" # Optional, qualified
+```
+
+An `[editions]` entry MAY carry an `identifier` on the same terms. Where both fields are present, `id` MUST equal the last path segment of `identifier`, so that the two never drift into different names for one deck.
 
 
 ## Image Formats
@@ -281,7 +350,6 @@ Applications should treat ANSI art as an optional format, falling back to other 
 - Raster folders are named `h<height>/`, e.g., `h750/`, `h1200/`.
 - Applications must preserve the aspect ratio when scaling images.
 
----
 
 ## Internationalization
 
@@ -299,7 +367,7 @@ names/zh-Hans.toml   # Chinese in Simplified script
 
 - Tags SHOULD be canonical: the shortest available ISO 639 subtag (`en`, not `eng`), lowercase language, titlecase script, uppercase region.
 - Applications MUST compare tags case-insensitively, since some filesystems are. A deck MUST NOT ship two name files whose tags differ only in case.
-- `[meta].default_language` declares the tag of the deck's default names file. If absent, applications assume `en`.
+- `[deck].default_language` declares the tag of the deck's default names file. If absent, applications assume `en`.
 
 ### Language Resolution
 
@@ -419,21 +487,29 @@ Applications should validate the following:
    - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
    - Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
    - Verify that alt text is provided for all cards in at least one language file.
-   - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[meta].default_language` has a corresponding file.
+   - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[deck].default_language` has a corresponding file.
 
 4. **Card Back Validation**:
    - If card back variants are defined, verify that the default card back exists.
    - Verify that all referenced card back image files exist.
 
 5. **Identifier Validation**:
-   - Verify that every custom name matches the custom name grammar and is not a reserved canonical key.
+   - Verify that every custom name matches the custom name grammar and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
    - Verify that every `id` field is a valid deck identifier.
+   - Verify that every `identifier` field is a well-formed qualified identifier, and that where an `id` accompanies it, the `id` equals the last path segment of the `identifier`.
    - Version 1.0 did not constrain these, so applications SHOULD report violations in a deck declaring `schema_version = "1.0"` as warnings rather than rejecting the deck.
 
 6. **Card Variant Validation**:
    - Verify that every card referenced in `[card_variants]` is a card the deck defines.
    - If a variant table declares `default`, verify that the named variant exists; if it does not declare one, verify that the card has an unsuffixed image file.
    - Verify that all referenced variant image files exist.
+
+7. **Custom Card Validation**:
+   - Verify that every card declared in `[custom_cards]` is a card the deck has files for. A declaration for a card with no images is an error, since `[custom_cards]` no longer defines cards on its own.
+   - Verify that no custom major arcana key is a two-digit string, and that no custom rank or suit key shadows a canonical one, so that a custom ID can never collide with a canonical one.
+   - Verify that every rank named in a `ranks` list has files in that suit, and that a suit's `ranks` list contains no duplicates.
+   - Report a `position` claimed by two cards as a warning, not an error; ordering remains well defined.
+   - Verify that no card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`.
 
 
 ## Licensing and Attribution
@@ -576,10 +652,10 @@ image = "card_backs/embers.png"
 description = "A dark background with smoldering red embers"
 
 # Add a custom elemental card
+# The card itself comes from scalable/major_arcana/elemental_force.svg;
+# this block exists only to seat it at 22 and supply fallback strings.
 [custom_cards.major_arcana.elemental_force]
-id = "elemental_force"
 name = "The Elemental Force"
-image = "scalable/major_arcana/elemental_force.svg"
 alt_text = "A vortex of the four elements swirling together in perfect harmony."
 position = 22
 
@@ -627,8 +703,8 @@ king = "Master"
 # ... and so on
 
 # Alt text for custom cards
-[alt_text.major_arcana.elemental_force]
-elemental_force = "A vortex of the four elements (fire, water, air, earth) swirling together in perfect harmony."
+[alt_text.major_arcana]
+elemental_force = "A vortex of the elements swirling together in harmony."
 
 # Card back alt text
 [alt_text.card_backs]
@@ -706,7 +782,7 @@ The variants above are discovered from the directory, so `deck.toml` declares no
 
 ```toml
 # deck.toml
-[meta]
+[deck]
 schema_version = "1.1"
 id = "inclusive-tarot"
 name = "Inclusive Tarot"
@@ -735,10 +811,16 @@ Variant keys are deck-wide, so an application can prefer `two_women` everywhere:
 
 - **Breaking**: Removed the `[aliases]` section from the manifest in favor of using a names file.
 - **Breaking:** Renamed the `[variants]` section to `[editions]`.
+- **Breaking:** Moved `[deck.excluded_cards]` to a top-level `[excluded_cards]`. `[deck]` now holds only the deck's identity and metadata, and no table nests under it.
+- **Breaking:** Removed the `image` and `id` fields from `[custom_cards.major_arcana.<key>]`. A custom card's images are now found by the same directory convention as every other card's, so one custom card can exist in several resolutions and formats.
 - Formalized display name resolution rules.
 - Added card variants and extended canonical IDs.
-- Added a `[meta]` section to the manifest.
+- Made custom cards discoverable from the directory structure, so that adding a card requires no manifest edit at all. `[custom_cards]` is now optional in its entirety and governs only ordering and fallback strings.
+- Defined how a file stem is read as either a card or a variant of one, so that custom cards and variants are unambiguous.
+- Allowed `ranks` on a canonical suit, so that a deck can add a rank to a suit it already has rather than only defining whole new suits.
+- Defined deck ordering, and specified `position` as an optional integer that may fall anywhere in the sequence.
 - Added an Identifiers section formalizing custom names and fields.
+- Added qualified identifiers (`<realm>/<path>`) and the optional `[deck].identifier` field.
 - Defined minor arcana name composition and the `name_template` key, so that a deck that renames its suits need not write out all 56 names.
 - Required that display strings supplied by a deck be used verbatim, so a deck controls its own capitalization.
 - Specified name file language tags as BCP 47 (RFC 5646) and added `default_language`.
