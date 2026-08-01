@@ -316,8 +316,11 @@ Resolution happens per key, not per file: a `pt-BR` file that overrides only a h
 01 = "The Magician"
 # ...
 
+[minor_arcana]
+name_template = "{rank} of {suit}"  # Optional: how minor arcana names are composed
+
 [minor_arcana.wands]
-ace = "Ace of Wands"
+ace = "Ace of Wands"  # Optional: overrides the template for this card
 two = "Two of Wands"
 # ...
 
@@ -361,15 +364,34 @@ Name files are sparse and may contain only keys it wishes to. Applications MUST 
 
 Each rule below is applied to name files in the order given by [Language Resolution](#language-resolution) — the requested tag, its progressively shortened forms, then the deck's `default_language` — before moving on to the next fallback.
 
-Card names are resolved first by inspecting the name files, then the canonical name for that ID.
+A resolved display string is used **verbatim**. Applications MUST NOT apply case conversion, or any other transformation, to a string a deck supplies; a deck that writes `"ace of torches"` means those exact characters. Case transformation appears in this specification only as a fallback for keys the deck never gave a string for.
 
 Suit names are resolved first by searching for `[suits].<key>` in the name files, then (for custom suits only) `[custom_cards.minor_arcana.<key>].name`, then the title-cased key.
 
 Rank names are resolved via `[ranks].<key>` in the name files, then the title-cased key.
 
+Major arcana names are resolved via `[major_arcana].<key>` in the name files, then (for custom cards only) `[custom_cards.major_arcana.<key>].name`, then the canonical name for that ID.
+
+Minor arcana names are resolved via `[minor_arcana.<suit>].<rank>` in the name files, then by [composition](#minor-arcana-name-composition) from the card's suit and rank names.
+
 Alt text is resolved via `[alt_text.*]` in the name files, then (for custom cards only) the entry's `alt_text` field.
 
 Card variant names are resolved via `[card_variants]."<extended-id>"` in the name files, then `[card_variants."<canonical-id>".variants.<key>].name`, then the name of the card itself. Variant alt text is resolved via `[alt_text.card_variants]."<extended-id>"`, then the variant's `alt_text` field, then the alt text of the card itself — which will describe a variant only approximately, so variants SHOULD carry their own.
+
+#### Minor Arcana Name Composition
+
+Because a deck may rename its suits and ranks, most decks need not write out all 56 minor arcana names. Where a name file gives no explicit name for a minor arcana card, its name is composed from a template:
+
+```toml
+[minor_arcana]
+name_template = "{rank} of {suit}"
+```
+
+`{rank}` and `{suit}` are replaced by the rank and suit names resolved above; no other placeholders are defined, and an application MUST leave any other braced text in the template alone. The template is resolved by the same [Language Resolution](#language-resolution) rules as any other key, so a translation supplies its own. If no name file supplies one, the template is `"{rank} of {suit}"`.
+
+Composition applies to custom suits and custom ranks exactly as it does to canonical ones. Since a suit or rank name always resolves — falling back to the title-cased key — composition always yields a name.
+
+Because the template interpolates already-resolved strings and is itself never case-converted, a deck expresses its typographic convention simply by writing its suit and rank names in the case it wants. A deck whose cards read "ace of torches" writes `wands = "torches"` and `ace = "ace"`; one that reads "Ace of Torches" writes `"Torches"` and `"Ace"`. Cards that do not follow the deck's own pattern keep an explicit entry under `[minor_arcana.<suit>]`, which always wins over the template.
 
 Where a deck supplies no value at any level, applications may fall back to the corresponding string from the default deck.
 
@@ -394,7 +416,8 @@ Applications should validate the following:
    - Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
 
 3. **Localization Validation**:
-   - Verify that every key present in a localization file corresponds to a card, suit, rank or card variant the deck defines. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
+   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
+   - Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
    - Verify that alt text is provided for all cards in at least one language file.
    - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[meta].default_language` has a corresponding file.
 
@@ -583,6 +606,8 @@ And the names and alt-text in `names/en.toml`:
 
 # This deck's renamed suits and ranks. A translation of this deck
 # supplies its own names/<tag>.toml with these tables translated.
+# All 56 minor arcana names compose from these two tables, so none of
+# them are written out: "Ace of Torches", "Student of Waters", and so on.
 [suits]
 wands = "Torches"
 cups = "Waters"
@@ -610,6 +635,49 @@ elemental_force = "A vortex of the four elements (fire, water, air, earth) swirl
 flames = "A dynamic pattern of red and orange flames swirling around a central spark"
 embers = "A dark background with scattered glowing embers and occasional small flames"
 ```
+
+### Deck with Renamed Suits and a Lowercase Convention
+
+A deck that calls its wands "torches", its pages and knights "princesses" and "princes", and prints every card name in lower case except where a card's own title is capitalized.
+
+```toml
+# names/en.toml
+[minor_arcana]
+name_template = "{rank} of {suit}"
+
+[suits]
+wands = "torches"
+cups = "cups"
+swords = "swords"
+pentacles = "pentacles"
+
+[ranks]
+ace = "ace"
+two = "two"
+# ... through ten
+page = "princess"
+knight = "prince"
+queen = "queen"
+king = "king"
+```
+
+That is the whole minor arcana: `minor_arcana.wands.ace` resolves to "ace of torches" and `minor_arcana.cups.knight` to "prince of cups", with no `[minor_arcana.<suit>]` tables at all. The lower case is not a setting — the deck simply wrote its suit and rank names that way, and applications reproduce them as given.
+
+Cards that break the deck's own pattern are written out individually, and take precedence over the template:
+
+```toml
+[minor_arcana.pentacles]
+ten = "ten of pentacles, reversed fortune"
+
+[major_arcana]
+00 = "the fool"
+01 = "the Magus"
+20 = "Judgement"
+21 = "the universe"
+# ...
+```
+
+Major arcana names have no template — a deck that renames them lists them.
 
 ### Deck with Card Variants
 
@@ -671,5 +739,7 @@ Variant keys are deck-wide, so an application can prefer `two_women` everywhere:
 - Added card variants and extended canonical IDs.
 - Added a `[meta]` section to the manifest.
 - Added an Identifiers section formalizing custom names and fields.
+- Defined minor arcana name composition and the `name_template` key, so that a deck that renames its suits need not write out all 56 names.
+- Required that display strings supplied by a deck be used verbatim, so a deck controls its own capitalization.
 - Specified name file language tags as BCP 47 (RFC 5646) and added `default_language`.
 
