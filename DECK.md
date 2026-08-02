@@ -63,9 +63,14 @@ version = "1.0"                  # Required: Deck version
 default_language = "en"          # Optional: BCP 47 tag of the deck's default names file (default "en")
 icon = "deck-icon.png"           # Optional: deck preview image
 author = "Pamela Colman Smith"   # Optional
-license = "Public Domain"        # Optional
 aspect_ratio = 0.5789            # Optional (default 11:19)
 description = "The classic Rider-Waite-Smith tarot deck, first published in 1909." # Optional
+
+# Licensing and attribution (all optional)
+license = "CC0-1.0"              # SPDX license expression governing the artwork
+license_files = ["LICENSE"]      # Full license text and notices, relative to the deck root
+copyright = "© 1909 Pamela Colman Smith" # Copyright notice, verbatim
+attribution = "Artwork by Pamela Colman Smith." # Credit line to display
 
 # Additional optional metadata
 created_date = "1909-12-01"      # Original creation date
@@ -357,12 +362,12 @@ Per-card display string (e.g., card names, suit names, alt text) are declared in
 
 ### Language Tags
 
-`<tag>` MUST be a well-formed language tag as defined by BCP 47 (RFC 5646). BCP 47 composes the relevant ISO standards — ISO 639 for the language, ISO 15924 for the script, ISO 3166-1 for the region — so a deck can express distinctions a bare two-letter code cannot:
+`<tag>` MUST be a well-formed IETF BCP 47 language tag:
 
 ```
-names/en.toml        # English
-names/pt-BR.toml     # Portuguese as written in Brazil
-names/zh-Hans.toml   # Chinese in Simplified script
+names/en.toml
+names/pt-BR.toml
+names/zh-Hans.toml
 ```
 
 - Tags SHOULD be canonical: the shortest available ISO 639 subtag (`en`, not `eng`), lowercase language, titlecase script, uppercase region.
@@ -378,6 +383,10 @@ For a request of `pt-BR`, that is `names/pt-BR.toml`, then `names/pt.toml`, then
 Resolution happens per key, not per file: a `pt-BR` file that overrides only a handful of names inherits the rest from `pt`, and anything neither supplies comes from the default language file.
 
 ```toml
+# Metadata about this name file (optional)
+[metadata]
+alt_text_attribution = "Alt text written by Jane Doe."
+
 # Card name localization
 [major_arcana]
 00 = "The Fool"
@@ -427,6 +436,14 @@ alternative = "A starry night sky pattern with gold accents"
 ```
 
 Name files are sparse and may contain only keys it wishes to. Applications MUST merge name files key by key rather than requiring a complete set and MUST NOT treat a missing key as an error.
+
+#### Name File Metadata
+
+The optional `[metadata]` table describes the name file itself rather than any card in it.
+
+| Key | Purpose |
+| --- | --- |
+| `alt_text_attribution` | Who or what produced the alt text in this file |
 
 ### Display Name Resolution
 
@@ -484,7 +501,7 @@ Applications should validate the following:
    - Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
 
 3. **Localization Validation**:
-   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
+   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
    - Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
    - Verify that alt text is provided for all cards in at least one language file.
    - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[deck].default_language` has a corresponding file.
@@ -511,17 +528,63 @@ Applications should validate the following:
    - Report a `position` claimed by two cards as a warning, not an error; ordering remains well defined.
    - Verify that no card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`.
 
+8. **License Validation**:
+   - Verify that every file listed in `license_files` exists.
+   - Verify that `license` is a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected; see [Licensing and Attribution](#licensing-and-attribution) for how to treat free-text values.
+
 
 ## Licensing and Attribution
 
-- A `license` field should be included in `deck.toml` to indicate the deck's licensing terms.
-- Attribution requirements must be specified (if any):
+A deck bundles two separately owned things: the card artwork, which usually comes from a third party, and the packaging around it — `deck.toml`, the name files, the directory layout. They frequently carry different terms, and the manifest describes only the artwork. Packaging terms belong to whoever assembled the deck and are conveyed the usual way, by a license file in the repository that ships it.
+
+### License Expressions
+
+The `[deck].license` field SHOULD be a valid [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/):
 
 ```toml
 [deck]
 license = "CC-BY-SA-4.0"
-attribution = "Artwork by Pamela Colman Smith (Public Domain)."
 ```
+
+Expressions compose, which matters for decks assembled from sources with different terms. A restoration of a public domain painting is subject to both sets of terms at once:
+
+```toml
+license = "LicenseRef-PublicDomain AND CC0-1.0"
+```
+
+Identifiers MUST come from the [SPDX License List](https://spdx.org/licenses/) and are case-sensitive. Note that this is not the same as the license's marketing name: the Creative Commons licenses are written `CC-BY-NC-SA-3.0`, not `CC BY-NC-SA 3.0`.
+
+For terms with no SPDX identifier — a bespoke grant from an artist, or a work whose copyright has simply expired — use a `LicenseRef-` idiom and record the actual terms in the license file:
+
+```toml
+license = "LicenseRef-PublicDomain"
+license_files = ["LICENSE"]
+```
+
+Version 1.0 placed no constraints on this field and decks in the wild carry free text such as `"Public Domain"` or `"CC BY-NC-SA 3.0"`. Applications MUST NOT reject a deck whose `license` does not parse. Treat an unparseable value as an opaque human-readable string, and report it as a warning only when the deck declares `schema_version = "1.1"` or later.
+
+### Attribution and Notices
+
+`license` states the terms. It does not discharge them. Most licenses that permit redistribution require that something travel with the copies — the license text, a copyright notice, a specific credit line — and a bare SPDX identifier satisfies none of it.
+
+| Field | Purpose |
+| --- | --- |
+| `license` | SPDX license expression governing the artwork |
+| `license_files` | Paths, relative to the deck root, to the full license text and any notices. Defaults to `["LICENSE"]` when that file exists |
+| `copyright` | The copyright notice, verbatim as the rights holder wrote it |
+| `attribution` | The credit line the license requires downstream users to display |
+
+```toml
+[deck]
+license = "CC-BY-NC-SA-3.0"
+license_files = ["LICENSE"]
+copyright = "© 1995-2010 Andreas Schröter"
+attribution = "\"Aquatic Tarot\" by Andreas Schröter (http://www.aquatictarot.net/), licensed under CC BY-NC-SA 3.0."
+```
+
+Decks SHOULD ship the full license text in the deck directory rather than relying on `license` alone. It is what most licenses actually require, it survives the deck being copied out of its original repository, and it gives an unambiguous home for terms that an SPDX identifier cannot express.
+
+`attribution` is a display string, not documentation. Applications that surface deck credits SHOULD render it, and SHOULD NOT present a deck's artwork with no attribution when the field is set.
 
 ## Extensibility for Applications
 
@@ -544,7 +607,9 @@ id = "rider-waite-smith"
 name = "Rider-Waite-Smith"
 version = "1.0"
 author = "Pamela Colman Smith"
-license = "Public Domain (original artwork), CC0 (digital restoration)"
+license = "LicenseRef-PublicDomain AND CC0-1.0"
+license_files = ["LICENSE"]
+copyright = "Artwork © 1909 Pamela Colman Smith (copyright expired)"
 attribution = "Original artwork by Pamela Colman Smith (1909). Digital restoration by Luciella Elisabeth Scarlett."
 description = "The classic Rider-Waite-Smith tarot deck, first published in 1909."
 schema_version = "1.1"
@@ -778,7 +843,7 @@ inclusive-tarot/
     en.toml
 ```
 
-The variants above are discovered from the directory, so `deck.toml` declares nothing about them:
+The variants above are discovered through the directory structure, so `deck.toml` does not need to declare them:
 
 ```toml
 # deck.toml
@@ -790,26 +855,23 @@ version = "1.0"
 default_language = "en"
 ```
 
-Only the alt text has to be written, since that is what differs between variants:
+Only the alt text has to be written:
 
 ```toml
 # names/en.toml
 [alt_text.major_arcana]
-06 = "A man and a woman stand beneath a winged figure, a tree behind each of them."
+06 = "A man and a woman stand hand and hand beneath a winged figure, a tree behind each of them."
 
 [alt_text.card_variants]
 "major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure, a tree behind each of them."
 "major_arcana.06:two_men" = "Two men stand hand in hand beneath a winged figure, a tree behind each of them."
-"minor_arcana.cups.two:two_women" = "Two women raise their cups to one another in a toast."
 ```
-
-Variant keys are deck-wide, so an application can prefer `two_women` everywhere: it renders `major_arcana.06:two_women` and `minor_arcana.cups.two:two_women`, and the default artwork for every other card.
 
 ## Changelog
 
 ### Version 1.1
 
-- **Breaking**: Removed the `[aliases]` section from the manifest in favor of using a names file.
+- **Breaking**: Removed the `[aliases]` section from the manifest in favor of using the names file.
 - **Breaking:** Renamed the `[variants]` section to `[editions]`.
 - **Breaking:** Moved `[deck.excluded_cards]` to a top-level `[excluded_cards]`. `[deck]` now holds only the deck's identity and metadata, and no table nests under it.
 - **Breaking:** Removed the `image` and `id` fields from `[custom_cards.major_arcana.<key>]`. A custom card's images are now found by the same directory convention as every other card's, so one custom card can exist in several resolutions and formats.
@@ -824,4 +886,6 @@ Variant keys are deck-wide, so an application can prefer `two_women` everywhere:
 - Defined minor arcana name composition and the `name_template` key, so that a deck that renames its suits need not write out all 56 names.
 - Required that display strings supplied by a deck be used verbatim, so a deck controls its own capitalization.
 - Specified name file language tags as BCP 47 (RFC 5646) and added `default_language`.
+- Specified deck's `license` field to use SPDX. Also added `license_files` and `copyright`.
+- Added a `[metadata]` section in name files for attribution.
 
