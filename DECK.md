@@ -1184,46 +1184,98 @@ Applications MUST ignore any `[app]` subtable they do not own, and validators MU
 
 ## 9. Conformance and Validation
 
-A validator checks the following:
+### 9.1 Conforming Deck
+
+A **conforming deck** is a directory that:
+
+- contains a readable `deck.toml`, well-formed under [§2.3.1](#231-toml-files);
+- whose `[deck]` table carries the fields [§4.1](#41-deck) marks required — `schema_version`, `name` and `version`;
+- carries at least one card asset, discoverable under [§5.1](#51-asset-discovery);
+- and produces no **error** under [§9.4](#94-validation-rules).
+
+Nothing else is required. A deck with no `identifier`, no name file, no card back, no license and only one of the 78 canonical cards is a conforming deck.
+
+### 9.2 Errors and Warnings
+
+A validator's findings are of two kinds, and every rule in [§9.4](#94-validation-rules) is labelled with one.
+
+- An **error** makes a deck non-conforming. The deck is broken in a way this specification defines an outcome for, and an application MAY refuse it.
+- A **warning** does not. It marks something an author probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings, and MUST NOT downgrade it, hide it, or report it to the user as broken.
+
+The distinction exists so that a validator can be strict without an application being brittle. A deck an author is halfway through writing accumulates warnings; it should still open.
+
+### 9.3 Conforming Applications and Validators
+
+A **conforming application**:
+
+- MUST implement deck discovery ([§2.2](#22-the-deck-library), [§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution));
+- MUST support decoding PNG and JPEG ([§5.7.5](#575-the-extension-chain));
+- MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define;
+- MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings));
+- MUST NOT require a deck's directory name to agree with anything in its `deck.toml` ([§3.4.1](#341-the-directory-name-is-the-handle)), and MUST NOT synthesise an `identifier` for a deck that lacks one ([§3.4.2](#342-identifier)).
+
+An application need not implement editions, card variants, ANSI art, SVG or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define.
+
+A **conforming validator**:
+
+- MUST implement the rules in [§9.4](#94-validation-rules);
+- MUST report each finding as an error or a warning, per the label the rule carries;
+- MUST NOT report unknown keys within an `[app]` subtable ([§8](#8-extensibility)).
+
+### 9.4 Validation Rules
+
+Each rule is labelled **[E]** for error or **[W]** for warning.
 
 1. **Required Files**:
-   - `deck.toml` MUST exist and adhere to the schema.
-   - All referenced images and name files MUST exist.
+   - **[E]** `deck.toml` MUST exist and adhere to the schema.
+   - **[E]** All referenced images and name files MUST exist.
 
 2. **Canonical ID Mapping**:
-   - Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
+   - **[E]** Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
 
 3. **Localization Validation**:
-   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table or its `alt_text` subtable. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
-   - Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
-   - Verify that alt text is provided for all cards in at least one language file.
-   - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[deck].default_language` has a corresponding file.
+   - **[E]** Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table or its `alt_text` subtable. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
+   - **[E]** Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
+   - **[W]** Verify that alt text is provided for all cards in at least one language file. [§6.4](#64-alt-text-guidelines) makes this a SHOULD, so its absence is a warning.
+   - **[E]** Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[deck].default_language` has a corresponding file.
 
 4. **Card Back Validation**:
-   - If card back variants are defined, verify that the default card back exists.
-   - Verify that all referenced card back image files exist.
+   - **[E]** If more than one card back variant is defined, verify that `[card_backs].default` is present and names a defined variant.
+   - **[E]** Verify that all referenced card back image files exist.
 
 5. **Identifier Validation**:
-   - Verify that every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
-   - Verify that every `identifier` field, in `[deck]` and in `[editions].<key>` alike, is a well-formed qualified identifier.
-   - Verify that every `[app]` subtable key is a well-formed realm. Do not validate the contents of such a subtable, whose keys are the owning application's to define.
+   - **[E]** Verify that every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
+   - **[E]** Verify that every `identifier` field, in `[deck]` and in `[editions].<key>` alike, is a well-formed qualified identifier.
+   - **[E]** Verify that every `[app]` subtable key is a well-formed realm. Do not validate the contents of such a subtable, whose keys are the owning application's to define.
+   - **[W]** Where a validator can see a whole library, verify that no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement — two versions installed side by side, or a fork — so this is a warning; see [§3.4.2](#342-identifier).
+   - **[W]** Verify that `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4.2](#342-identifier)).
 
 6. **Card Variant Validation**:
-   - Verify that every card referenced in `[card_variants]` is a card the deck defines.
-   - If a variant table declares `default`, verify that the named variant exists; if it does not declare one, verify that the card has an unsuffixed image file.
-   - Verify that all referenced variant image files exist.
+   - **[E]** Verify that every card referenced in `[card_variants]` is a card the deck defines.
+   - **[E]** If a variant table declares `default`, verify that the named variant exists; if it does not declare one, verify that the card has an unsuffixed image file.
+   - **[E]** Verify that all referenced variant image files exist.
 
 7. **Custom Card Validation**:
-   - Verify that every card declared in `[custom_cards]` is a card the deck has files for. A declaration for a card with no images is an error, since `[custom_cards]` no longer defines cards on its own.
-   - Verify that no custom major arcana key is a two-digit string, and that no custom rank or suit key shadows a canonical one, so that a custom ID can never collide with a canonical one.
-   - Verify that every rank named in a `ranks` list has files in that suit, and that a suit's `ranks` list contains no duplicates.
-   - Report a `position` claimed by two cards as a warning, not an error; ordering remains well defined.
-   - Verify that no card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`.
+   - **[E]** Verify that every card declared in `[custom_cards]` is a card the deck has files for. A declaration for a card with no images is an error, since `[custom_cards]` no longer defines cards on its own.
+   - **[E]** Verify that no custom major arcana key is a two-digit string, and that no custom rank or suit key shadows a canonical one, so that a custom ID can never collide with a canonical one.
+   - **[E]** Verify that every rank named in a `ranks` list has files in that suit, and that a suit's `ranks` list contains no duplicates.
+   - **[W]** Report a `position` claimed by two cards as a warning, not an error; ordering remains well defined.
+   - **[E]** Verify that no card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`.
 
-8. **License Validation**:
-   - Verify that every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike.
-   - Verify that every `license` field is a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected; see [Licensing and Attribution](#7-licensing-and-attribution) for how to treat free-text values.
-   - Verify that `[metadata.alt_text]` contains no key that is not defined for `[metadata]`.
+8. **Edition Validation**:
+   - **[E]** If more than one edition is defined, verify that `[editions].default` is present and names a defined edition ([§4.5](#45-editions)).
+   - **[E]** Verify that every `[editions].<key>.card_back` names a variant defined under `[card_backs.variants]`.
+
+9. **Asset Validation**:
+   - **[E]** Verify that no path field — `icon`, `image`, any `license_files` entry — begins with `/`, contains a `..` segment, or resolves outside the deck root ([§2.3.2](#232-paths-in-decktoml), [§10.1](#101-path-traversal)).
+   - **[E]** Verify that no directory holds two files whose stems differ only in case ([§2.3.3](#233-filename-case)).
+   - **[W]** Report two files in one directory sharing a stem and differing only in a chain extension — `06.png` beside `06.webp`. Resolution is well defined ([§5.7.5](#575-the-extension-chain)), but one of the two is usually a conversion left behind.
+   - **[W]** Report a card asset whose own aspect ratio differs materially from `[deck].aspect_ratio` ([§4.1](#41-deck)).
+
+10. **License Validation**:
+   - **[E]** Verify that every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike.
+   - **[W]** Verify that every `license` field is a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected; see [Licensing and Attribution](#7-licensing-and-attribution) for how to treat free-text values.
+   - **[E]** Verify that `[metadata.alt_text]` contains no key that is not defined for `[metadata]`.
 
 ## 10. Security Considerations
 
