@@ -4,7 +4,6 @@
 # dependencies = ["abnf>=2.2"]
 # ///
 """Check the ABNF grammar embedded in DECK.md against a corpus of cases.
-
 """
 
 import re
@@ -12,7 +11,7 @@ import sys
 import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore")  # DIGIT redefines the core rule, identically
+warnings.filterwarnings("ignore")  # DIGIT redefines the core rule
 from abnf.parser import Rule  # noqa: E402
 
 DOC = Path(__file__).resolve().parent.parent / "DECK.md"
@@ -54,14 +53,30 @@ CASES = [
     # a custom name must not be a reserved canonical key
     ("canonical-id", "minor_arcana.stars.page", LOOSE),
 
-    # ---- extended IDs and card refs ------------------------------------
-    ("extended-id", "major_arcana.06:two_women", ACCEPT),
-    ("extended-id", "minor_arcana.cups.ace:alt", ACCEPT),
-    ("extended-id", "major_arcana.06:two.women", REJECT),
-    ("extended-id", "major_arcana.06:", REJECT),
-    ("extended-id", "major_arcana.06", REJECT),
+    # ---- card references -----------------------------------------------
+    # the suffix is optional: a bare canonical ID is a card-ref
     ("card-ref", "major_arcana.06", ACCEPT),
     ("card-ref", "major_arcana.06:two_women", ACCEPT),
+    ("card-ref", "minor_arcana.cups.ace:alt", ACCEPT),
+    ("card-ref", "major_arcana.happy_squirrel:dark", ACCEPT),
+    ("card-ref", "major_arcana.06:", REJECT),
+    ("card-ref", "major_arcana.06:two.women", REJECT),
+    ("card-ref", "major_arcana.06:Two_Women", REJECT),
+
+    # ---- variant references --------------------------------------------
+    # the form name files key [card_variants] by; the suffix is mandatory
+    ("variant-ref", "major_arcana.06:two_women", ACCEPT),
+    ("variant-ref", "minor_arcana.cups.ace:alt", ACCEPT),
+    ("variant-ref", "major_arcana.06", REJECT),
+    ("variant-ref", "major_arcana.06:", REJECT),
+    # §5.7.3's stem/extension split rests on a variant key having no dot
+    ("variant-ref", "major_arcana.06:two.women", REJECT),
+
+    ("variant-suffix", ":two_women", ACCEPT),
+    ("variant-suffix", ":alt", ACCEPT),
+    ("variant-suffix", ":", REJECT),
+    ("variant-suffix", "two_women", REJECT),
+    ("variant-suffix", ":two_women:more", REJECT),
 
     # ---- custom names --------------------------------------------------
     ("custom-name", "happy_squirrel", ACCEPT),

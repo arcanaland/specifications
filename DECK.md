@@ -73,13 +73,15 @@ This specification addresses three types of actors:
 
 **canonical ID** — The identifier by which this specification names a card: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>`. A canonical ID is a **slot**, not an assertion about a card's meaning; see [§3.1 Canonical IDs](#31-canonical-ids).
 
-**extended canonical ID** — A canonical ID with `:` and a variant key appended, naming one card variant: `major_arcana.06:two_women`.
+**card reference** — How this specification writes a card wherever one is expected: a canonical ID, OPTIONALLY followed by a variant suffix. `major_arcana.06` and `major_arcana.06:two_women` are both card references.
+
+**variant suffix** — `:` and a variant key, appended to a canonical ID to pick out one [card variant](#133-variants-designs-and-editions) of that card. A card reference carrying one is a **variant reference**. The suffix selects a rendering; it does not change which card is named, and a consumer concerned with what a card *means* discards it ([§4.6](#46-card_variants)).
 
 #### 1.3.3 Variants, Designs and Editions
 
 **In this specification "variant" means one thing: an alternative artwork for a card.** Nothing else varies by that name. The two other constructs a reader might expect it to cover have nouns of their own, given here so the distinction is fixed once.
 
-**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by an extended canonical ID. Variants of a card are interchangeable and carry the same meaning. Declared under `[card_variants]`; see [§4.6](#46-card_variants).
+**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by a [variant reference](#132-cards). Variants of a card are interchangeable and carry the same meaning. Declared under `[card_variants]`; see [§4.6](#46-card_variants).
 
 **card back design** — One of the card back designs a deck ships, named by a design key. Discovered from `card_backs/` and OPTIONALLY annotated under `[card_backs.designs]`; see [§4.2](#42-card_backs). A card back is not a card: it has no canonical ID, and a back design has no variants of its own, since a back that looks different simply is a different design.
 
@@ -301,15 +303,21 @@ This is why this specification has no remapping mechanism. A deck expresses its 
 
 [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort. It carries the same caveat, and for the same reason: it is a fallback for decks that supply no name, not a claim about what a slot means.
 
-#### 3.1.2 Extended Canonical IDs
+#### 3.1.2 Card References and the Variant Suffix
 
-An **extended canonical ID** names a specific [card variant](#46-card_variants) by appending `:` and a variant key to a canonical ID:
+A **card reference** is how this specification writes a card wherever one is expected. It is a canonical ID, OPTIONALLY followed by a **variant suffix** — `:` and a variant key — which picks out one [card variant](#46-card_variants) of that card:
 
 ```
-major_arcana.06:two_women
+major_arcana.06                 a card reference; the card's default variant
+major_arcana.06:two_women       a card reference carrying a variant suffix,
+                                so also a variant reference
 ```
 
-Wherever this specification accepts a canonical ID, an extended canonical ID is also accepted unless stated otherwise. A canonical ID with no suffix denotes the card's default variant.
+A card reference with no variant suffix denotes the card's default variant.
+
+The suffix selects a *rendering* of the card and does not change which card is named. `major_arcana.06:two_women` and `major_arcana.06:two_men` are the same card in the same slot, drawn twice. This is why a consumer concerned with what a card means — the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) above all — discards the suffix rather than treating it as part of the identity ([§4.6](#46-card_variants)), and why a request for a variant a card does not have resolves to that card's default instead of failing ([§5.7.6](#576-variants)).
+
+Where this specification needs to name the suffixed form on its own — a name file's `[card_variants]` table is keyed by it, since a variant is exactly what those entries name — it says **variant reference**. [§3.5](#35-grammar) gives both productions.
 
 ### 3.2 Custom Names
 
@@ -334,31 +342,39 @@ A qualified identifier is composed of a **realm** and an object **path**, separa
 
 - The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has **two labels or more**, each beginning with a letter and neither beginning nor ending with a hyphen; a single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form: `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
 - The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
-- The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In *this* specification, the fragment of a deck's qualified identifier is a canonical ID or an extended canonical ID: `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
+- The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In *this* specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix): `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
 
-Note: qualified identifiers are not locations. Nothing in this specification implies that one can be fetched, and applications MUST NOT treat a realm as a network host to contact. See [§10.3](#103-identifiers-are-not-locations).
+Realms are compared bytewise.
 
-Realms are compared **bytewise**. Every realm is lowercase ASCII by construction, so no case folding, Unicode normalization or trailing-dot stripping is applied before comparison, and two realms are the same realm exactly when their bytes agree.
+Note: qualified identifiers are not locations and nothing in this specification implies that one can be fetched.
+
+#### 3.3.1 The `tarot:` Scheme (Informative)
+
+A qualified identifier is essentially a URI without the scheme. Arcana Land reserves the scheme `tarot:`
+
+```
+tarot:land.arcana/deck/inclusive-tarot#major_arcana.06:two_women
+```
+
+No version of this specification defines this scheme and nothing in this document depends on it. It is recorded here primarily for downstream implementation awareness.
 
 ### 3.4 Deck Identity
 
-A deck has three distinct things that are easy to confuse, and this specification keeps them separate:
+A deck has three distinct properties related to identity:
 
-| Thing | What it is | Where it lives | Unique? |
+| Property | Description | Location | Uniqueness |
 |---|---|---|---|
-| **Directory name** | The deck's library-scoped handle: how a user or an application addresses it locally | The filesystem — the name of the deck root's own directory | Within a root, by the filesystem. Across roots, the first occurrence wins ([§2.2.3](#223-shadowing)) |
-| **`identifier`** | The deck's global identity: what another Arcana Land document points at | `[deck].identifier`, RECOMMENDED | Globally, by construction of the realm |
-| **`name`** | The display string shown to a user | `[deck].name`, REQUIRED | No. Two unrelated decks can share a name |
+| Directory name | Library-scoped handle | The filesystem | Unique within a library root. |
+| `identifier` | Globally unique identitfier | `[deck].identifier`, RECOMMENDED | Globally |
+| `name` | Display string shown to the user | `[deck].name`, REQUIRED | Two unrelated decks can share a name |
 
-#### 3.4.1 The Directory Name Is the Handle
+#### 3.4.1 Directory Name
 
-A deck's handle within a library is its directory name, and nothing inside `deck.toml` overrides it. A deck author who wants their deck addressed as `rider-waite-smith` names the directory `rider-waite-smith`.
-
-A directory name is not required to match `[deck].name`, nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree, and a validator MUST NOT report a disagreement.
+A deck's handle within a library is its directory name and it is not required to match `[deck].name`, nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree, and a validator MUST NOT report a disagreement.
 
 #### 3.4.2 `identifier`
 
-`[deck].identifier` is the deck's qualified identifier, and is **RECOMMENDED**. A deck SHOULD carry one:
+`[deck].identifier` is the deck's qualified identifier, and is **RECOMMENDED**. A deck SHOULD provide one:
 
 ```toml
 [deck]
@@ -366,17 +382,15 @@ name = "Rider-Waite-Smith Tarot"
 identifier = "land.arcana/deck/rider-waite-smith"
 ```
 
-The consequence of omitting it is concrete and MUST be understood: **a deck with no `identifier` cannot be referenced from another Arcana Land document.** Nothing in the Esoterica or Spread specifications can name it, because there is no globally unique string to name it by. A directory name is a handle within one library and is not an identity; two people can each have a `rider-waite-smith` and mean different decks.
+A deck with no `identifier` cannot be referenced from another Arcana Land document.
 
-This is an acceptable trade. A deck a person made for themselves has a perfectly good identity in its directory name, and requiring every author to own a domain would tax the hobbyist for a benefit only the publisher needs.
+Applications and validators MUST NOT synthesise an `identifier` for a deck that lacks one.
 
-Applications and validators MUST NOT synthesise an `identifier` for a deck that lacks one — not from the directory name, not from `[deck].name`, not from anything. A deck either has a global identity or it does not, and inventing one would produce an identifier that collides exactly where a real one would not.
-
-Two decks visible in one library MAY declare the same `identifier`, under different directory names. Two versions of a deck installed side by side, or a deck and a fork of it, are the ordinary cases. This is a validator **warning**, never an error, and it does not affect shadowing, which keys on directory name alone.
+Two decks in one library MAY declare the same `identifier` under different directory names, although a validator may provide a warning in such cases.
 
 #### 3.4.3 Edition Identity
 
-An `[editions].<key>` entry follows the same model one level down. Its **table key** is the edition's handle within the deck, and it MAY carry an `identifier` giving the edition a global identity on the terms above.
+For editions, its table key is the edition's handle within the deck, and it MAY carry an `identifier` giving the edition a global identity on the terms above.
 
 ### 3.5 Grammar
 
@@ -400,10 +414,10 @@ canonical-rank  = %s"ace" / %s"two" / %s"three" / %s"four" / %s"five" /
                   %s"six" / %s"seven" / %s"eight" / %s"nine" / %s"ten" /
                   %s"page" / %s"knight" / %s"queen" / %s"king"
 
-extended-id     = canonical-id ":" variant-key
+card-ref        = canonical-id [ variant-suffix ]
+variant-ref     = canonical-id variant-suffix
+variant-suffix  = ":" variant-key
 variant-key     = custom-name
-
-card-ref        = canonical-id / extended-id
 
 ; ---- Custom names -----------------------------------------------------
 
@@ -683,7 +697,7 @@ Where an application has selected an edition, that edition's fields take precede
 
 A card variant is an alternative artwork for a card that a deck already contains.
 
-Variants are addressed by an [extended canonical ID](#31-canonical-ids) of the card's canonical ID, a colon, and the variant key (e.g., `major_arcana.06:two_women`).
+Variants are addressed by a [variant reference](#312-card-references-and-the-variant-suffix): the card's canonical ID, a colon, and the variant key (e.g., `major_arcana.06:two_women`).
 
 File assets are named with the variant key infixed between the card's file stem and its extension:
 
@@ -721,7 +735,7 @@ Variant keys are custom names and MUST follow the [identifier rules](#3-identity
 
 If `default` is omitted, the unsuffixed file (`06.svg`) is the default variant. If a deck provides only variant files for a card and no unsuffixed file, it MUST declare `default`.
 
-Note that `names/<tag>.toml` also has a `[card_variants]` table, but a flat one keyed by extended canonical ID; see [Internationalization](#6-internationalization).
+Note that `names/<tag>.toml` also has a `[card_variants]` table, but a flat one keyed by variant reference; see [Internationalization](#6-internationalization).
 
 Variants of a card are interchangeable and carry the same meaning; consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck; where a card has no variant under that key, it MUST use that card's default rather than treat it as an error.
 
@@ -1094,7 +1108,7 @@ alternative = "Starry Night"
 classic = "A blue and white geometric pattern featuring roses and lilies"
 alternative = "A starry night sky pattern with gold accents"
 
-# Card variants, keyed by extended canonical ID (optional)
+# Card variants, keyed by variant reference (optional)
 [card_variants]
 "major_arcana.06:two_women" = "The Lovers"
 
@@ -1136,7 +1150,7 @@ Alt text is resolved via `[alt_text.*]` in the name files, then (for custom card
 
 Card back design names are resolved via `[card_backs].<key>` in the name files, then `[card_backs.designs.<key>].name`, then the [title-cased key](#135-names-and-files). Design alt text is resolved via `[alt_text.card_backs].<key>`, then the design's `alt_text` field. A back discovered with no declaration anywhere is therefore still displayable: `card_backs/classic.png` shows as "Classic".
 
-Card variant names are resolved via `[card_variants]."<extended-id>"` in the name files, then `[card_variants."<canonical-id>".variants.<key>].name`, then the name of the card itself. Variant alt text is resolved via `[alt_text.card_variants]."<extended-id>"`, then the variant's `alt_text` field, then the alt text of the card itself — which will describe a variant only approximately, so variants SHOULD carry their own.
+Card variant names are resolved via `[card_variants]."<variant-ref>"` in the name files, then `[card_variants."<canonical-id>".variants.<key>].name`, then the name of the card itself. Variant alt text is resolved via `[alt_text.card_variants]."<variant-ref>"`, then the variant's `alt_text` field, then the alt text of the card itself — which will describe a variant only approximately, so variants SHOULD carry their own.
 
 #### 6.3.1 Minor Arcana Name Composition
 
@@ -1645,7 +1659,7 @@ Applications MUST ignore these names in a 2.0 deck.
 
 | Name | Was | Status |
 | --- | --- | --- |
-| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the [directory name](#341-the-directory-name-is-the-handle) and the global identity is [`[deck].identifier`](#342-identifier).|
+| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#342-identifier).|
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
 | `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#45-editions) in 2.0. The word "variant" now means a [card variant](#46-card_variants)|
 | `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning.|
@@ -1728,7 +1742,7 @@ Naming and Identity:
 
 Custom Cards:
 - Made custom cards discoverable from the directory structure.
-- Added card variants and extended canonical IDs.
+- Added card variants, and the variant suffix by which a [card reference](#312-card-references-and-the-variant-suffix) names one.
 - Allowed custom `ranks` for canonical suits
 - Allowed custom minor arcana name composition with `name_template`
 
