@@ -61,88 +61,60 @@ This specification addresses three types of actors:
 
 **card** — One addressable image in a deck, named by a canonical ID.
 
-**major arcana** — The trump cards, canonically twenty-two, keyed `00` through `21` under `major_arcana`.
+**major arcana** — The twenty-two major arcana cards, keyed `00` through `21` under `major_arcana`.
 
 **minor arcana** — The suited cards, canonically fifty-six, keyed by suit and rank under `minor_arcana`.
 
-**suit** — A grouping of minor arcana cards. The four canonical suits are `wands`, `cups`, `swords` and `pentacles`; a deck MAY define others.
+**suit** — A grouping of minor arcana cards. The four canonical suits are `wands`, `cups`, `swords` and `pentacles`. A deck MAY define other suits.
 
 **rank** — A card's place within its suit. The fourteen canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`; a deck MAY define others.
 
-**court card** — Conventionally the `page`, `knight`, `queen` and `king` of a suit. The term is descriptive; this specification attaches no rule to it.
+**court card** — Conventionally the `page`, `knight`, `queen` and `king` of a suit. The term is descriptive and this specification attaches no rule to it.
 
-**canonical ID** — The identifier by which this specification names a card: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>`. A canonical ID is a **slot**, not an assertion about a card's meaning; see [§3.1 Canonical IDs](#31-canonical-ids).
+**canonical ID** — The identifier by which this specification names a card, either `major_arcana.<key>` or `minor_arcana.<suit>.<rank>`. A canonical ID does not attach meaning. See [§3.1 Canonical IDs](#31-canonical-ids).
 
-**card reference** — How this specification writes a card wherever one is expected: a canonical ID, OPTIONALLY followed by a variant suffix. `major_arcana.06` and `major_arcana.06:two_women` are both card references.
+**card reference** — How this specification writes a card wherever one is expected. The format is a canonical ID, OPTIONALLY followed by a variant suffix. `major_arcana.06` and `major_arcana.06:two_women` are both card references.
 
-**variant suffix** — `:` and a variant key, appended to a canonical ID to pick out one [card variant](#133-variants-designs-and-editions) of that card. A card reference carrying one is a **variant reference**. The suffix selects a rendering; it does not change which card is named, and a consumer concerned with what a card *means* discards it ([§4.6](#46-card_variants)).
+**variant suffix** — The portion of a card reference after a colon, appended to a canonical ID to pick out one [card variant](#133-variants-designs-and-editions) of that card. A card reference carrying one is a called a variant reference.
 
 #### 1.3.3 Variants, Designs and Editions
 
-**In this specification "variant" means one thing: an alternative artwork for a card.** Nothing else varies by that name. The two other constructs a reader might expect it to cover have nouns of their own, given here so the distinction is fixed once.
+**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by a [variant reference](#132-cards). Variants of a card are interchangeable and denote the same meaning.
 
-**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by a [variant reference](#132-cards). Variants of a card are interchangeable and carry the same meaning. Declared under `[card_variants]`; see [§4.6](#46-card_variants).
+**card back design** — One of the card back designs, named by a design key. Discovered from `card_backs/` and OPTIONALLY annotated under `[card_backs.designs]`.
 
-**card back design** — One of the card back designs a deck ships, named by a design key. Discovered from `card_backs/` and OPTIONALLY annotated under `[card_backs.designs]`; see [§4.2](#42-card_backs). A card back is not a card: it has no canonical ID, and a back design has no variants of its own, since a back that looks different simply is a different design.
-
-**edition** — A printing or release of a deck that shares the deck's card fronts but selects a different card back and carries its own metadata. Declared under `[editions]`; see [§4.5](#45-editions). An edition does not change which cards the deck has.
-
-Note: version 1.0 of this specification used "variant" for both of the latter — a top-level `[variants]` table for what [§4.5](#45-editions) now calls editions, and `[card_backs.variants]` for what [§4.2](#42-card_backs) now calls designs. A reader of a 1.0 deck therefore meets the word in two senses this document does not use. See [Appendix B](#appendix-b-reserved-and-deprecated-names).
+**edition** — A printing or release of a deck that shares the deck's card fronts but selects a different card back and has its own metadata. An edition does not change which cards the deck has.
 
 #### 1.3.4 Identifiers
 
-**custom name** — An identifier a deck author coins: a custom card key, suit key, rank key, card back design key, edition key or card variant key. Grammar in [§3.5](#35-grammar).
+**custom name** — An identifier that the deck author creates. Custom card keys, suit keys, rank keys, card back design keys, edition keys and card variant keys are all custom names.
 
-**qualified identifier** — An identifier naming an Arcana Land entity unambiguously across authors, composed of a realm and a path: `land.arcana/deck/rider-waite-smith`. See [§3.3](#33-qualified-identifiers).
+**qualified identifier** — An identifier naming an Arcana Land entity unambiguously across authors, composed of a realm and a path. See [§3.3](#33-qualified-identifiers).
 
-**realm** — The first component of a qualified identifier: a domain name the author controls, written in reverse order. A realm is a namespace, never a network location.
+**realm** — The first component of a qualified identifier consisting of a domain name the author MAY control, written in reverse order.
 
 #### 1.3.5 Names and Files
 
-**name file** — A `names/<tag>.toml` file, supplying display strings and alt text for one language tag.
+**name file** — A `names/<tag>.toml` file containing display strings and alt text for a single language tag.
 
-**display string** — A string an application shows to a user: a card name, suit name, rank name or alt text. A resolved display string is used verbatim; see [§6.3](#63-display-name-resolution).
+**display string** — A string an application shows to a user, such as a card name, suit name, rank name or alt text.
 
-**title-cased key** — The display string derived from a key when no name file and no `deck.toml` fallback supplies one. It is formed by replacing each `_` with a space and uppercasing the first character of each resulting word, leaving every other character as it stands. So `happy_squirrel` yields `Happy Squirrel`, `ace` yields `Ace`, and `mcdonald_wand` yields `Mcdonald Wand`.
+**title-cased key** — The display string derived from a key when no name file and no `deck.toml` fallback supplies one. It is formed by replacing each `_` with a space and uppercasing the first character of each resulting word.
 
-**discovery** — Reading a deck's asset directories to determine which cards it has and which files supply them. See [§5.1](#51-asset-discovery).
-
-**base** — The part of a card asset's file stem before the first `.`. In `06.two_women.png` the stem is `06.two_women` and the base is `06`. See [§5.1](#51-asset-discovery) and [§5.7.3](#573-extensions-stems-and-bases).
-
-#### 1.3.6 Actors and Findings
-
-**application** and **validator** are defined in [§1.2.3](#123-audience); **error** and **warning** in [§9.2](#92-errors-and-warnings).
+**base** — The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06`. See [§5.1](#51-asset-discovery) and [§5.7.3](#573-extensions-stems-and-bases).
 
 ### 1.4 Versioning and Compatibility
 
 #### 1.4.1 `schema_version`
 
-Every deck declares the version of this specification it is written against, in `[deck].schema_version`. The value is `"<major>.<minor>"`: two decimal integers separated by a dot. A deck written against this document declares `schema_version = "2.0"`.
+Every deck declares the version of this specification it is written against in `[deck].schema_version`. The value is `"<major>.<minor>"`: two decimal integers separated by a dot.
 
 #### 1.4.2 The Compatibility Contract
 
-- A **minor** version update MUST be backward and forward compatible. It MAY add new tables, keys and values, and it MAY deprecate existing ones, but it MUST NOT change or remove the behavior of anything an earlier version of the same major version defined.
-- A **major** version update MAY be incompatible in any respect.
+- A minor version update MUST be backward and forward compatible. It MAY add new tables, keys and values, and it MAY deprecate existing ones, but it MUST NOT change or remove the behavior of anything an earlier version of the same major version defined.
+- A major version update MAY be incompatible in any respect.
 
-The contract binds this specification, not any deck or application. Its consequence for an application is the rule below.
-
-#### 1.4.3 Reading a Deck Whose Version an Application Does Not Know
-
-An application meeting a `schema_version` it does not recognise:
-
-- Where the **major** version matches one the application implements, it SHOULD load the deck and ignore every table, key and value it does not understand. A deck declaring `2.1` is readable by a 2.0 application on exactly this basis: forward compatibility within a major version is what §1.4.2 guarantees.
-- Where the **major** version does not match any the application implements, it SHOULD refuse the deck and report why. A 2.0 application meeting `3.0` has no basis for guessing which of its rules still hold.
-- Where `schema_version` is absent or is not of the form given in §1.4.1, an application SHOULD treat the deck as malformed rather than assume a version.
-
-#### 1.4.4 Version 2.0 and Version 1.0 Decks
-
-Version 2.0 is a major version and is not compatible with 1.0. An application MAY support 1.0 decks in addition to 2.0 decks. Where it does, it reads a deck declaring `schema_version = "1.0"` **under 1.0's rules**, and the requirements of this document do not apply to it. In particular, a 1.0 deck's `[deck].id`, `[aliases]`, `[variants]` and `[remap_major_arcana]` mean what 1.0 said they meant; see [Appendix B](#appendix-b-reserved-and-deprecated-names) for what became of each.
-
-An application that does not support 1.0 decks refuses them under §1.4.3.
-
-This section is the only place in this document that states a rule about reading an older version. Nothing elsewhere relaxes a 2.0 requirement on the grounds that a deck is old.
-
-Note: version 1.1 was drafted but never published. No deck declares it. A `schema_version` of `"1.1"` is not defined by any released version of this specification.
+The contract binds this specification, not any deck or application.
 
 #### 1.4.5 `[deck].version`
 
@@ -388,13 +360,9 @@ Applications and validators MUST NOT synthesise an `identifier` for a deck that 
 
 Two decks in one library MAY declare the same `identifier` under different directory names, although a validator may provide a warning in such cases.
 
-#### 3.4.3 Edition Identity
-
-For editions, its table key is the edition's handle within the deck, and it MAY carry an `identifier` giving the edition a global identity on the terms above.
-
 ### 3.5 Grammar
 
-The productions below are [ABNF](https://www.rfc-editor.org/rfc/rfc5234) (RFC 5234), with the case-sensitive string notation of [RFC 7405](https://www.rfc-editor.org/rfc/rfc7405). Every string literal in this grammar is **case-sensitive** and lowercase, and each carries the `%s` prefix that says so — RFC 5234 alone would read a bare `"wands"` as matching `WANDS`, which this specification does not permit. Literals with no letters in them are written bare, having no case to fix.
+The productions below are [ABNF](https://www.rfc-editor.org/rfc/rfc5234) (RFC 5234), with the case-sensitive string notation of [RFC 7405](https://www.rfc-editor.org/rfc/rfc7405). Every string literal in this grammar is case-sensitive and lowercase.
 
 ```abnf
 ; ---- Card identifiers -------------------------------------------------
@@ -449,29 +417,26 @@ Three constraints are not expressible in the grammar and are stated normatively 
 
 - `canonical-major` admits any two digits, but only `00` through `21` are defined. `22` through `99` are reserved; see [§3.2](#32-custom-names).
 - A `custom-name` MUST NOT be a reserved canonical key, with the one exception in [§3.2](#32-custom-names).
-- A `fragment` on a *deck's* qualified identifier is a `card-ref`; see [§3.3](#33-qualified-identifiers).
 
 ## 4. deck.toml Reference
 
-Every table this specification defines is listed below with its fields. In each section the **field table is normative**: it fixes each key's type, whether it is required, and its default. The TOML block beside it illustrates the table in use and is informative.
+Every table this specification defines is listed below with its fields. 
 
 A key not listed here and not under `[app]` ([§8](#8-extensibility)) is not defined by this specification; [§8](#8-extensibility) reserves such names for future versions of it.
-
-Types name TOML 1.0.0 types. *Path* means a deck-root-relative path as [§2.3.2](#232-paths-in-decktoml) defines it.
 
 ### 4.1 `[deck]`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `schema_version` | String | **Yes** | — | The version of this specification the deck is written against, `"<major>.<minor>"`; see [§1.4.1](#141-schema_version). A deck written against this document declares `"2.0"`. |
+| `schema_version` | String | Yes | — | The version of this specification the deck is written against as `"<major>.<minor>"` |
 | `name` | String | **Yes** | — | The deck's display name. Not required to be unique, and not required to match the directory name ([§3.4](#34-deck-identity)). |
-| `version` | String | **Yes** | — | The deck's own version. Free-form; comparable for equality only, with no ordering implied ([§1.4.5](#145-deckversion)). |
+| `version` | String | Yes | — | The deck's own free-form version. |
 | `identifier` | String | RECOMMENDED | none | The deck's qualified identifier ([§3.3](#33-qualified-identifiers)). A deck without one cannot be referenced from another Arcana Land document ([§3.4.2](#342-identifier)). |
 | `default_language` | String | No | `"en"` | BCP 47 tag of the deck's default name file ([§6.2](#62-language-resolution)). |
 | `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
-| `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards; see below. |
-| `author` | String | No | none | The artwork's author, as displayed. |
-| `description` | String | No | none | A prose description of the deck. Not localized: written once, in `default_language` ([§6.4](#64-alt-text-guidelines)). |
+| `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
+| `author` | String | No | none | The artwork's author. |
+| `description` | String | No | none | A prose description of the deck written once in `default_language` ([§6.4](#64-alt-text-guidelines)). |
 | `license` | String | No | none | SPDX license expression governing the artwork ([§7.1](#71-license-expressions)). |
 | `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
 | `copyright` | String | No | none | Copyright notice, displayed verbatim. |
@@ -675,29 +640,26 @@ created_date = "1912-01-01"
 | --- | --- | --- | --- | --- |
 | `default` | String | Required where more than one edition is defined | see below | The edition key an application selects where the user has not chosen another. |
 
-Where exactly one edition is defined and `default` is omitted, that edition is the default. Where more than one is defined, `default` is REQUIRED and MUST name a defined edition ([§9.4](#94-validation-rules)). Editions differ from [card back designs](#42-card_backs) here: an edition exists only because `deck.toml` declares it, so requiring the declaration to be complete costs an author nothing, whereas a design can arrive with no declaration at all and still needs a well-defined default.
+Where exactly one edition is defined and `default` is omitted, that edition is the default. Where more than one is defined, `default` is REQUIRED and MUST name a defined edition ([§9.4](#94-validation-rules)). 
 
-**`[editions.<key>]`** — `<key>` is a [custom name](#32-custom-names) and is the edition's handle within the deck ([§3.4.3](#343-edition-identity)).
+**`[editions.<key>]`** — `<key>` is a [custom name](#32-custom-names) and is the edition's handle within the deck.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `name` | String | **Yes** | — | The edition's display name. |
 | `card_back` | String | No | `[card_backs].default` | The [design key](#42-card_backs) this edition uses. MUST name a card back design the deck has ([§9.4](#94-validation-rules)). |
-| `identifier` | String | No | none | A qualified identifier for the edition ([§3.4.3](#343-edition-identity)). |
 | `publisher` | String | No | `[deck].publisher` | The edition's publisher, where it differs from the deck's. |
 | `created_date` | String | No | `[deck].created_date` | RFC 3339 `full-date`, on the terms in [§4.1](#41-deck). |
 
-An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) defines for `[deck]` — `description`, `version`, `updated_date`, `author`, `website` and the rest — with the same type and meaning. It MUST NOT carry `schema_version`, which is a property of the deck.
+An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) defines for `[deck]`.
 
-**What an edition is.** An edition selects a card back and supplies metadata that differs from the deck's. It does **not** change which cards the deck has: every edition of a deck shares one set of card fronts, one set of custom cards and one set of exclusions. A printing whose artwork differs is a different deck, not an edition — or, where only some cards differ, a set of [card variants](#46-card_variants).
-
-Where an application has selected an edition, that edition's fields take precedence over `[deck]`'s for display, and a field the edition does not give falls back to `[deck]`'s value. An application that does not model editions at all reads `[deck]` and the default card back, and is conforming.
+The purpose of the edition section is to define a specific card back design and provide metadata that differs from the main printing. A printing with differing number of cards or front artwork is a separate deck and SHOULD NOT be represented as an edition. By design, an edition has no [qualified identifier].
 
 ### 4.6 `[card_variants]`
 
 A card variant is an alternative artwork for a card that a deck already contains.
 
-Variants are addressed by a [variant reference](#312-card-references-and-the-variant-suffix): the card's canonical ID, a colon, and the variant key (e.g., `major_arcana.06:two_women`).
+Variants are addressed by a [variant reference](#312-card-references-and-the-variant-suffix), defined as the card's canonical ID, a colon followed by a variant key (e.g., `major_arcana.06:two_women`).
 
 File assets are named with the variant key infixed between the card's file stem and its extension:
 
@@ -705,16 +667,16 @@ File assets are named with the variant key infixed between the card's file stem 
 h1200/major_arcana/06.two_women.png
 ```
 
-Declaring variants in `deck.toml` is OPTIONAL, and is necessary only to choose a non-default default, to supply fallback strings, or to point at a file that does not follow the naming convention.
+Declaring variants in `deck.toml` is OPTIONAL, and is necessary only to choose a non-default default, to supply fallback strings or to point at a file that does not follow the naming convention.
 
 ```toml
 [card_variants."major_arcana.06"]
 default = "two_women"   # Optional: which variant is used for a bare canonical ID
 
 [card_variants."major_arcana.06".variants.two_women]
-name = "The Lovers"     # Optional fallback; prefer names/<tag>.toml
+name = "The Lovers"     # Optional fallback
 alt_text = "Two women stand hand in hand beneath a winged figure." # Optional fallback
-image = "scalable/major_arcana/06.two_women.svg" # Optional: explicit path
+image = "scalable/major_arcana/06.two_women.svg" # Optional explicit path
 ```
 
 **`[card_variants."<canonical-id>"]`** — the table key is the card's canonical ID, quoted because it contains dots.
@@ -735,9 +697,7 @@ Variant keys are custom names and MUST follow the [identifier rules](#3-identity
 
 If `default` is omitted, the unsuffixed file (`06.svg`) is the default variant. If a deck provides only variant files for a card and no unsuffixed file, it MUST declare `default`.
 
-Note that `names/<tag>.toml` also has a `[card_variants]` table, but a flat one keyed by variant reference; see [Internationalization](#6-internationalization).
-
-Variants of a card are interchangeable and carry the same meaning; consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck; where a card has no variant under that key, it MUST use that card's default rather than treat it as an error.
+Variants of a card are interchangeable and carry the same meaning. Consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
 
 ## 5. Card Assets
 
@@ -1352,7 +1312,7 @@ Each rule is labelled **[E]** for error or **[W]** for warning.
 
 5. **Identifier Validation**:
    - **[E]** Verify that every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
-   - **[E]** Verify that every `identifier` field, in `[deck]` and in `[editions].<key>` alike, is a well-formed qualified identifier.
+   - **[E]** Verify that `[deck].identifier`, where present, is a well-formed qualified identifier.
    - **[E]** Verify that every `[app]` subtable key is a well-formed realm — in particular that it has two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). Do not validate the contents of such a subtable, whose keys are the owning application's to define.
    - **[W]** Where a validator can see a whole library, verify that no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement — two versions installed side by side, or a fork — so this is a warning; see [§3.4.2](#342-identifier).
    - **[W]** Verify that `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4.2](#342-identifier)).
@@ -1413,7 +1373,7 @@ An application that renders ANSI art MUST therefore restrict what it passes thro
 
 A [realm](#33-qualified-identifiers) looks like a domain name because it is one, written backwards, and a [qualified identifier](#33-qualified-identifiers) looks like a URL path because it borrows the shape. Neither is a location, and an author supplies both.
 
-An application MUST NOT resolve a realm as a hostname, contact it, or otherwise derive a network request from any part of a qualified identifier — not from `[deck].identifier`, not from an `[editions].<key>.identifier`, not from an `[app]` subtable key. A deck declaring `identifier = "attacker.example/deck/x"` is naming itself, not nominating a server; an application that turns the declaration into a lookup lets any deck it merely *scans* direct traffic on the user's behalf, and leaks the fact of the scan to whoever owns that name.
+An application MUST NOT resolve a realm as a hostname, contact it, or otherwise derive a network request from any part of a qualified identifier — not from `[deck].identifier`, not from an `[app]` subtable key. A deck declaring `identifier = "attacker.example/deck/x"` is naming itself, not nominating a server; an application that turns the declaration into a lookup lets any deck it merely *scans* direct traffic on the user's behalf, and leaks the fact of the scan to whoever owns that name.
 
 `[deck].website` is the one field this specification defines that does hold a URL, and it is a URL to **show or to open on the user's request**, never one to fetch while loading a deck.
 
