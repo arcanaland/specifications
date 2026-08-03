@@ -270,7 +270,7 @@ This specification uses two identifier grammars: custom names, which appear as k
 
 ### Custom Names
 
-Custom names, such as custom major arcana keys, custom suit keys, custom rank keys, card back variant keys, deck edition keys, card variant keys and the application key in `[app.<key>]` MUST match:
+Custom names, such as custom major arcana keys, custom suit keys, custom rank keys, card back variant keys, deck edition keys and card variant keys MUST match:
 
 ```
 custom-name = ^[a-z_][a-z0-9_]*$
@@ -337,9 +337,11 @@ An `[editions]` entry MAY carry an `identifier` on the same terms. Where both fi
 - **h2400**: Use for high-resolution displays, printing, and when fine details need to be preserved
 
 ### ANSI Art
-- Files should be stored in the `ansi<lines>/` directory, organized by card type and suit (e.g., `ansi32/major_arcana/00.ansi`).
-- ANSI files can use any extension.
-- Applications can assume that files with a `.txt` extension contain just ASCII text while files with an `.ansi` extension contain ANSI escape codes.
+- Files should be stored in the `ansi<lines>/` directory, organized by card type and suit (e.g., `ansi32/major_arcana/00.ansi`). `<lines>` is the number of terminal rows the art occupies, so art 20 rows tall belongs in `ansi20/`.
+- ANSI files can use any extension. `.ans` is conventional for art carrying escape sequences and `.txt` for plain text, but neither is required.
+- Applications MUST determine a file's kind from its content rather than its extension. Art using ANSI escape sequences necessarily contains ESC (`0x1B`); a file with no ESC byte is plain text and may be written to a terminal as-is.
+- Plain text files are UTF-8. Art drawn with box-drawing or block characters is plain text, not ANSI, and a deck of it is no less valid for containing no escape sequences at all.
+- Where a file carries a [SAUCE](https://www.acid.org/info/sauce/sauce.htm) record, applications SHOULD honor it. SAUCE already expresses iCE colors, letter spacing and font selection, so a deck need not restate those elsewhere.
 
 Applications should treat ANSI art as an optional format, falling back to other image formats if ANSI files are not provided.
 
@@ -383,9 +385,10 @@ For a request of `pt-BR`, that is `names/pt-BR.toml`, then `names/pt.toml`, then
 Resolution happens per key, not per file: a `pt-BR` file that overrides only a handful of names inherits the rest from `pt`, and anything neither supplies comes from the default language file.
 
 ```toml
-# Metadata about this name file (optional)
+# Metadata about this name file (optional); see Name File Licensing
 [metadata]
-alt_text_attribution = "Alt text written by Jane Doe."
+source = "Names and alt text written by Jane Doe."
+license = "CC-BY-4.0"
 
 # Card name localization
 [major_arcana]
@@ -443,7 +446,13 @@ The optional `[metadata]` table describes the name file itself rather than any c
 
 | Key | Purpose |
 | --- | --- |
-| `alt_text_attribution` | Who or what produced the alt text in this file |
+| `source` | Who or what produced the strings in this file |
+| `license` | SPDX license expression governing the strings in this file |
+| `license_files` | Paths, relative to the deck root, to the full license text and any notices |
+| `copyright` | The copyright notice, verbatim as the rights holder wrote it |
+| `attribution` | The credit line the license requires downstream users to display |
+
+The optional `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Name File Licensing](#name-file-licensing).
 
 ### Display Name Resolution
 
@@ -501,7 +510,7 @@ Applications should validate the following:
    - Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
 
 3. **Localization Validation**:
-   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
+   - Verify that every key present in a localization file corresponds to a card, suit, rank, card variant or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table or its `alt_text` subtable. Name files are sparse, so a *missing* key is not an error; an *unrecognized* key is.
    - Verify that `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`.
    - Verify that alt text is provided for all cards in at least one language file.
    - Verify that every name file's stem is a well-formed BCP 47 language tag, that no two differ only in case, and that `[deck].default_language` has a corresponding file.
@@ -514,6 +523,7 @@ Applications should validate the following:
    - Verify that every custom name matches the custom name grammar and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
    - Verify that every `id` field is a valid deck identifier.
    - Verify that every `identifier` field is a well-formed qualified identifier, and that where an `id` accompanies it, the `id` equals the last path segment of the `identifier`.
+   - Verify that every `[app]` subtable key is a well-formed realm. Do not validate the contents of such a subtable, whose keys are the owning application's to define.
    - Version 1.0 did not constrain these, so applications SHOULD report violations in a deck declaring `schema_version = "1.0"` as warnings rather than rejecting the deck.
 
 6. **Card Variant Validation**:
@@ -529,43 +539,38 @@ Applications should validate the following:
    - Verify that no card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`.
 
 8. **License Validation**:
-   - Verify that every file listed in `license_files` exists.
-   - Verify that `license` is a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected; see [Licensing and Attribution](#licensing-and-attribution) for how to treat free-text values.
+   - Verify that every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike.
+   - Verify that every `license` field is a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected; see [Licensing and Attribution](#licensing-and-attribution) for how to treat free-text values.
+   - Verify that `[metadata.alt_text]` contains no key that is not defined for `[metadata]`.
 
 
 ## Licensing and Attribution
 
-A deck bundles two separately owned things: the card artwork, which usually comes from a third party, and the packaging around it — `deck.toml`, the name files, the directory layout. They frequently carry different terms, and the manifest describes only the artwork. Packaging terms belong to whoever assembled the deck and are conveyed the usual way, by a license file in the repository that ships it.
+A deck is comprised of several components that may have separate licensing terms.
+
+- The license specified by `[deck].license` describes the artwork.
+- The license in the `[metadata].license` field of a names file covers the strings in that file, and `[metadata.alt_text]` narrows that to the alt text alone.
+- The optional `LICENSE` file at the root of the deck conveys terms for whoever assembled the deck.
 
 ### License Expressions
 
-The `[deck].license` field SHOULD be a valid [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/):
+The `[deck].license` field SHOULD be a valid [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) and compose:
 
 ```toml
 [deck]
-license = "CC-BY-SA-4.0"
+license = "CC0-1.0 AND LicenseRef-PublicDomain"
 ```
 
-Expressions compose, which matters for decks assembled from sources with different terms. A restoration of a public domain painting is subject to both sets of terms at once:
+Identifiers MUST come from the [SPDX License List](https://spdx.org/licenses/) and are case-sensitive.
+
+For terms with no SPDX identifier, use a custom `LicenseRef-` license and record the actual terms in the license file:
 
 ```toml
-license = "LicenseRef-PublicDomain AND CC0-1.0"
-```
-
-Identifiers MUST come from the [SPDX License List](https://spdx.org/licenses/) and are case-sensitive. Note that this is not the same as the license's marketing name: the Creative Commons licenses are written `CC-BY-NC-SA-3.0`, not `CC BY-NC-SA 3.0`.
-
-For terms with no SPDX identifier — a bespoke grant from an artist, or a work whose copyright has simply expired — use a `LicenseRef-` idiom and record the actual terms in the license file:
-
-```toml
-license = "LicenseRef-PublicDomain"
+license = "LicenseRef-MyCustomLicense"
 license_files = ["LICENSE"]
 ```
 
-Version 1.0 placed no constraints on this field and decks in the wild carry free text such as `"Public Domain"` or `"CC BY-NC-SA 3.0"`. Applications MUST NOT reject a deck whose `license` does not parse. Treat an unparseable value as an opaque human-readable string, and report it as a warning only when the deck declares `schema_version = "1.1"` or later.
-
 ### Attribution and Notices
-
-`license` states the terms. It does not discharge them. Most licenses that permit redistribution require that something travel with the copies — the license text, a copyright notice, a specific credit line — and a bare SPDX identifier satisfies none of it.
 
 | Field | Purpose |
 | --- | --- |
@@ -582,19 +587,64 @@ copyright = "© 1995-2010 Andreas Schröter"
 attribution = "\"Aquatic Tarot\" by Andreas Schröter (http://www.aquatictarot.net/), licensed under CC BY-NC-SA 3.0."
 ```
 
-Decks SHOULD ship the full license text in the deck directory rather than relying on `license` alone. It is what most licenses actually require, it survives the deck being copied out of its original repository, and it gives an unambiguous home for terms that an SPDX identifier cannot express.
+Decks SHOULD ship the full license text in the deck directory rather than relying on `license` alone.
 
-`attribution` is a display string, not documentation. Applications that surface deck credits SHOULD render it, and SHOULD NOT present a deck's artwork with no attribution when the field is set.
+### Name File Licensing
+
+The strings in a name file are usually not the deck assembler's own work. Alt text may be written by a contributor or adapted from a published source. Each name file therefore states its own terms in its [`[metadata]`](#name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
+
+Most decks need only to license their alt text:
+
+```toml
+# names/en.toml
+[metadata.alt_text]
+source = "Written by Jane Doe."
+license = "CC-BY-4.0"
+attribution = "Card descriptions by Jane Doe."
+```
+
+If instead the whole file is a single person's work, such as with translations, `[metadata]` refers to the entire file, alt text included:
+
+```toml
+# names/pt-BR.toml
+[metadata]
+source = "Translated by Paulo Freire."
+license = "CC-BY-4.0"
+license_files = ["names/LICENSE.pt-BR"]
+attribution = "Portuguese translation by Paulo Freire."
+```
+
+When the two differ, `[metadata]` specifies the file's license, and `[metadata.alt_text]` is an override:
+
+```toml
+[metadata]
+source = "Card names by the deck author."
+license = "CC-BY-4.0"
+
+[metadata.alt_text]
+source = "Descriptions contributed by Jane Doe."
+license = "CC0-1.0"
+```
+
+Key meanings:
+- `source`:  who or what produced the strings.
+- `attribution`: the credit line a license obliges downstream users to display.
+- `license_files`: path relative to the deck root.
 
 ## Extensibility for Applications
 
-- A reserved namespace `[app]` allows applications to include custom configurations without conflicts:
+The `[app]` table is reserved for applications to record things about a deck that this specification does not model — a rendering hint, a format-specific parameter. Each application takes a subtable keyed by a [realm](#qualified-identifiers) it controls:
 
 ```toml
-[app.my_tarot_app]
-default_layout = "grid"
-favorite_cards = ["major_arcana.00", "minor_arcana.wands.ace"]
+[app."land.arcana.cartomancer"]
+bleed = true                    # artwork runs to the edge; draw no border
+ansi_color_depth = "truecolor"  # ANSI art uses 24-bit SGR; downsample below that
+ansi_glyphs = "sextants"        # needs a font covering U+1FB00–U+1FBFF
 ```
+
+`[app]` is written by the deck's author, and holds properties of the deck. An application's own settings and a user's preferences are not deck data and do not belong here, however convenient it is to put them in reach.
+
+Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`. Top-level table names outside `[app]` are reserved for future versions of this specification.
 
 ## Examples
 
@@ -630,8 +680,14 @@ image = "card_backs/classic.png"
 description = "Card back design provided by Luciella Elisabeth Scarlett"
 ```
 
-With names and alt text in `names/en.toml`:
+With names and alt text in `names/en.toml`. The card names are the canonical ones and the deck claims nothing over them, so it states terms for the alt text alone:
+
 ```toml
+[metadata.alt_text]
+source = "Written by Jane Doe."
+license = "CC-BY-4.0"
+attribution = "Card descriptions by Jane Done, licensed under CC BY 4.0."
+
 [major_arcana]
 # You usually only need to give major arcana names that are different
 00 = "The Fool"
@@ -871,21 +927,36 @@ Only the alt text has to be written:
 
 ### Version 1.1
 
-- **Breaking**: Removed the `[aliases]` section from the manifest in favor of using the names file.
+Breaking changes:
+- **Breaking**: Removed the `[aliases]` section in favor of using names files.
 - **Breaking:** Renamed the `[variants]` section to `[editions]`.
-- **Breaking:** Moved `[deck.excluded_cards]` to a top-level `[excluded_cards]`. `[deck]` now holds only the deck's identity and metadata, and no table nests under it.
-- **Breaking:** Removed the `image` and `id` fields from `[custom_cards.major_arcana.<key>]`. A custom card's images are now found by the same directory convention as every other card's, so one custom card can exist in several resolutions and formats.
+- **Breaking:** Moved `[deck.excluded_cards]` to a top-level `[excluded_cards]`.
+- **Breaking:** Removed the `image` and `id` fields from `[custom_cards.major_arcana.<key>]`.
+- **Breaking:** Keyed `[app]` subtables by a realm the application controls, rather than by a bare custom name.
+
+Naming and Identity:
 - Formalized display name resolution rules.
+- Added qualified identifiers (`<realm>/<path>`) for decks.
+- Added section formalizing custom names and fields.
+
+Custom Cards:
+- Made custom cards discoverable from the directory structure.
 - Added card variants and extended canonical IDs.
-- Made custom cards discoverable from the directory structure, so that adding a card requires no manifest edit at all. `[custom_cards]` is now optional in its entirety and governs only ordering and fallback strings.
-- Defined how a file stem is read as either a card or a variant of one, so that custom cards and variants are unambiguous.
-- Allowed `ranks` on a canonical suit, so that a deck can add a rank to a suit it already has rather than only defining whole new suits.
-- Defined deck ordering, and specified `position` as an optional integer that may fall anywhere in the sequence.
-- Added an Identifiers section formalizing custom names and fields.
-- Added qualified identifiers (`<realm>/<path>`) and the optional `[deck].identifier` field.
-- Defined minor arcana name composition and the `name_template` key, so that a deck that renames its suits need not write out all 56 names.
-- Required that display strings supplied by a deck be used verbatim, so a deck controls its own capitalization.
+- Allowed custom `ranks` for canonical suits
+- Allowed custom minor arcana name composition with `name_template`
+
+Internationalization:
 - Specified name file language tags as BCP 47 (RFC 5646) and added `default_language`.
+
+Licensing:
 - Specified deck's `license` field to use SPDX. Also added `license_files` and `copyright`.
-- Added a `[metadata]` section in name files for attribution.
+- Added a `[metadata]` table for licensing fields
+
+ANSI Art:
+- Required that a file's kind be detected from its content rather than its extension, and clarified that plain text art is UTF-8 and needs no escape sequences to be valid.
+- Recommended that applications honor a SAUCE record where a file carries one.
+
+Extensibility:
+- Defined what `[app]` is for, and required applications to ignore subtables they do not own.
+- Reserved top-level table names outside `[app]` for future versions of this specification.
 
