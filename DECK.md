@@ -718,11 +718,11 @@ For example,
 
 ### 5.2 Vector Graphics
 
-Support for SVG is OPTIONAL for an application and MUST be placed in the `scalable/` directory. SVG is the only vector format this specification defines.
+SVG card assets MUST be placed in the `scalable/` directory. SVG is the only vector format this specification defines. Support for rendering SVG is OPTIONAL for an application.
 
 ### 5.3 Raster Graphics
 
-Raster images MUST be placed in an `h<height>/` directory, where `<height>` is the height of the image in pixels
+Raster card assets are discovered only under an `h<height>/` root, where `<height>` is the height of the image in pixels. A raster image anywhere else is not a card asset and is ignored ([§5.7.1](#571-image-roots))
 - Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.5](#575-the-extension-chain)
 - PNG with an alpha channel is RECOMMENDED for images requiring transparency
 
@@ -1291,11 +1291,12 @@ A conforming validator:
 Each rule is labelled **[E]** for error or **[W]** for warning.
 
 1. **Required Files**:
-   - **[E]** `deck.toml` MUST exist and adhere to the schema.
+   - **[E]** `deck.toml` MUST exist and be valid TOML 1.0.0.
+   - **[E]** `[deck]` MUST carry `schema_version`, `name` and `version` ([§4.1](#41-deck)).
    - **[E]** All referenced images, licenses and name files MUST exist.
 
-2. **Canonical ID Mapping**:
-   - **[E]** Ensure all canonical IDs referenced in `deck.toml` have corresponding images in the defined directories.
+2. **Exclusion Validation**:
+   - **[W]** Verify that no card listed in `[excluded_cards]` has an image file. An exclusion is a statement of intent ([§4.4](#44-excluded_cards)); a deck that ships the asset anyway has probably changed its mind and not updated the list.
 
 3. **Localization Validation**:
    - **[E]** Verify that every key present in a localization file corresponds to a card, suit, rank, card variant, card back design or reserved key (`[minor_arcana].name_template`) the deck defines, or appears in the reserved `[metadata]` table or its `alt_text` subtable.
@@ -1319,7 +1320,8 @@ Each rule is labelled **[E]** for error or **[W]** for warning.
 
 6. **Card Variant Validation**:
    - **[E]** Verify that every card referenced in `[card_variants]` is a card the deck defines.
-   - **[E]** If a variant table declares `default`, verify that the named variant exists; if it does not declare one, verify that the card has an unsuffixed image file.
+   - **[E]** If a variant table declares `default`, verify that the named variant exists.
+   - **[E]** Where a card has variant files but no unsuffixed file, verify that `[card_variants]."<canonical-id>".default` is declared ([§4.6](#46-card_variants)). A card with no files at all is a [resolution failure](#577-when-no-asset-is-found), not a violation of this rule.
    - **[E]** Verify that all referenced variant image files exist.
 
 7. **Custom Card Validation**:
@@ -1337,7 +1339,7 @@ Each rule is labelled **[E]** for error or **[W]** for warning.
    - **[E]** Verify that no path field — `icon`, `image`, any `license_files` entry — begins with `/`, contains a `..` segment, or resolves outside the deck root ([§2.3.2](#232-paths-in-decktoml), [§10.1](#101-path-traversal)).
    - **[E]** Verify that no directory holds two files whose stems differ only in case ([§2.3.3](#233-filename-case)).
    - **[W]** Report two files in one directory sharing a stem and differing only in a chain extension — `06.png` beside `06.webp`. Resolution is well defined ([§5.7.5](#575-the-extension-chain)), but one of the two is usually a conversion left behind.
-   - **[W]** Report a card asset whose own aspect ratio differs materially from `[deck].aspect_ratio` ([§4.1](#41-deck)). Card backs are exempt: `[deck].aspect_ratio` describes the fronts ([§5.5](#55-card-back-images)).
+   - **[W]** Report a card asset whose own aspect ratio differs from `[deck].aspect_ratio` by more than 10%, measured as `|actual - declared| / declared` ([§4.1](#41-deck)). Card backs are exempt, since `[deck].aspect_ratio` describes the fronts ([§5.5](#55-card-back-images)), and so is ANSI art, whose extent is counted in character cells rather than pixels and is not comparable to a ratio of lengths.
 
 10. **License Validation**:
    - **[E]** Verify that every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike.
