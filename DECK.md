@@ -1321,6 +1321,18 @@ A deck's other strings are displayed, not executed, but an application writing `
 
 ## 11. Implementation Notes (Informative)
 
+Nothing in this section is normative. It records what implementers of this format have found, so that the next one need not find it again.
+
+**Discovery is the expensive part.** A deck may carry five image roots — `scalable/`, three raster heights and an ANSI tree — each with a `major_arcana/` directory and one directory per suit. Determining which cards a deck has means listing on the order of twenty-five directories, and a library with thirty decks in it means several hundred. Applications are expected to cache the listing rather than repeat it per card, per redraw, or per deck-picker scroll. Invalidating on the mtime of each listed directory is cheap and catches the case that matters, which is an author adding a file while the application is running.
+
+**A deck picker does not need discovery at all.** Everything a picker shows — name, author, description, icon, card back — is in `deck.toml`, which is one small file. Reading `deck.toml` alone, without walking any asset tree, is the right shape for enumerating a library; `libarcana` calls the result a `deck_summary`. Walking the assets can wait until the user opens a deck.
+
+**Resolution is worth memoising per (card, kind, target).** The ranking in [§5.7.4](#574-size-selection-within-a-kind) depends only on the set of image roots and the target, not on the card, so an application that renders a spread at one size ranks the roots once and reuses the order for every card in it.
+
+**Name resolution has a hot path and a cold one.** The chain in [§6.3](#63-display-name-resolution) is long, but for the common case — a deck with a complete default-language name file — it terminates at the first step for every card. Building a flat map from canonical ID to display string once per (deck, language) is simpler than walking the chain per lookup, and makes the composition rule in [§6.3.1](#631-minor-arcana-name-composition) a build-time concern rather than a render-time one.
+
+**Failure to resolve an image is normal.** [§5.7.7](#577-when-no-asset-is-found) makes a missing asset a resolution failure rather than a validation error, and a deck may legitimately ship only the majors. An application that treats "no image for this card" as an exceptional condition will spend a lot of its life in that condition; treating it as an ordinary return value ages better.
+
 ## Appendix A. Examples (Informative)
 
 ### A.1 Rider Waite Smith
@@ -1592,11 +1604,64 @@ Only the alt text has to be written:
 
 ## Appendix B. Reserved and Deprecated Names
 
+The names below were defined by an earlier version of this specification, or appeared in early implementations of it, and are no longer defined by this one. A future version of this specification MUST NOT reuse any of them with a new meaning, so that a name in a deck written years ago can never be read as something its author did not write.
+
+Applications MUST ignore these names in a 2.0 deck. In a 1.0 deck they mean what 1.0 said they meant; see [§1.4.4](#144-version-20-and-version-10-decks).
+
+| Name | Was | Status |
+| --- | --- | --- |
+| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either: unqualified, so collisions between authors were expected rather than exceptional | Removed in 2.0. The handle is the [directory name](#341-the-directory-name-is-the-handle); the global identity is [`[deck].identifier`](#342-identifier). Reading a 1.0 deck, an application maps `id` to nothing |
+| `[editions].<key>.id` | The same, for editions | Removed in 2.0. An edition's handle is its table key; it MAY carry an `identifier` ([§3.4.3](#343-edition-identity)) |
+| `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0; superseded by [name files](#6-internationalization), which localize |
+| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#45-editions) in 2.0. The word "variant" now means a [card variant](#46-card_variants) |
+| `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#44-excluded_cards) in 2.0 |
+| `[deck.companions]` | Never specified. Present in early implementations as a list of related documents, each with `id`, `name` and `uri` | Not defined by any version. Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
+| `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A custom card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
+| `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's key |
+| `[remap_major_arcana]` | A table remapping major arcana display positions in 1.0 | Removed in 2.0. No published deck used it, and it was unnecessary: a deck files its cards at the positions it uses. See [Appendix D](#appendix-d-changelog) |
+
 ## Appendix C. Canonical Card Names (Informative)
+
+This appendix is **informative**. It publishes conventional English names for the twenty-two major arcana, as the display fallback of last resort that [§6.3](#63-display-name-resolution) refers to when a deck supplies no name for a canonical key and the library designates no [reference deck](#131-decks-and-libraries).
+
+> **This list is not a claim about meaning.** A [canonical ID is a slot](#311-a-canonical-id-is-a-slot), not an assertion about the card that occupies it. `major_arcana.08` is "the card this deck files at position 8" and nothing more. A deck following the Marseille or Thoth numbering files Justice at `08` and Strength at `11`, writes those names in its name file, and is entirely conforming — the split between that tradition and the Rider-Waite-Smith one is real, old, and none of this specification's business. The list below is what an application shows when a deck has told it nothing at all, which is a display problem, not an interpretive one.
+>
+> Nothing in this specification, and nothing in a conforming application, may treat a deck as wrong for disagreeing with this table.
+
+| Key | Name |
+| --- | --- |
+| `00` | The Fool |
+| `01` | The Magician |
+| `02` | The High Priestess |
+| `03` | The Empress |
+| `04` | The Emperor |
+| `05` | The Hierophant |
+| `06` | The Lovers |
+| `07` | The Chariot |
+| `08` | Strength |
+| `09` | The Hermit |
+| `10` | Wheel of Fortune |
+| `11` | Justice |
+| `12` | The Hanged Man |
+| `13` | Death |
+| `14` | Temperance |
+| `15` | The Devil |
+| `16` | The Tower |
+| `17` | The Star |
+| `18` | The Moon |
+| `19` | The Sun |
+| `20` | Judgement |
+| `21` | The World |
+
+Suit and rank names are deliberately omitted. They are recoverable from their keys by the [title-cased key](#135-names-and-files) rule — `wands` yields `Wands`, `ace` yields `Ace` — and listing them here would create a second source of truth for a string the existing fallback already produces correctly.
 
 ## Appendix D. Changelog
 
 ### Version 2.0
+
+This version is numbered 2.0 rather than 1.1 **because of the breaking list below**. [§1.4.2](#142-the-compatibility-contract) forbids a minor version from changing or removing behavior an earlier version defined, and this version does so seven times. A 1.1 that broke seven rules would make the compatibility contract worthless the first time anyone relied on it.
+
+**Reading a 1.0 deck.** An application MAY support 1.0 decks alongside 2.0 ones; where it does, it reads them under 1.0's rules, and nothing in this document applies to them. [§1.4.4](#144-version-20-and-version-10-decks) states this once and is the only place that does. [Appendix B](#appendix-b-reserved-and-deprecated-names) records what became of each name 1.0 defined and 2.0 does not.
 
 Breaking changes:
 - **Breaking**: Removed the `[aliases]` section in favor of using names files.
@@ -1604,6 +1669,23 @@ Breaking changes:
 - **Breaking:** Moved `[deck.excluded_cards]` to a top-level `[excluded_cards]`.
 - **Breaking:** Removed the `image` and `id` fields from `[custom_cards.major_arcana.<key>]`.
 - **Breaking:** Keyed `[app]` subtables by a realm the application controls, rather than by a bare custom name.
+- **Breaking:** Removed `[deck].id` and `[editions].<key>.id`, and reworked deck identity into three separate things: the **directory name** is the deck's handle within a library, `[deck].identifier` is its optional global identity, and `[deck].name` is a display string. `id` was the first two at once and adequate as neither — being unqualified, collisions between authors were expected rather than exceptional. `identifier` is RECOMMENDED, not required: a deck without one is entirely conforming but cannot be referenced from another Arcana Land document. See [§3.4](#34-deck-identity).
+- **Breaking:** Removed `[remap_major_arcana]`. No published deck ever set it, what the implementations of it actually did was renumber the displayed position rather than remap anything, and it is unnecessary for the tradition it was named after: a Marseille deck puts Justice art in `08` and writes `08 = "Justice"` in its name file. A canonical ID is a slot rather than a claim about meaning ([§3.1.1](#311-a-canonical-id-is-a-slot)), which is what makes remapping unnecessary; a deck's adherence to a numbering tradition is an interpretive claim and belongs in the Esoterica specification.
+
+Document structure:
+- Restructured the document as a specification: numbered sections, [document conventions](#12-document-conventions), [terminology](#13-terminology), a [versioning contract](#14-versioning-and-compatibility) and [normative references](#15-normative-references).
+- Adopted BCP 14 keywords explicitly, and rewrote every lowercase `should`/`must` as either a keyword or a plainly non-normative verb.
+- Named three conformance actors — deck author, application, validator — and defined [what conformance means for each](#93-conforming-applications-and-validators).
+- Replaced the regex identifier forms with one consolidated [ABNF grammar](#35-grammar).
+- Lifted every field's type, required-ness and default out of TOML comments into [normative field tables](#4-decktoml-reference).
+
+Newly specified:
+- [The deck library](#22-the-deck-library): the XDG search path, non-recursive scanning, `deck.toml` as the marker, and first-root-wins shadowing by directory name.
+- [Card image resolution](#57-card-image-resolution): image roots, size selection within a kind, the `png`/`webp`/`avif`/`jpeg` extension chain with PNG and JPEG as the mandatory decode baseline, and the algorithm as pseudocode. Previously every consumer had to invent this.
+- [File format and encoding](#23-file-format-and-encoding): TOML 1.0.0, UTF-8, path base and separator, and the filename case rule.
+- [Security considerations](#10-security-considerations): path traversal through author-supplied path fields, and terminal escape injection through ANSI assets.
+- [Appendix C](#appendix-c-canonical-card-names-informative) publishes the canonical major arcana names, so that the fallback the name-resolution chain ends in is resolvable without a reference deck installed.
+- Added `[editions].default`, and stated what an edition actually does.
 
 Naming and Identity:
 - Formalized display name resolution rules.
