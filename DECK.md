@@ -1279,6 +1279,46 @@ Each rule is labelled **[E]** for error or **[W]** for warning.
 
 ## 10. Security Considerations
 
+A deck is data from somewhere else. It arrives as a directory a user copied, unpacked or installed, and every string and every byte in it is written by its author. Two of the things a deck contains are read by an application in a way an author can abuse, and this section specifies what an application does about each.
+
+### 10.1 Path Traversal
+
+`icon`, `image` and each entry of `license_files` are author-supplied paths, and a future version may define others. [§2.3.2](#232-paths-in-decktoml) fixes their form; this section fixes what an application does with one that breaks it.
+
+An application MUST reject, rather than resolve:
+
+- a path beginning with `/`, or otherwise absolute on the host platform — including a Windows drive-qualified path such as `C:\...` or a UNC path;
+- a path containing a `..` segment, whether or not the result would remain inside the deck root;
+- a path that, once resolved, names a location outside the deck root.
+
+An application MUST NOT follow a symbolic link that leads outside the deck root, and MUST perform this check **after** resolving links rather than only on the text of the path: a deck can ship a symlink named `LICENSE` pointing at `/etc/shadow`, and the path field naming it is entirely well-formed. Rejecting a path means treating that field as absent — the card has no explicit image, the deck has no icon — not refusing the deck.
+
+The exposure is worth stating plainly, since a path field looks harmless: an application that resolves these paths naively will read a file of the author's choosing from the user's filesystem and, where it displays or attributes it, show its contents to the user or carry them onward.
+
+Related, and specified in [§3.3](#33-qualified-identifiers): a [realm](#33-qualified-identifiers) is a namespace and never a network location. An application MUST NOT resolve a realm as a hostname, fetch anything from it, or treat `[deck].identifier` as a URL.
+
+### 10.2 Terminal Escape Injection
+
+ANSI art is, by construction, a sequence of bytes an application writes to a terminal. That is what makes it renderable and what makes it dangerous: the terminal is a command interpreter, and a deck author chooses the commands.
+
+A hostile deck can carry, among others:
+
+- **OSC 52** — write to the user's clipboard, silently replacing whatever is in it;
+- **OSC 0 / OSC 1 / OSC 2** — set the window or icon title, which some terminals will report back on request;
+- **CSI ... r**, **CSI ... J**, cursor positioning and save/restore — draw outside the region the application allotted the card, or scroll content off the screen;
+- **DA**, **DSR**, **DECRQSS** and other **query** sequences — induce the terminal to write attacker-chosen bytes to the application's standard input, which a shell reading that input may then execute. This is the serious one: it turns a picture of a tarot card into keystrokes.
+
+An application that renders ANSI art MUST therefore restrict what it passes through. The permitted subset is:
+
+- **SGR** — `CSI` parameters `m` — the colour and attribute sequences that make the art art;
+- the cursor positioning necessary to draw the art within its allotted region, which an application SHOULD supply itself from the art's line structure rather than pass through from the file.
+
+Every other escape sequence MUST be stripped or the file rejected, **OSC sequences in particular**, and no exception is made for a sequence an application does not recognise: an unknown sequence is stripped, not forwarded on the assumption that it is harmless.
+
+Note that [§5.4](#54-ansi-art) tells an application it MAY write a plain-text file to a terminal as-is. That remains safe for exactly one reason, which this section makes explicit rather than leave to inference: a file with no ESC byte (`0x1B`) contains no escape sequence, and a file containing one is not plain text and is not covered by that permission. An application determining kind from content, as [§5.4](#54-ansi-art) requires, has already made this distinction.
+
+A deck's other strings are displayed, not executed, but an application writing `[deck].name`, `description`, `attribution` or a resolved display string to a terminal MUST apply the same rule to those: they are author-supplied text and may contain ESC as readily as an asset does.
+
 ## 11. Implementation Notes (Informative)
 
 ## Appendix A. Examples (Informative)
