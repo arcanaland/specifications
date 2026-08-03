@@ -80,13 +80,13 @@ Every normative sentence in this document binds exactly one of these three. A re
 
 Three constructs in this specification are commonly called "variants". They are distinct and are defined here together so they are not confused.
 
-**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by an extended canonical ID. Variants of a card are interchangeable and carry the same meaning. Declared under `[card_variants]`; see [§4.7](#46-card_variants).
+**card variant** — An alternative artwork for a card the deck already contains, named by a variant key and addressed by an extended canonical ID. Variants of a card are interchangeable and carry the same meaning. Declared under `[card_variants]`; see [§4.6](#46-card_variants).
 
 **card back variant** — One of the card back designs a deck ships, named by a custom name and declared under `[card_backs.variants]`. A card back is not a card and has no canonical ID; see [§4.2](#42-card_backs).
 
-**edition** — A printing or release of a deck that shares the deck's card fronts but selects a different card back and carries its own metadata. Declared under `[editions]`; see [§4.6](#45-editions). An edition does not change which cards the deck has.
+**edition** — A printing or release of a deck that shares the deck's card fronts but selects a different card back and carries its own metadata. Declared under `[editions]`; see [§4.5](#45-editions). An edition does not change which cards the deck has.
 
-Note: version 1.0 of this specification used a top-level `[variants]` table for what [§4.6](#45-editions) now calls editions. A reader of a 1.0 deck therefore meets a fourth sense of the word. See [Appendix B](#appendix-b-reserved-and-deprecated-names).
+Note: version 1.0 of this specification used a top-level `[variants]` table for what [§4.5](#45-editions) now calls editions. A reader of a 1.0 deck therefore meets a fourth sense of the word. See [Appendix B](#appendix-b-reserved-and-deprecated-names).
 
 #### 1.3.4 Identifiers
 
@@ -168,7 +168,7 @@ The following documents are referenced normatively. A dated reference applies on
 | Reference | Where used |
 | --- | --- |
 | **SAUCE** — [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
-| **Esoterica Specification** — [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#46-card_variants) |
+| **Esoterica Specification** — [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.6](#46-card_variants) |
 | **Spread Specification** — [SPREAD.md](https://github.com/arcanaland/specifications/blob/main/SPREAD.md), proposed | [§1.1](#11-scope-and-design-goals) |
 
 ## 2. Deck Structure
@@ -435,7 +435,38 @@ Three constraints are not expressible in the grammar and are stated normatively 
 
 ## 4. deck.toml Reference
 
+Every table this specification defines is listed below with its fields. In each section the **field table is normative**: it fixes each key's type, whether it is required, and its default. The TOML block beside it illustrates the table in use and is informative.
+
+A key not listed here and not under `[app]` ([§8](#8-extensibility)) is not defined by this specification; [§8](#8-extensibility) reserves such names for future versions of it.
+
+Types name TOML 1.0.0 types. *Path* means a deck-root-relative path as [§2.3.2](#232-paths-in-decktoml) defines it.
+
 ### 4.1 `[deck]`
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | String | **Yes** | — | The version of this specification the deck is written against, `"<major>.<minor>"`; see [§1.4.1](#141-schema_version). A deck written against this document declares `"2.0"`. |
+| `name` | String | **Yes** | — | The deck's display name. Not required to be unique, and not required to match the directory name ([§3.4](#34-deck-identity)). |
+| `version` | String | **Yes** | — | The deck's own version. Free-form; comparable for equality only, with no ordering implied ([§1.4.5](#145-deckversion)). |
+| `identifier` | String | RECOMMENDED | none | The deck's qualified identifier ([§3.3](#33-qualified-identifiers)). A deck without one cannot be referenced from another Arcana Land document ([§3.4.2](#342-identifier)). |
+| `default_language` | String | No | `"en"` | BCP 47 tag of the deck's default name file ([§6.2](#62-language-resolution)). |
+| `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
+| `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards; see below. |
+| `author` | String | No | none | The artwork's author, as displayed. |
+| `description` | String | No | none | A prose description of the deck. |
+| `license` | String | No | none | SPDX license expression governing the artwork ([§7.1](#71-license-expressions)). |
+| `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
+| `copyright` | String | No | none | Copyright notice, displayed verbatim. |
+| `attribution` | String | No | none | Credit line to display ([§7.2](#72-attribution-and-notices)). |
+| `created_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`); see below. |
+| `updated_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`); see below. |
+| `publisher` | String | No | none | The deck's publisher. |
+| `website` | String | No | none | An absolute URL for the deck. |
+| `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
+
+**Dates.** `created_date` and `updated_date` are RFC 3339 `full-date` values written as TOML **strings**, not TOML native dates. A quoted `"1909-12-01"` is correct; a bare `1909-12-01`, which TOML would read as a local date, is an error. The string form is required because a date is metadata to display and compare textually, and because TOML's date types would tempt applications to parse a precision the field does not carry.
+
+**Aspect ratio.** `aspect_ratio` is the width of a card divided by its height, so the traditional 11:19 card is `0.5789`. It governs **layout**: an application reserves space for a card by this ratio. Where an asset's own pixel ratio disagrees with it, the application MUST still preserve the asset's own ratio when scaling it — an image is never stretched to fit the declared value — and SHOULD report the mismatch to the author.
 
 ```toml
 [deck]
@@ -481,7 +512,24 @@ description = "The original blue and white rose pattern back" # Optional descrip
 alt_text = "A blue and white geometric pattern featuring roses and lilies" # Optional alt text
 ```
 
-Card backs can have different dimensions and formats from the card fronts, and MAY be provided in multiple variants without duplicating the entire deck.
+**`[card_backs]`**
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `default` | String | Required where more than one variant is defined | see below | The key under `[card_backs.variants]` an application uses where the user or an [edition](#45-editions) has not chosen another. |
+
+Where exactly one variant is defined and `default` is omitted, that variant is the default. Where more than one is defined, `default` is REQUIRED and MUST name a defined variant ([§9.4](#94-validation-rules)). Where none is defined, the deck has no card back and an application supplies its own.
+
+**`[card_backs.variants.<key>]`** — `<key>` is a [custom name](#32-custom-names).
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `image` | String (path) | **Yes** | — | The card back image. Card backs are named explicitly rather than discovered; see [§5.5](#55-card-back-images). |
+| `name` | String | No | none | Display name of this card back. Where it is absent, an application shows the [title-cased key](#135-names-and-files) or nothing at all, as suits it. |
+| `description` | String | No | none | Prose description of the design. |
+| `alt_text` | String | No | none | Fallback alt text; a name file's `[alt_text.card_backs]` takes precedence ([§6.3](#63-display-name-resolution)). |
+
+Card backs MAY have different dimensions and formats from the card fronts, and a deck MAY provide several without duplicating the entire deck.
 
 ### 4.3 `[custom_cards]`
 
@@ -497,6 +545,14 @@ name = "The Happy Squirrel"  # Optional fallback; prefer names/<tag>.toml
 alt_text = "A cheerful squirrel standing on a branch proudly holding an acorn." # Optional fallback
 position = 22                # Optional; see Ordering
 ```
+
+**`[custom_cards.major_arcana.<key>]`** — `<key>` is a [custom name](#32-custom-names) and MUST NOT be two digits ([§3.5](#35-grammar)).
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name, used where no name file supplies one. |
+| `alt_text` | String | No | none | Fallback alt text, used where no name file supplies one. |
+| `position` | Integer | No | none | Where the card sits in the deck's sequence; see [§4.3.3](#433-ordering). A card with no `position` follows those that have one. |
 
 The `name` and `alt_text` fields are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized; see [Display Name Resolution](#63-display-name-resolution).
 
@@ -525,6 +581,13 @@ ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
 
 The table key here is the canonical suit `cups`. This is the one place in this specification where a reserved key is accepted as a `[custom_cards]` table key, because the intent is to modify that suit rather than to name a new one. The rank keys themselves are custom names and remain subject to the reserved-key rule: a deck MUST NOT introduce a new rank called `page`.
 
+**`[custom_cards.minor_arcana.<key>]`** — `<key>` is a [custom name](#32-custom-names), or one of the four canonical suits where the intent is to modify that suit.
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for the suit, used where no name file supplies one. |
+| `ranks` | Array of String | No | the canonical rank sequence, for a canonical suit; otherwise none | The suit's rank keys, in the order the deck reads them. |
+
 `ranks` is a matter of ordering only, and is OPTIONAL in both forms. A rank whose files are present but which no `ranks` list mentions is still a card of that suit; see below.
 
 Rank and suit keys resolve their display names through `names/<tag>.toml`; see [Display Name Resolution](#63-display-name-resolution).
@@ -549,12 +612,21 @@ cards = [
 reason = "This deck excludes these specific court cards."
 ```
 
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `cards` | Array of String | No | `[]` | Canonical IDs of cards this deck deliberately does not contain. |
+| `reason` | String | No | none | Why they are excluded, for display to a user. |
+
+An exclusion is a statement of intent, not a mechanism: a card is absent because the deck ships no asset for it ([§5.1](#51-asset-discovery)). `[excluded_cards]` records that the absence is deliberate, so that an application can tell a user "this deck has no court cards" rather than report a gap, and so that resolution does not go looking for the card in a [reference deck](#131-decks-and-libraries) ([§5.7.7](#577-when-no-asset-is-found)).
+
 ### 4.5 `[editions]`
 
 For decks that have multiple editions or printings sharing the same card fronts:
 
 ```toml
 [editions]
+default = "standard"   # Required if multiple editions are defined
+
 # Define deck editions that share the same card fronts
 [editions.standard]
 name = "Rider-Waite-Smith (Standard)"
@@ -567,6 +639,30 @@ card_back = "rider"    # References card_backs.variants.rider
 publisher = "Rider & Company"
 created_date = "1912-01-01"
 ```
+
+**`[editions]`**
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `default` | String | Required where more than one edition is defined | see below | The edition key an application selects where the user has not chosen another. |
+
+Where exactly one edition is defined and `default` is omitted, that edition is the default — the same rule `[card_backs].default` follows. Where more than one is defined, `default` is REQUIRED and MUST name a defined edition ([§9.4](#94-validation-rules)).
+
+**`[editions.<key>]`** — `<key>` is a [custom name](#32-custom-names) and is the edition's handle within the deck ([§3.4.3](#343-edition-identity)).
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | String | **Yes** | — | The edition's display name. |
+| `card_back` | String | No | `[card_backs].default` | The `[card_backs.variants]` key this edition uses. MUST name a defined card back variant ([§9.4](#94-validation-rules)). |
+| `identifier` | String | No | none | A qualified identifier for the edition ([§3.4.3](#343-edition-identity)). |
+| `publisher` | String | No | `[deck].publisher` | The edition's publisher, where it differs from the deck's. |
+| `created_date` | String | No | `[deck].created_date` | RFC 3339 `full-date`, on the terms in [§4.1](#41-deck). |
+
+An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) defines for `[deck]` — `description`, `version`, `updated_date`, `author`, `website` and the rest — with the same type and meaning. It MUST NOT carry `schema_version`, which is a property of the deck.
+
+**What an edition is.** An edition selects a card back and supplies metadata that differs from the deck's. It does **not** change which cards the deck has: every edition of a deck shares one set of card fronts, one set of custom cards and one set of exclusions. A printing whose artwork differs is a different deck, not an edition — or, where only some cards differ, a set of [card variants](#46-card_variants).
+
+Where an application has selected an edition, that edition's fields take precedence over `[deck]`'s for display, and a field the edition does not give falls back to `[deck]`'s value. An application that does not model editions at all reads `[deck]` and the default card back, and is conforming.
 
 ### 4.6 `[card_variants]`
 
@@ -592,7 +688,21 @@ alt_text = "Two women stand hand in hand beneath a winged figure." # Optional fa
 image = "scalable/major_arcana/06.two_women.svg" # Optional: explicit path
 ```
 
-The table key is the card's canonical ID, quoted because it contains dots. Variant keys are custom names and MUST follow the [identifier rules](#3-identity-and-identifiers).
+**`[card_variants."<canonical-id>"]`** — the table key is the card's canonical ID, quoted because it contains dots.
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `default` | String | Required where the card has no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§5.7.6](#576-variants)). MUST name a variant of this card ([§9.4](#94-validation-rules)). |
+
+**`[card_variants."<canonical-id>".variants.<key>]`** — `<key>` is a [custom name](#32-custom-names) and is the variant key.
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for this variant, used where no name file supplies one. |
+| `alt_text` | String | No | none | Fallback alt text for this variant. Variants SHOULD carry their own; see [§6.4](#64-alt-text-guidelines). |
+| `image` | String (path) | No | found by discovery | An explicit path to this variant's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.5](#575-the-extension-chain)). |
+
+Variant keys are custom names and MUST follow the [identifier rules](#3-identity-and-identifiers).
 
 If `default` is omitted, the unsuffixed file (`06.svg`) is the default variant. If a deck provides only variant files for a card and no unsuffixed file, it MUST declare `default`.
 
