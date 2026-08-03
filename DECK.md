@@ -344,7 +344,7 @@ A deck has three distinct things that are easy to confuse, and this specificatio
 |---|---|---|---|
 | **Directory name** | The deck's library-scoped handle: how a user or an application addresses it locally | The filesystem — the name of the deck root's own directory | Within a root, by the filesystem. Across roots, the first occurrence wins ([§2.2.3](#223-shadowing)) |
 | **`identifier`** | The deck's global identity: what another Arcana Land document points at | `[deck].identifier`, RECOMMENDED | Globally, by construction of the realm |
-| **`name`** | The display string shown to a user | `[deck].name`, REQUIRED | No. Two unrelated decks may share a name |
+| **`name`** | The display string shown to a user | `[deck].name`, REQUIRED | No. Two unrelated decks can share a name |
 
 #### 3.4.1 The Directory Name Is the Handle
 
@@ -802,7 +802,7 @@ A card asset filename is read as three parts. Given `06.two_women.png`:
 | base | `06` | The part of the stem before the **first** `.` |
 | variant key | `two_women` | The remainder of the stem after the first `.`, where there is one |
 
-Note that the stem is split on the first `.` and the extension on the last. The two rules differ because a variant key may not contain a `.` — [§3.5](#35-grammar) forbids it — so at most one dot in a stem is ever a separator, while the extension is always the final component. A file named `06.png` has base `06`, no variant key, and extension `png`.
+Note that the stem is split on the first `.` and the extension on the last. The two rules differ because a variant key cannot contain a `.` — [§3.5](#35-grammar) forbids it — so at most one dot in a stem is ever a separator, while the extension is always the final component. A file named `06.png` has base `06`, no variant key, and extension `png`.
 
 A file whose name contains no `.` at all has no extension. Discovery ignores it in `scalable/` and in raster roots. In an ANSI root it is a candidate: [§5.4](#54-ansi-art) allows ANSI files any extension or none, and determines their kind from content.
 
@@ -1202,7 +1202,7 @@ A validator's findings are of two kinds, and every rule in [§9.4](#94-validatio
 - An **error** makes a deck non-conforming. The deck is broken in a way this specification defines an outcome for, and an application MAY refuse it.
 - A **warning** does not. It marks something an author probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings, and MUST NOT downgrade it, hide it, or report it to the user as broken.
 
-The distinction exists so that a validator can be strict without an application being brittle. A deck an author is halfway through writing accumulates warnings; it should still open.
+The distinction exists so that a validator can be strict without an application being brittle. A deck an author is halfway through writing accumulates warnings, and it still opens.
 
 ### 9.3 Conforming Applications and Validators
 
@@ -1283,7 +1283,7 @@ A deck is data from somewhere else. It arrives as a directory a user copied, unp
 
 ### 10.1 Path Traversal
 
-`icon`, `image` and each entry of `license_files` are author-supplied paths, and a future version may define others. [§2.3.2](#232-paths-in-decktoml) fixes their form; this section fixes what an application does with one that breaks it.
+`icon`, `image` and each entry of `license_files` are author-supplied paths, and a future version might define others. [§2.3.2](#232-paths-in-decktoml) fixes their form; this section fixes what an application does with one that breaks it.
 
 An application MUST reject, rather than resolve:
 
@@ -1306,7 +1306,7 @@ A hostile deck can carry, among others:
 - **OSC 52** — write to the user's clipboard, silently replacing whatever is in it;
 - **OSC 0 / OSC 1 / OSC 2** — set the window or icon title, which some terminals will report back on request;
 - **CSI ... r**, **CSI ... J**, cursor positioning and save/restore — draw outside the region the application allotted the card, or scroll content off the screen;
-- **DA**, **DSR**, **DECRQSS** and other **query** sequences — induce the terminal to write attacker-chosen bytes to the application's standard input, which a shell reading that input may then execute. This is the serious one: it turns a picture of a tarot card into keystrokes.
+- **DA**, **DSR**, **DECRQSS** and other **query** sequences — induce the terminal to write attacker-chosen bytes to the application's standard input, which a shell reading that input then executes. This is the serious one: it turns a picture of a tarot card into keystrokes.
 
 An application that renders ANSI art MUST therefore restrict what it passes through. The permitted subset is:
 
@@ -1317,13 +1317,13 @@ Every other escape sequence MUST be stripped or the file rejected, **OSC sequenc
 
 Note that [§5.4](#54-ansi-art) tells an application it MAY write a plain-text file to a terminal as-is. That remains safe for exactly one reason, which this section makes explicit rather than leave to inference: a file with no ESC byte (`0x1B`) contains no escape sequence, and a file containing one is not plain text and is not covered by that permission. An application determining kind from content, as [§5.4](#54-ansi-art) requires, has already made this distinction.
 
-A deck's other strings are displayed, not executed, but an application writing `[deck].name`, `description`, `attribution` or a resolved display string to a terminal MUST apply the same rule to those: they are author-supplied text and may contain ESC as readily as an asset does.
+A deck's other strings are displayed, not executed, but an application writing `[deck].name`, `description`, `attribution` or a resolved display string to a terminal MUST apply the same rule to those: they are author-supplied text and can contain ESC as readily as an asset does.
 
 ## 11. Implementation Notes (Informative)
 
 Nothing in this section is normative. It records what implementers of this format have found, so that the next one need not find it again.
 
-**Discovery is the expensive part.** A deck may carry five image roots — `scalable/`, three raster heights and an ANSI tree — each with a `major_arcana/` directory and one directory per suit. Determining which cards a deck has means listing on the order of twenty-five directories, and a library with thirty decks in it means several hundred. Applications are expected to cache the listing rather than repeat it per card, per redraw, or per deck-picker scroll. Invalidating on the mtime of each listed directory is cheap and catches the case that matters, which is an author adding a file while the application is running.
+**Discovery is the expensive part.** A deck can carry five image roots — `scalable/`, three raster heights and an ANSI tree — each with a `major_arcana/` directory and one directory per suit. Determining which cards a deck has means listing on the order of twenty-five directories, and a library with thirty decks in it means several hundred. Applications are expected to cache the listing rather than repeat it per card, per redraw, or per deck-picker scroll. Invalidating on the mtime of each listed directory is cheap and catches the case that matters, which is an author adding a file while the application is running.
 
 **A deck picker does not need discovery at all.** Everything a picker shows — name, author, description, icon, card back — is in `deck.toml`, which is one small file. Reading `deck.toml` alone, without walking any asset tree, is the right shape for enumerating a library; `libarcana` calls the result a `deck_summary`. Walking the assets can wait until the user opens a deck.
 
@@ -1331,7 +1331,7 @@ Nothing in this section is normative. It records what implementers of this forma
 
 **Name resolution has a hot path and a cold one.** The chain in [§6.3](#63-display-name-resolution) is long, but for the common case — a deck with a complete default-language name file — it terminates at the first step for every card. Building a flat map from canonical ID to display string once per (deck, language) is simpler than walking the chain per lookup, and makes the composition rule in [§6.3.1](#631-minor-arcana-name-composition) a build-time concern rather than a render-time one.
 
-**Failure to resolve an image is normal.** [§5.7.7](#577-when-no-asset-is-found) makes a missing asset a resolution failure rather than a validation error, and a deck may legitimately ship only the majors. An application that treats "no image for this card" as an exceptional condition will spend a lot of its life in that condition; treating it as an ordinary return value ages better.
+**Failure to resolve an image is normal.** [§5.7.7](#577-when-no-asset-is-found) makes a missing asset a resolution failure rather than a validation error, and a deck that ships only the majors is entirely conforming. An application that treats "no image for this card" as an exceptional condition will spend a lot of its life in that condition; treating it as an ordinary return value ages better.
 
 ## Appendix A. Examples (Informative)
 
@@ -1626,7 +1626,7 @@ This appendix is **informative**. It publishes conventional English names for th
 
 > **This list is not a claim about meaning.** A [canonical ID is a slot](#311-a-canonical-id-is-a-slot), not an assertion about the card that occupies it. `major_arcana.08` is "the card this deck files at position 8" and nothing more. A deck following the Marseille or Thoth numbering files Justice at `08` and Strength at `11`, writes those names in its name file, and is entirely conforming — the split between that tradition and the Rider-Waite-Smith one is real, old, and none of this specification's business. The list below is what an application shows when a deck has told it nothing at all, which is a display problem, not an interpretive one.
 >
-> Nothing in this specification, and nothing in a conforming application, may treat a deck as wrong for disagreeing with this table.
+> Nothing in this specification treats a deck as wrong for disagreeing with this table, and no conforming application does either.
 
 | Key | Name |
 | --- | --- |
