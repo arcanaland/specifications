@@ -106,7 +106,7 @@ Note: version 1.0 of this specification used a top-level `[variants]` table for 
 
 **discovery** — Reading a deck's asset directories to determine which cards it has and which files supply them. See [§5.1](#51-asset-discovery).
 
-**base** — The part of a card asset's file stem before the first `.`. In `06.two_women.png` the stem is `06.two_women` and the base is `06`. See [§5.1](#51-asset-discovery) and [§5.7.5](#575-extensions-stems-and-bases).
+**base** — The part of a card asset's file stem before the first `.`. In `06.two_women.png` the stem is `06.two_women` and the base is `06`. See [§5.1](#51-asset-discovery) and [§5.7.3](#573-extensions-stems-and-bases).
 
 #### 1.3.6 Actors and Findings
 
@@ -621,11 +621,12 @@ So in `major_arcana/`, `06.two_women.png` is a variant of The Lovers, `the_morni
 ### 5.2 Vector Graphics
 - Vector graphics MUST be placed in the `scalable/` directory
 - SVG is the only vector format this specification defines
+- Support for SVG is OPTIONAL for an application; see [§5.7.5](#575-the-extension-chain)
 
 ### 5.3 Raster Graphics
-- Recommended formats: PNG (preferred), JPEG, WebP
-- Recommended resolutions: h750, h1200, h2400 (height in pixels)
-- Each resolution MUST have its own directory (e.g., `h750/`, `h1200/`, `h2400/`)
+- Raster images MUST be placed in an `h<height>/` directory, where `<height>` is the height of the images in that directory in pixels; see [§5.7.1](#571-image-roots)
+- `h750`, `h1200` and `h2400` are conventional heights, not a closed set
+- Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.5](#575-the-extension-chain)
 - PNG with an alpha channel is RECOMMENDED for images requiring transparency
 
 #### 5.3.1 Resolution Usage Guidelines
@@ -644,16 +645,189 @@ Support for ANSI art is OPTIONAL for an application. Which rendering kind an app
 
 ### 5.5 Card Back Images
 - Placed in the `card_backs/` directory
-- Can use any supported image format
-- May have different dimensions and aspect ratios from the card fronts
+- MAY have different dimensions and aspect ratios from the card fronts
+- Are named by an explicit `image` path in [`[card_backs.variants.<key>]`](#42-card_backs) rather than found by discovery, so the extension chain in [§5.7.5](#575-the-extension-chain) does not apply to them. A deck SHOULD nonetheless supply its card backs in a format [§5.7.5](#575-the-extension-chain) requires every application to decode, since an application that cannot decode a card back has no fallback for it.
 
 ### 5.6 Aspect Ratio
 
-- Standard assumed aspect ratio is **11:19** (~0.5789).
-- Raster folders are named `h<height>/`, e.g., `h750/`, `h1200/`.
+- Standard assumed aspect ratio is **11:19** (~0.5789), declared by [`[deck].aspect_ratio`](#41-deck).
 - Applications MUST preserve the aspect ratio when scaling images.
 
 ### 5.7 Card Image Resolution
+
+Given a card, a rendering kind and a target size, an application resolves a file to display. This section defines that resolution. It is the algorithm every application implements, and a deck author reads it to know which of several files an application will choose.
+
+#### 5.7.1 Image Roots
+
+An **image root** is a top-level directory of a deck root that discovery searches for card assets. There are three forms:
+
+| Form | Kind | Size |
+| --- | --- | --- |
+| `scalable/` | scalable | none; a vector image has no intrinsic size |
+| `h<height>/` | raster | `<height>`, in pixels |
+| `ansi<lines>/` | ANSI | `<lines>`, in terminal rows |
+
+`<height>` and `<lines>` are decimal integers greater than zero, written without a sign, leading zeroes or separators: `h750`, `h1200`, `h2400`, `ansi20`, `ansi32`. Any such integer is legal. `h750`, `h1200` and `h2400` are conventions this specification recommends and no more; `h900` and `ansi48` are equally well-formed, and an application MUST NOT restrict itself to the conventional set.
+
+A deck MAY carry any number of image roots of each form, and MUST NOT carry two roots naming the same kind and size.
+
+Every other top-level directory is **ignored by discovery**. `card_backs/` and `names/` are directories this specification gives other meanings to; a directory named anything else — `src/`, `.git/`, `previews/` — is not an image root and its contents are not cards.
+
+Within an image root, assets are arranged by card type and suit, as [§2.1](#21-directory-skeleton) shows: `major_arcana/<base>.<ext>` and `minor_arcana/<suit>/<base>.<ext>`.
+
+#### 5.7.2 Choosing a Rendering Kind
+
+Which kind an application renders is **the application's choice**, made from its own capabilities and context: a terminal client renders ANSI, a compositing GUI prefers scalable where it has it, a thumbnailer takes the raster size nearest what it needs. This specification defines resolution *within* a kind and deliberately defines no preference *between* kinds. A deck that ships all three kinds is not asserting an order over them.
+
+An application that finds no asset of its preferred kind MAY fall back to another kind. Where it does, the choice of which is again its own.
+
+#### 5.7.3 Extensions, Stems and Bases
+
+A card asset filename is read as three parts. Given `06.two_women.png`:
+
+| Part | Value | Rule |
+| --- | --- | --- |
+| extension | `png` | The part after the **last** `.` |
+| stem | `06.two_women` | Everything before the last `.` |
+| base | `06` | The part of the stem before the **first** `.` |
+| variant key | `two_women` | The remainder of the stem after the first `.`, where there is one |
+
+Note that the stem is split on the first `.` and the extension on the last. The two rules differ because a variant key may not contain a `.` — [§3.5](#35-grammar) forbids it — so at most one dot in a stem is ever a separator, while the extension is always the final component. A file named `06.png` has base `06`, no variant key, and extension `png`.
+
+A file whose name contains no `.` at all has no extension. Discovery ignores it in `scalable/` and in raster roots. In an ANSI root it is a candidate: [§5.4](#54-ansi-art) allows ANSI files any extension or none, and determines their kind from content.
+
+#### 5.7.4 Size Selection Within a Kind
+
+`scalable/` holds at most one image per card and variant, so selection there is trivial: the file is the file.
+
+For raster and ANSI, an application selects among the roots of that kind that supply a file for the card. The rules differ, because the two media degrade in opposite directions:
+
+- **Raster**: prefer the **smallest image at or above** the target height. Downscaling a raster image is well-behaved; upscaling is not.
+- **ANSI**: prefer the **largest art at or below** the target number of lines. Art taller than the space available is truncated, which is worse than art that leaves a gap.
+
+Where no candidate lies on the preferred side of the target, an application MUST fall back to the nearest candidate on the other side rather than fail.
+
+Stated exactly, an application ranks each candidate root by the tuple
+
+```
+(wrong_side, |size - target|, tiebreak)
+```
+
+where, writing `size` for the root's height or line count:
+
+- `wrong_side` is `size < target` for raster and `size > target` for ANSI, with `false` ordering before `true`;
+- `tiebreak` is `size` for raster and `-size` for ANSI, so that a tie between two equidistant candidates breaks toward the preferred side.
+
+The candidate with the smallest tuple wins. An exact match always wins, since it alone scores `(false, 0, …)` at the minimum distance.
+
+*Example.* A deck ships `h750/`, `h1200/` and `h2400/`. A raster request for target 1000 resolves to `h1200` — the smallest at or above. A request for target 3000 resolves to `h2400`, the nearest below, no candidate being at or above. A request for target 975, equidistant from 750 and 1200, resolves to `h1200`, the tie breaking toward the preferred side.
+
+#### 5.7.5 The Extension Chain
+
+Within one directory, an application considers extensions in this fixed order:
+
+1. `png`
+2. `webp`
+3. `avif`
+4. `jpeg` and `jpg` — one entry, not two; where a directory holds both, the choice between them is unspecified
+
+In `scalable/`, the chain is `svg` alone.
+
+- Applications MUST support decoding **PNG** and **JPEG**. Support for WebP, AVIF and SVG is OPTIONAL.
+- This is a **fallback chain, not a negotiation**. An application MUST skip a file whose format it does not support, or whose bytes it fails to decode, and continue to the next entry in the chain.
+- Extensions outside the chain are **ignored by discovery entirely**. A `.tiff` or a `.gif` in `h1200/major_arcana/` does not define a card and is never chosen.
+- A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order; a validator reports the duplication as a warning ([§9.4](#94-validation-rules)).
+- Where a directory supplies no file the application can decode — every candidate is either outside the chain or in a format it lacks — that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.4](#574-size-selection-within-a-kind).
+
+A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.6](#46-card_variants)) or card back ([§4.2](#42-card_backs)). Discovery is a convention; an explicit path is an instruction.
+
+> **Note (informative).** The order looks arbitrary against the usual web ordering, which puts the newest and most compact format first. It is not the same problem. A deck is already on disk and already downloaded, so a second encoding of the same card buys no bandwidth; where a deck does ship two, it is usually an authoring accident — a conversion tool left its output behind — rather than progressive enhancement. The chain therefore favours fidelity and universal decodability over recency: PNG is lossless, alpha-capable and decodable everywhere. The honest consequence is that where a PNG is present, an application that can decode every format will always choose it, and the optional formats matter only where they stand alone. An author who ships `06.avif` and nothing else is served exactly as intended.
+
+#### 5.7.6 Variants
+
+A request MAY name a [variant key](#46-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged: the same size selection, the same extension chain.
+
+Where the requested card has no variant under that key, the application MUST resolve that card's **default** variant instead, and MUST NOT treat the absence as an error. Variant keys are deck-wide and a card need not carry every key the deck uses; this is the asset-resolution statement of the rule in [§4.6](#46-card_variants).
+
+A request naming no variant key resolves the card's default variant: the unsuffixed file, or the variant named by `[card_variants."<id>"].default` where one is declared.
+
+#### 5.7.7 When No Asset Is Found
+
+Where resolution yields no file for a card in any image root of any kind:
+
+- Where the library designates a [reference deck](#131-decks-and-libraries) and the card is not deliberately absent under [`[excluded_cards]`](#44-excluded_cards), the application SHOULD resolve the same card against that deck.
+- Otherwise, this is a **resolution failure**, not a validation error. The application decides what to show — a placeholder, a card back, nothing. A deck is not non-conforming for lacking an asset for some card, and [§9](#9-conformance-and-validation) does not make it so.
+
+#### 5.7.8 Resolution Algorithm
+
+The following expresses [§5.7.1](#571-image-roots)–[§5.7.7](#577-when-no-asset-is-found) as pseudocode. Where it and the prose disagree, the prose governs.
+
+```
+ResolveCardImage(deck, card_id, variant_key, kind, target):
+  file = LookupCardImage(deck, card_id, variant_key, kind, target)
+  if file != none:
+    return file
+
+  if variant_key != none:
+    # §5.7.6: an absent variant falls back to the card's default
+    file = LookupCardImage(deck, card_id, none, kind, target)
+    if file != none:
+      return file
+
+  # §5.7.7
+  if deck.library has a reference deck R and deck != R
+       and card_id not in deck.excluded_cards:
+    return ResolveCardImage(R, card_id, variant_key, kind, target)
+
+  return none
+
+
+LookupCardImage(deck, card_id, variant_key, kind, target):
+  stem = card_id.base
+  if variant_key != none:
+    stem = stem + "." + variant_key
+  subpath = CardSubpath(card_id)          # major_arcana/ or minor_arcana/<suit>/
+
+  if kind == scalable:
+    return LookupInDirectory(deck/scalable/subpath, stem, [svg])
+
+  # §5.7.1: the image roots of this kind, with their sizes
+  candidates = [ root for root in TopLevelDirectories(deck)
+                      if RootKind(root) == kind ]
+
+  # §5.7.4: best first, then the next best, and so on
+  for root in SortByRank(candidates, kind, target):
+    file = LookupInDirectory(root/subpath, stem, ChainFor(kind))
+    if file != none:
+      return file
+
+  return none
+
+
+LookupInDirectory(dir, stem, chain):
+  # §5.7.5: fixed order, skipping what this application cannot decode
+  for ext in chain:                       # [png, webp, avif, jpeg|jpg]; [svg] in scalable/
+    for name in FileNamesFor(stem, ext):  # jpeg and jpg are one entry;
+                                          # in an ANSI root, any extension matches
+      if Exists(dir/name) and CanDecode(dir/name):
+        return dir/name
+  return none
+
+
+SortByRank(roots, kind, target):
+  # §5.7.4
+  prefer_at_least = (kind != ansi)
+  rank(root):
+    size = SizeOf(root)
+    wrong_side = (size < target) if prefer_at_least else (size > target)
+    tiebreak   = size if prefer_at_least else -size
+    return (wrong_side, abs(size - target), tiebreak)
+  return roots sorted ascending by rank
+```
+
+Two properties of this shape are deliberate. `LookupCardImage` walks the ranked candidates rather than stopping at the best one, so that a root the application cannot decode ([§5.7.5](#575-the-extension-chain)) costs it a fallback rather than the card. And the reference-deck step sits in `ResolveCardImage`, outside the per-deck lookup, so a reference deck is consulted once the deck itself is exhausted in every kind and size — never in the middle of size selection.
+
+ANSI files are exempt from the extension chain: [§5.4](#54-ansi-art) allows them any extension, so in an ANSI root `LookupInDirectory` matches on stem alone and determines the file's kind from its content. An application MUST apply [§10.2](#102-terminal-escape-injection) to any ANSI file it writes to a terminal.
 
 ## 6. Internationalization
 
