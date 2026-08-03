@@ -154,6 +154,7 @@ The following documents are referenced normatively. A dated reference applies on
 | --- | --- |
 | **BCP 14** — [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119), [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) — Key words for use in RFCs | [§1.2.1](#121-normative-terminology) |
 | **RFC 5234** — Augmented BNF for Syntax Specifications: ABNF | [§3.5](#35-grammar) |
+| **RFC 7405** — Case-Sensitive String Support in ABNF | [§3.5](#35-grammar) |
 | **RFC 1035 §2.3.1** — Domain Names: preferred name syntax | [§3.3](#33-qualified-identifiers) |
 | **BCP 47** — [RFC 5646](https://www.rfc-editor.org/rfc/rfc5646) — Tags for Identifying Languages | [§6.1](#61-language-tags) |
 | **RFC 4647** — Matching of Language Tags | [§6.2](#62-language-resolution) |
@@ -331,11 +332,13 @@ Qualified identifiers name Arcana Land entities such as tarot decks or spreads u
 
 A qualified identifier is composed of a **realm** and an object **path**, separated by a slash, with an OPTIONAL **fragment** after a `#`. See [§3.5](#35-grammar) for the grammar.
 
-- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash.
+- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has **two labels or more**, each beginning with a letter and neither beginning nor ending with a hyphen; a single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form: `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
 - The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
 - The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In *this* specification, the fragment of a deck's qualified identifier is a canonical ID or an extended canonical ID: `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
 
-Note: qualified identifiers are not locations. Nothing in this specification implies that one can be fetched, and applications MUST NOT treat a realm as a network host to contact. See [§10.1](#101-path-traversal).
+Note: qualified identifiers are not locations. Nothing in this specification implies that one can be fetched, and applications MUST NOT treat a realm as a network host to contact. See [§10.3](#103-identifiers-are-not-locations).
+
+Realms are compared **bytewise**. Every realm is lowercase ASCII by construction, so no case folding, Unicode normalization or trailing-dot stripping is applied before comparison, and two realms are the same realm exactly when their bytes agree.
 
 ### 3.4 Deck Identity
 
@@ -377,25 +380,25 @@ An `[editions].<key>` entry follows the same model one level down. Its **table k
 
 ### 3.5 Grammar
 
-The productions below are [ABNF](https://www.rfc-editor.org/rfc/rfc5234) (RFC 5234). Every string literal in this grammar is **case-sensitive**, with the semantics RFC 7405 gives `%s`; all of them are lowercase.
+The productions below are [ABNF](https://www.rfc-editor.org/rfc/rfc5234) (RFC 5234), with the case-sensitive string notation of [RFC 7405](https://www.rfc-editor.org/rfc/rfc7405). Every string literal in this grammar is **case-sensitive** and lowercase, and each carries the `%s` prefix that says so — RFC 5234 alone would read a bare `"wands"` as matching `WANDS`, which this specification does not permit. Literals with no letters in them are written bare, having no case to fix.
 
 ```abnf
 ; ---- Card identifiers -------------------------------------------------
 
 canonical-id    = major-id / minor-id
 
-major-id        = "major_arcana" "." major-key
+major-id        = %s"major_arcana" "." major-key
 major-key       = canonical-major / custom-name
 canonical-major = 2DIGIT
 
-minor-id        = "minor_arcana" "." suit-key "." rank-key
+minor-id        = %s"minor_arcana" "." suit-key "." rank-key
 suit-key        = canonical-suit / custom-name
 rank-key        = canonical-rank / custom-name
 
-canonical-suit  = "wands" / "cups" / "swords" / "pentacles"
-canonical-rank  = "ace" / "two" / "three" / "four" / "five" / "six" /
-                  "seven" / "eight" / "nine" / "ten" /
-                  "page" / "knight" / "queen" / "king"
+canonical-suit  = %s"wands" / %s"cups" / %s"swords" / %s"pentacles"
+canonical-rank  = %s"ace" / %s"two" / %s"three" / %s"four" / %s"five" /
+                  %s"six" / %s"seven" / %s"eight" / %s"nine" / %s"ten" /
+                  %s"page" / %s"knight" / %s"queen" / %s"king"
 
 extended-id     = canonical-id ":" variant-key
 variant-key     = custom-name
@@ -412,8 +415,8 @@ name-char       = lcalpha / DIGIT / "_"
 
 qualified-id    = realm "/" path [ "#" fragment ]
 
-realm           = 1*realm-char
-realm-char      = lcalpha / DIGIT / "." / "-"
+realm           = label 1*( "." label )
+label           = lcalpha [ *61( lcalpha / DIGIT / "-" ) ( lcalpha / DIGIT ) ]
 
 path            = segment *( "/" segment )
 segment         = 1*segment-char
@@ -1261,18 +1264,20 @@ Key meanings:
 
 ## 8. Extensibility
 
-The `[app]` table is reserved for applications to record things about a deck that this specification does not model — a rendering hint, a format-specific parameter. Each application takes a subtable keyed by a [realm](#33-qualified-identifiers) it controls:
+The `[app]` table is reserved for applications to record data about a deck that this specification does not model. Each application takes a subtable keyed by a [realm](#33-qualified-identifiers):
 
 ```toml
+[app."land.arcana.tarotcanvas"]
+bleed = true # artwork runs to the edge
+
 [app."land.arcana.cartomancer"]
-bleed = true                    # artwork runs to the edge; draw no border
-ansi_color_depth = "truecolor"  # ANSI art uses 24-bit SGR; downsample below that
+ansi_color_depth = "truecolor"  # ANSI art uses 24-bit SGR
 ansi_glyphs = "sextants"        # needs a font covering U+1FB00–U+1FBFF
 ```
 
-`[app]` is written by the deck's author, and holds properties of the deck. An application's own settings and a user's preferences are not deck data and do not belong here, however convenient it is to put them in reach.
+A realm always contains a `.`, which is TOML's key separator, so the subtable key MUST be written as a **quoted** TOML key. The quotes are not decoration: `[app.land.arcana]` is well-formed TOML and defines a subtable `arcana` nested inside a subtable `land`, which is not what the author meant and which no parse error announces. Requiring a realm to have two labels or more ([§3.3](#33-qualified-identifiers)) is what lets a validator catch the mistake — the key it finds under `[app]` is the bare label `land`, which is not a realm ([§9.4](#94-validation-rules)).
 
-Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`. Top-level table names outside `[app]` are reserved for future versions of this specification.
+Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`. An application owns the subtable whose key is bytewise equal to its own realm ([§3.3](#33-qualified-identifiers)). Top-level table names outside `[app]` are reserved for future versions of this specification.
 
 ## 9. Conformance and Validation
 
@@ -1334,7 +1339,7 @@ Each rule is labelled **[E]** for error or **[W]** for warning.
 5. **Identifier Validation**:
    - **[E]** Verify that every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key.
    - **[E]** Verify that every `identifier` field, in `[deck]` and in `[editions].<key>` alike, is a well-formed qualified identifier.
-   - **[E]** Verify that every `[app]` subtable key is a well-formed realm. Do not validate the contents of such a subtable, whose keys are the owning application's to define.
+   - **[E]** Verify that every `[app]` subtable key is a well-formed realm — in particular that it has two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). Do not validate the contents of such a subtable, whose keys are the owning application's to define.
    - **[W]** Where a validator can see a whole library, verify that no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement — two versions installed side by side, or a fork — so this is a warning; see [§3.4.2](#342-identifier).
    - **[W]** Verify that `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4.2](#342-identifier)).
 
@@ -1389,6 +1394,14 @@ ANSI art is a sequence of bytes an application writes to a terminal. A hostile d
 - **DA**, **DSR**, **DECRQSS** and other sequences, which can induce the terminal to write attacker-chosen bytes to the application's standard input
 
 An application that renders ANSI art MUST therefore restrict what it passes through. It is the application's responsibility to safely display ANSI.
+
+### 10.3 Identifiers Are Not Locations
+
+A [realm](#33-qualified-identifiers) looks like a domain name because it is one, written backwards, and a [qualified identifier](#33-qualified-identifiers) looks like a URL path because it borrows the shape. Neither is a location, and an author supplies both.
+
+An application MUST NOT resolve a realm as a hostname, contact it, or otherwise derive a network request from any part of a qualified identifier — not from `[deck].identifier`, not from an `[editions].<key>.identifier`, not from an `[app]` subtable key. A deck declaring `identifier = "attacker.example/deck/x"` is naming itself, not nominating a server; an application that turns the declaration into a lookup lets any deck it merely *scans* direct traffic on the user's behalf, and leaks the fact of the scan to whoever owns that name.
+
+`[deck].website` is the one field this specification defines that does hold a URL, and it is a URL to **show or to open on the user's request**, never one to fetch while loading a deck.
 
 ## Appendix A. Examples (Informative)
 
@@ -1704,7 +1717,7 @@ Newly specified:
 - [Card image resolution](#57-card-image-resolution): image roots, size selection within a kind, the `png`/`webp`/`avif`/`jpeg` extension chain with PNG and JPEG as the mandatory decode baseline, and the algorithm as pseudocode. Previously every consumer had to invent this.
 - [Card back discovery](#55-card-back-images): a `card_backs/` directory at the top level or inside any image root, design keys taken from filenames, and card backs resolved by the same size selection cards get — so a back can exist at several resolutions, and in ANSI, which 1.0 gave no way to express.
 - [File format and encoding](#23-file-format-and-encoding): TOML 1.0.0, UTF-8, path base and separator, and the filename case rule.
-- [Security considerations](#10-security-considerations): path traversal through author-supplied path fields, and terminal escape injection through ANSI assets.
+- [Security considerations](#10-security-considerations): path traversal through author-supplied path fields, terminal escape injection through ANSI assets, and the rule that an identifier is never dereferenced as a location.
 - [Appendix C](#appendix-c-canonical-card-names-informative) publishes the canonical major arcana names, so that the fallback the name-resolution chain ends in is resolvable without a reference deck installed.
 - Added `[editions].default`, and stated what an edition actually does.
 
