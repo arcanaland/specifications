@@ -195,30 +195,19 @@ Applications SHOULD form the default library from the [XDG Base Directory Specif
 
 Where `$XDG_DATA_HOME` is unset or empty, it defaults to `$HOME/.local/share`, per that specification. Where `$XDG_DATA_DIRS` is unset or empty, it defaults to `/usr/local/share:/usr/share`.
 
-An application MAY offer the user additional roots, and MAY let the user reorder them. Nothing requires an application to use the XDG defaults at all — an application given an explicit list of roots uses that list. What this section fixes is the *default*, so that a deck installed to the conventional location is found by every application that has not been told otherwise.
+An application MAY offer the user additional roots, and MAY let the user reorder them. Nothing requires an application to use the XDG defaults at all.
 
 #### 2.2.2 Scanning
 
-- Scanning a root is **non-recursive**: only its immediate children are candidates. A deck nested two levels below a root is not found.
-- A directory is a deck **if and only if** it contains a regular file named `deck.toml`. A directory without one is not a deck and MUST NOT be reported as a malformed deck.
-- A directory containing a `deck.toml` that cannot be read or parsed **is** a deck, and a malformed one. Applications SHOULD report it as malformed rather than omit it silently, so that an author who has broken their deck can tell.
+- Scanning a root is non-recursive and decks nested two levels or more below a root are not discovered.
+- A directory is a deck if and only if*it contains a regular file named `deck.toml`. A directory without one is not a deck and MUST NOT be reported as a malformed deck.
+- A directory containing a `deck.toml` that cannot be read or parsed is a malfomed deck. Applications SHOULD report malformed decks.
 
 #### 2.2.3 Shadowing
 
-Roots are searched in order and a deck is identified within the library by its **directory name**. Where two roots each contain a directory of the same name, the one in the earlier root wins and the later one is not reported at all — the same rule `PATH` uses for executables.
+Roots are searched in order and a deck is identified within the library by its directory name. Where two roots each contain a directory of the same name, the one in the earlier root wins and the later one is not reported.
 
-Shadowing keys on directory name **only**. Two decks under different directory names are two decks, whatever their `[deck].identifier` fields say. Where two visible decks declare the same `identifier`, a validator reports a warning; see [§9.4](#94-validation-rules). This is a legitimate arrangement — two versions of a deck installed side by side, or a fork — and is not an error.
-
-#### 2.2.4 Non-Goals
-
-This specification does not define:
-
-- an **archive or packaging format** for a deck. Decks are directories. How a deck is compressed for transport is a matter for whoever transports it.
-- an **installation mechanism**. Placing a directory in a library root is installation.
-- a **network protocol** for discovering, fetching or updating decks.
-- a **media type** or **filename extension** registration. There is no archive form to register one for.
-
-These omissions are deliberate. An application that grows any of these features does so outside this specification, and a deck that arrives by such a mechanism is a conforming deck or not on exactly the terms in [§9](#9-conformance-and-validation).
+Shadowing occurs on directory name only. Where two visible decks declare the same `identifier`, a validator MUST report a warning.
 
 ### 2.3 File Format and Encoding
 
@@ -227,30 +216,25 @@ These omissions are deliberate. An application that grows any of these features 
 `deck.toml` and every `names/<tag>.toml` file:
 
 - MUST be well-formed [TOML 1.0.0](https://toml.io/en/v1.0.0).
-- MUST be encoded as **UTF-8**. A byte order mark is not part of TOML 1.0.0; applications MAY skip a leading `U+FEFF`, and a deck SHOULD NOT write one.
+- MUST be encoded as UTF-8. Applications MAY skip a leading byte-order mark and a deck SHOULD NOT write one.
 
 #### 2.3.2 Paths in `deck.toml`
 
-Every path-valued field in `deck.toml` — `icon`, `image`, each entry of `license_files`, and any path field a future version adds:
+Every path-valued field in `deck.toml`:
 
-- is interpreted **relative to the deck root**;
-- MUST use `/` as its separator, on every platform, whatever separator the host filesystem uses;
+- is interpreted relative to the deck root.
+- MUST use `/` as its separator, regardless of whatever separator the host filesystem uses.
 - MUST NOT begin with `/` and MUST NOT contain a `..` segment.
 
-Applications MUST reject a path that breaks these rules rather than resolve it; see [§10.1](#101-path-traversal).
+Applications MUST reject a path that breaks these rules.
 
 #### 2.3.3 Filename Case
 
-Some filesystems preserve case without distinguishing it, and a deck that relies on the distinction is unportable. Mirroring the language-tag rule in [§6.1](#61-language-tags):
-
-- Applications MUST compare card asset stems case-insensitively.
-- A deck MUST NOT ship two files in one directory whose stems differ only in case. A validator reports this as an error.
-
-Note: this rule governs stem comparison. It says nothing about the case of a *display string*, which is always used verbatim; see [§6.3](#63-display-name-resolution).
+To support case-insensitive filesystems, applications MUST compare card asset stems case-insensitively. A deck MUST NOT ship two files in one directory whose stems differ only in case. A validator reports this as an error.
 
 ## 3. Identity and Identifiers
 
-This specification names three different kinds of thing, and keeps them apart. **Cards** are named by canonical IDs. **Keys a deck author coins** — custom cards, suits, ranks, card back designs, editions, card variants — are custom names. **Whole entities across authors** — a deck, a spread — are named by qualified identifiers. [§3.5](#35-grammar) gives the grammar of all three in one place.
+Cards are named by canonical IDs. Keys that a deck author creates that differ from canonical names are called custom names. Arcana Land entities, such as decks, esoterica and spreads are named by qualified identifiers.
 
 ### 3.1 Canonical IDs
 
@@ -263,26 +247,23 @@ Cards are referenced internally using canonical IDs, which are the only way this
 
 All references to cards in this specification, including configuration files, custom cards and name files, MUST use these canonical IDs.
 
-Custom cards extend this scheme using the author's own keys: `major_arcana.happy_squirrel`, `minor_arcana.stars.ace`. Because custom names cannot begin with a digit, such an ID is never ambiguous with a canonical one.
+Custom cards extend this scheme using the author's own keys. For example: `major_arcana.happy_squirrel`, `minor_arcana.stars.ace`.
 
 #### 3.1.1 A Canonical ID Is a Slot
 
-A canonical ID denotes **the card a deck files at that position**. It is not an assertion about what the card means, and this specification attaches no interpretation to any of them.
+A canonical ID denotes the card a deck defines at a specific position. 
 
-`major_arcana.08` is "the card this deck files at 8". It does **not** mean Strength. A deck in the Rider-Waite-Smith tradition files Strength there; a deck following the Marseille or Thoth numbering files Justice there. Both decks are equally conforming, and neither needs to declare anything: each simply puts its own artwork in `08` and, if it wants a name of its own, writes one under `[major_arcana].08` in its name files.
+A. E. Waite infamously swapped the positions of Strength and Justice from the traditional Marseille ordering. In this specification, `major_arcana.08` means the eigth major arcana card, not specifically Strength. To support decks following the Marseille ordering system, a deck can write Justice under `[major_arcana].08` instead of Strength in the name file.
 
-This is why this specification has no remapping mechanism. A deck expresses its numbering tradition by *where it files its cards*, which is the only thing a presentation format can observe. Whether a deck adheres to one tradition or another is an interpretive claim, and belongs in the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) rather than here.
-
-[Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort. It carries the same caveat, and for the same reason: it is a fallback for decks that supply no name, not a claim about what a slot means.
+[Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
 
 #### 3.1.2 Card References and the Variant Suffix
 
-A **card reference** is how this specification writes a card wherever one is expected. It is a canonical ID, OPTIONALLY followed by a **variant suffix** — `:` and a variant key — which picks out one [card variant](#46-card_variants) of that card:
+A card reference is how this specification writes a card wherever one is expected. It is a canonical ID, OPTIONALLY followed by a variant suffix, which is a `:` and a variant key:
 
 ```
-major_arcana.06                 a card reference; the card's default variant
-major_arcana.06:two_women       a card reference carrying a variant suffix,
-                                so also a variant reference
+major_arcana.06             # a card reference
+major_arcana.06:two_women   # a card reference with a variant suffix
 ```
 
 A card reference with no variant suffix denotes the card's default variant.
