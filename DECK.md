@@ -30,13 +30,13 @@
 - [4. deck.toml Reference](#4-decktoml-reference)
   - [4.1 `[deck]`](#41-deck)
   - [4.2 `[card_backs]`](#42-card_backs)
-  - [4.3 `[custom_cards]`](#43-custom_cards)
-    - [4.3.1 Custom Major Arcana](#431-custom-major-arcana)
-    - [4.3.2 Custom Suits and Ranks](#432-custom-suits-and-ranks)
-    - [4.3.3 Ordering](#433-ordering)
-  - [4.4 `[excluded_cards]`](#44-excluded_cards)
-  - [4.5 `[editions]`](#45-editions)
-  - [4.6 `[card_variants]`](#46-card_variants)
+  - [4.3 `[cards]`](#43-cards)
+    - [4.3.1 Card Numbers](#431-card-numbers)
+    - [4.3.2 Ordering](#432-ordering)
+  - [4.4 `[suits]`](#44-suits)
+  - [4.5 `[excluded_cards]`](#45-excluded_cards)
+  - [4.6 `[editions]`](#46-editions)
+  - [4.7 `[card_variants]`](#47-card_variants)
 - [5. Card Assets](#5-card-assets)
   - [5.1 Asset Discovery](#51-asset-discovery)
   - [5.2 Vector Graphics](#52-vector-graphics)
@@ -79,6 +79,8 @@
   - [A.3 Renamed Suits, a Custom Card and Multiple Editions](#a3-renamed-suits-a-custom-card-and-multiple-editions)
   - [A.4 A Lowercase Typographic Convention](#a4-a-lowercase-typographic-convention)
   - [A.5 Deck with Card Variants](#a5-deck-with-card-variants)
+  - [A.6 A Deck with Extra Major Arcana](#a6-a-deck-with-extra-major-arcana)
+  - [A.7 A Second Card at a Number Already Taken](#a7-a-second-card-at-a-number-already-taken)
 - [Appendix B. Reserved and Deprecated Names](#appendix-b-reserved-and-deprecated-names)
 - [Appendix C. Canonical Card Names (Informative)](#appendix-c-canonical-card-names-informative)
 - [Appendix D. Changelog](#appendix-d-changelog)
@@ -116,15 +118,18 @@ This specification addresses three kinds of actors: deck authors who craft a `de
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. It is not a property of any deck. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
 | **card** | One addressable image in a deck, named by a canonical ID. |
-| **major arcana** | The twenty-two cards keyed `00`–`21` under `major_arcana`. |
+| **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
+| **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99` |
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. Distinct from **kind** ([§5.7.1](#571-image-roots)), which distinguishes scalable, raster and ANSI assets. |
 | **canonical ID** | The identifier by which this specification names a card: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
 | **card reference** | A canonical ID, optionally followed by a **variant suffix** (`:` and a variant key). `major_arcana.06` and `major_arcana.06:two_women` are both card references. The suffixed form is also called a **variant reference**. |
 | **card variant** | An alternative artwork for a card the deck already contains, named by a variant key. Variants of a card are interchangeable and denote the same meaning. |
 | **card back design** | One of the card back images a deck ships, named by a design key ([§4.2](#42-card_backs)). |
-| **edition** | A printing of a deck that shares the deck's card fronts but selects a different card back and has its own metadata ([§4.5](#45-editions)). |
+| **edition** | A printing of a deck that shares the deck's card fronts but selects a different card back and has its own metadata ([§4.6](#46-editions)). |
 | **custom name** | An identifier the deck author coins: custom card, suit, rank, card back design, edition and card variant keys ([§3.2](#32-custom-names)). |
+| **card number** | The number printed on a card's face, held as a display string ([§4.3.1](#431-card-numbers)). Distinct from **position**, which orders cards and is never displayed. |
+| **position** | An integer sort key placing a major arcanum in the deck's sequence ([§4.3.2](#432-ordering)). |
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** (a domain name the author controls, written in reverse) and a path ([§3.3](#33-qualified-identifiers)). |
 | **name file** | A `names/<tag>.toml` file holding **display strings** for one language tag, such as card, suit and rank names and alt text. |
 | **title-cased key** | The display string derived from a key where nothing else supplies one: each `_` becomes a space and the first character of each word is uppercased. |
@@ -156,7 +161,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **SPDX License List** | [spdx.org/licenses](https://spdx.org/licenses/), with the [license expression syntax](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) | [§7](#7-licensing-and-attribution) |
 | **XDG Base Directory Specification** | [specifications.freedesktop.org](https://specifications.freedesktop.org/basedir-spec/latest/) | [§2.2](#22-the-deck-library) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
-| **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.6](#46-card_variants) |
+| **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#47-card_variants) |
 | **Spread Specification** (informative, proposed) | [SPREAD.md](https://github.com/arcanaland/specifications/blob/main/SPREAD.md) | [§1.1](#11-scope-and-design-goals) |
 
 ## 2. Deck Structure
@@ -174,7 +179,7 @@ The documents below are referenced normatively unless marked informative. A date
       classic.svg
     major_arcana/
       00.svg               # The Fool
-      06.svg               # The Lovers (default variant)
+      22.svg               # An optional twenty-third major arcanum
     minor_arcana/
       wands/
         ace.svg
@@ -227,7 +232,7 @@ Cards are named by canonical IDs. Keys that a deck author creates that differ fr
 
 Cards are referenced internally using canonical IDs, which are the only way this specification identifies a card:
 
-- Major Arcana: `major_arcana.00` to `major_arcana.21`
+- Major Arcana: `major_arcana.00` to `major_arcana.99`, of which `00` to `21` are the canonical twenty-two
 - Minor Arcana: `minor_arcana.<suit>.<rank>` where:
   - `<suit>`: `wands`, `cups`, `swords`, `pentacles`
   - `<rank>`: `ace`, `two`, ..., `ten`, `page`, `knight`, `queen`, `king`
@@ -239,6 +244,8 @@ Custom cards extend this scheme using the author's own keys. For example: `major
 #### 3.1.1 A Canonical ID Is a Slot
 
 A canonical ID denotes the card a deck defines at a given position, not a particular card of tradition. A. E. Waite infamously swapped the positions of Strength and Justice from the Marseille ordering. In this specification `major_arcana.08` means the eighth major arcana card, so a deck following the Marseille ordering simply writes Justice under `[major_arcana].08` in its name file. [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
+
+A deck whose extra card is not a numbered member of its sequence gives it a [custom name](#32-custom-names) instead, which denotes membership without asserting a number ([§4.3.1](#431-card-numbers)).
 
 #### 3.1.2 Card References and the Variant Suffix
 
@@ -260,7 +267,7 @@ Custom names are the keys a deck author creates such as custom major arcana keys
 Further:
 
 - A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords` and `pentacles`, or the ranks `ace`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`, `page`, `knight`, `queen` and `king`.
-- A custom major arcana key additionally MUST NOT be a two-digit string. Two-digit major arcana keys are reserved: `00` through `21` are the canonical cards, and `22` through `99` are reserved for future versions of this specification.
+- A custom major arcana key additionally MUST NOT be a two-digit string.
 
 ### 3.3 Qualified Identifiers
 
@@ -347,10 +354,10 @@ lcalpha         = %x61-7A               ; a-z
 DIGIT           = %x30-39               ; 0-9, from RFC 5234 Appendix B.1
 ```
 
-Three constraints are not expressible in the grammar and are stated normatively where they belong:
+Two constraints are not expressible in the grammar and are stated normatively:
 
-- `canonical-major` admits any two digits, but only `00` through `21` are defined. `22` through `99` are reserved, as [§3.2](#32-custom-names) states.
-- A `custom-name` MUST NOT be a reserved canonical key, with the one exception in [§3.2](#32-custom-names).
+- `canonical-major` admits any two digits, but only `00` through `21` have a name in [Appendix C](#appendix-c-canonical-card-names-informative) or any meaning shared between decks ([§3.1.1](#311-a-canonical-id-is-a-slot)). A key MUST be written with both digits.
+- A `custom-name` MUST NOT be a reserved canonical key, with the one exception in [§4.4](#44-suits).
 
 ## 4. deck.toml Reference
 
@@ -399,7 +406,7 @@ tags = ["traditional", "classic"]
 
 **Aspect ratio.** `aspect_ratio` is the width of a card divided by its height, so the traditional 11:19 card is `0.5789`. It governs **layout**, meaning an application reserves space for a card by this ratio. Where an asset's own pixel ratio disagrees with it, the application MUST still preserve the asset's own ratio when scaling it, never stretching an image to fit the declared value, and SHOULD report the mismatch to the author. An `icon` is assumed to share the cards' aspect ratio.
 
-`[deck]` holds the deck's identity and the human-facing metadata about it. Everything that is *content*, such as card backs, custom cards, card variants, editions and exclusions, is a top-level table of its own. No table nests under `[deck]`.
+`[deck]` holds the deck's identity and the human-facing metadata about it. Everything that is *content*, such as card backs, cards, suits, card variants, editions and exclusions, is a top-level table of its own. No table nests under `[deck]`.
 
 ### 4.2 `[card_backs]`
 
@@ -419,7 +426,7 @@ alt_text = "A lattice of blue and white roses and lilies, edge to edge, with no 
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `default` | String | No | see below | The design key an application uses where the user or an [edition](#45-editions) has not chosen another. Where present it MUST name a design the deck has ([§9.4](#94-validation-rules)). |
+| `default` | String | No | see below | The design key an application uses where the user or an [edition](#46-editions) has not chosen another. Where present it MUST name a design the deck has ([§9.4](#94-validation-rules)). |
 
 Where a deck has no card back at all, an application supplies its own. Otherwise the default design is the first of these that applies: the design named by `[card_backs].default`, then the design keyed `default` where the deck has one, then the lexicographically first design key. The last rule makes the default well defined for a deck that declares nothing, and an application MUST NOT substitute filesystem order for it. A deck shipping more than one design SHOULD nonetheless declare `default` or key a design `default` rather than rely on collation, and a validator says so ([§9.4](#94-validation-rules)).
 
@@ -434,66 +441,85 @@ Where a deck has no card back at all, an application supplies its own. Otherwise
 
 Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#576-when-no-asset-is-found) rather than a validation error, exactly as for a card.
 
-### 4.3 `[custom_cards]`
+### 4.3 `[cards]`
 
-A deck can hold cards the traditional 78 do not: additional major arcana, entirely new suits, or additional ranks within a suit. Custom card keys, custom suit keys and custom rank keys are custom names and MUST follow the [identifier rules](#3-identity-and-identifiers).
+Cards are [discovered from the directory structure](#51-asset-discovery) so the `[cards]` table supplies what is not availble from the filename alone, such as the card's printed number, its place in the deck's sequence and fallback display strings. It is OPTIONAL in its entirety.
 
-Custom cards are [discovered from the directory structure](#51-asset-discovery) exactly as canonical cards are. A deck that drops `h1200/major_arcana/happy_squirrel.png` into place has added a card, and need declare nothing at all. The `[custom_cards]` table supplies only what a filename cannot: a card's place in the deck's sequence, and fallback display strings. It is OPTIONAL in its entirety.
-
-#### 4.3.1 Custom Major Arcana
 
 ```toml
-[custom_cards.major_arcana.happy_squirrel]
+[cards."major_arcana.23"]
+number = "XXIII"
+
+[cards."major_arcana.happy_squirrel"]
 name = "The Happy Squirrel"
 alt_text = "A cheerful squirrel standing on a branch proudly holding an acorn."
 position = 22
 ```
 
-**`[custom_cards.major_arcana.<key>]`** takes a [custom name](#32-custom-names) as the key, which MUST NOT be two digits ([§3.5](#35-grammar)).
+**`[cards."<canonical-id>"]`** takes a card's [canonical ID](#31-canonical-ids) as the table key, quoted because it contains dots. A [variant reference](#312-card-references-and-the-variant-suffix) is not accepted here and variants provide their own strings under [`[card_variants]`](#47-card_variants).
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name, used where no name file supplies one. |
 | `alt_text` | String | No | none | Fallback alt text, used where no name file supplies one. |
-| `position` | Integer | No | none | Where the card sits in the deck's sequence ([§4.3.3](#433-ordering)). A card with no `position` follows those that have one. |
+| `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
+| `position` | Integer | No | see [§4.3.2](#432-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 
-`name` and `alt_text` are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized ([§6.3](#63-display-name-resolution)). There is no `image` field, because a custom card's images are found by the same convention as every other card's, which is what lets one card exist in several resolutions and formats at once.
+`name` and `alt_text` are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized ([§6.3](#63-display-name-resolution)). There is no `image` field, because a card's images are found by the same convention as every other card's, which is what lets one card exist in several resolutions and formats at once.
 
-#### 4.3.2 Custom Suits and Ranks
+An entry for a canonical minor arcanum or for `major_arcana.00` through `major_arcana.21` is always accepted, since those slots exist for every deck. An entry for any other card is an error unless the deck has files for it ([§9.4](#94-validation-rules)).
 
-A suit's rank sequence is declared by `ranks`, a list of rank keys in the order the deck reads them:
+`position` is meaningful only for a major arcanum. A minor arcanum takes its place from its suit's [`ranks`](#44-suits) sequence and an application MUST ignore a `position` declared on one.
+
+#### 4.3.1 Card Numbers
+
+Many decks print a number on the card face and the `number` field holds that number as an opaque display string (e.g., "XXIII", "23" or "VIII½").
+
+Where `number` is absent, a card's number follows from the shape of its key:
+
+- A major arcanum with a two-digit key is numbered, and its number is that key's value. An application renders it by its own convention, which for a tarot deck is conventionally an upper-case Roman numeral.
+- A major arcanum with a custom key is considered unnumbered.
+- A minor arcanum is unnumbered.
+
+`number` is not localized.
+
+#### 4.3.2 Ordering
+
+Applications that present a deck in order resolve it as follows. The major arcana come first, then the minor arcana.
+
+Within the major arcana, cards are ordered by `position`. Every major arcanum with a two-digit key has an implicit `position` equal to that key's value. A card with a custom key and no declared `position` follows every card that has one.
+
+Within the minor arcana, cards are ordered by their suit's [`ranks`](#44-suits) sequence. Suits with no declared order follow the four canonical suits, sorted by key, and a rank not named in any `ranks` list follows those that are, likewise sorted by key.
+
+A declared `position` MAY fall anywhere in the sequence and MAY be negative. Where two cards claim the same position, a declared `position` precedes an implicit one, and a tie between two of the same sort breaks by key.
+
+### 4.4 `[suits]`
+
+A deck can hold suits and ranks beyond the canonical ones:
 
 ```toml
-# A new suit
-[custom_cards.minor_arcana.stars]
+[suits.stars]
 name = "Stars"
 ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
          "nine", "ten", "page", "knight", "queen", "king"]
 
-# A fifteenth cups card, seated among the court
-[custom_cards.minor_arcana.cups]
+[suits.cups]
 ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
          "nine", "ten", "princess", "page", "knight", "queen", "king"]
 ```
 
-The second table key is the canonical suit `cups`, and giving `ranks` for a canonical suit replaces that suit's canonical sequence. This is how a deck adds a rank to a suit it already has, and it is the one place in this specification where a reserved key is accepted as a `[custom_cards]` table key. The rank keys themselves are custom names and remain subject to the reserved-key rule, so a deck MUST NOT introduce a new rank called `page`.
+Providing  `ranks` for a canonical suit, such as in the above example, replaces that suit's canonical sequence. 
 
-**`[custom_cards.minor_arcana.<key>]`** takes a [custom name](#32-custom-names) as the key, or one of the four canonical suits where the intent is to modify that suit.
+**`[suits.<key>]`** takes a [custom name](#32-custom-names) as the key, or one of the four canonical suits where the intent is to modify that suit.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for the suit, used where no name file supplies one. |
-| `ranks` | Array of String | No | the canonical rank sequence for a canonical suit, otherwise none | The suit's rank keys, in the order the deck reads them. |
+| `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for the suit |
+| `ranks` | Array of String | No | the canonical rank sequence for a canonical suit, otherwise none | The suit's rank keys in the order the deck reads them. |
 
-`ranks` is a matter of ordering only and is OPTIONAL in both forms. A rank whose files are present but which no `ranks` list mentions is still a card of that suit. Rank and suit keys resolve their display names through `names/<tag>.toml` ([§6.3](#63-display-name-resolution)).
+Like [`[cards]`](#43-cards), `[suits]` describes rather than creates and a suit is created by placing files under `minor_arcana/<suit>/`. The whole table is OPTIONAL. Suit and rank display names resolve through `names/<tag>.toml` ([§6.3](#63-display-name-resolution)).
 
-#### 4.3.3 Ordering
-
-Applications that present a deck in order resolve it as follows. Cards with a declared place come first, major arcana by `position` and minor arcana by their suit's `ranks`. Everything else follows, sorted by key. Suits with no canonical order follow the four canonical suits, likewise sorted by key.
-
-`position` MAY fall anywhere in the sequence, including between two canonical cards. A deck that seats an extra card between `08` and `09` gives it `position = 9` and pushes the rest along. Where two cards claim one position, the order between them is by key. A deck with no opinion about where its extra card sits declares nothing and gets it last.
-
-### 4.4 `[excluded_cards]`
+### 4.5 `[excluded_cards]`
 
 ```toml
 [excluded_cards]
@@ -506,9 +532,9 @@ reason = "This deck excludes these specific court cards."
 | `cards` | Array of String | No | `[]` | Canonical IDs of cards this deck deliberately does not contain. |
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
-An exclusion is a statement of intent rather than a mechanism. A card is absent because the deck ships no asset for it ([§5.1](#51-asset-discovery)), and `[excluded_cards]` records that the absence is deliberate, so that an application can tell a user "this deck has no court cards" rather than report a gap, and so that resolution does not go looking for the card in a [reference deck](#13-terminology) ([§5.7.6](#576-when-no-asset-is-found)).
+An exclusion records that an absence of an expected card is deliberate, so that an application can tell a user "this deck has no court cards" rather than report missing assets.
 
-### 4.5 `[editions]`
+### 4.6 `[editions]`
 
 For decks that have multiple editions or printings sharing the same card fronts:
 
@@ -549,7 +575,7 @@ An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) de
 
 An edition exists to name a specific card back design and to carry metadata that differs from the main printing. A printing with a different number of cards or different front artwork is a separate deck and SHOULD NOT be represented as an edition. By design, an edition has no qualified identifier.
 
-### 4.6 `[card_variants]`
+### 4.7 `[card_variants]`
 
 A card variant is an alternative artwork for a card that a deck already contains. Variants are addressed by a [variant reference](#312-card-references-and-the-variant-suffix), which is the card's canonical ID followed by a colon and a variant key, such as `major_arcana.06:two_women`. File assets are named with the variant key infixed between the card's base and its extension, as in `h1200/major_arcana/06.two_women.png`.
 
@@ -589,11 +615,14 @@ Variants of a card are interchangeable and carry the same meaning, so consumers 
 
 Applications detect files placed in the expected directory structure and map them to cards without further configuration. An image at `h1200/minor_arcana/wands/ace.png` maps to the card with the canonical ID `minor_arcana.wands.ace`, so creating a deck can be as simple as placing files into the right directories.
 
-A file's stem is split on the first `.`, and the first portion is called the base. Where the base names a card the deck already contains, the remainder is a [variant key](#46-card_variants) and the file is a variant of that card. Otherwise the base is a custom name and the file defines a custom card. For example:
+A file's stem is split on the first `.`, and the first portion is called the base. Where the base names a card the deck already contains, the remainder is a [variant key](#47-card_variants) and the file is a variant of that card. Otherwise the base names a card the file defines: in `major_arcana/` a two-digit base is that [major arcanum](#31-canonical-ids) and any other base is a custom name, and in `minor_arcana/<suit>/` the base is a rank key. For example:
 
 - `major_arcana/06.two_women.png` is a variant of The Lovers
-- `major_arcana/the_morning.png` is a custom card
-- `major_arcana/the_morning.dark.png` is a variant of a custom card
+- `major_arcana/23.png` is the deck's twenty-fourth major arcanum
+- `major_arcana/the_morning.png` is a major arcanum with a custom key
+- `major_arcana/the_morning.dark.png` is a variant of that card
+
+A deck therefore adds a card by adding a file, whether the card is canonical, numbered beyond `21`, or custom-keyed. Nothing in `deck.toml` is required for any of them.
 
 ### 5.2 Vector Graphics
 
@@ -707,15 +736,15 @@ In `scalable/`, the chain is `svg` alone.
 - A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning ([§9.4](#94-validation-rules)).
 - Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.3](#573-size-selection-within-a-kind).
 
-A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.6](#46-card_variants)) or card back design ([§4.2](#42-card_backs)). Discovery is a convention and an explicit path is an instruction.
+A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.7](#47-card_variants)) or card back design ([§4.2](#42-card_backs)). Discovery is a convention and an explicit path is an instruction.
 
 > **Note (informative).** Unlike the usual web ordering, this order favours fidelity and universal decodability over recency. A deck is already on disk, so a second encoding of the same card buys no bandwidth and is usually an authoring accident rather than progressive enhancement. The consequence is that where a PNG is present it always wins, and the optional formats matter only where they stand alone.
 
 #### 5.7.5 Variants
 
-A request MAY name a [variant key](#46-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged: the same size selection, the same extension chain.
+A request MAY name a [variant key](#47-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged: the same size selection, the same extension chain.
 
-Where the requested card has no variant under that key, the application MUST resolve that card's **default** variant instead, and MUST NOT treat the absence as an error. Variant keys are deck-wide and a card need not carry every key the deck uses. This is the asset-resolution statement of the rule in [§4.6](#46-card_variants).
+Where the requested card has no variant under that key, the application MUST resolve that card's **default** variant instead, and MUST NOT treat the absence as an error. Variant keys are deck-wide and a card need not carry every key the deck uses. This is the asset-resolution statement of the rule in [§4.7](#47-card_variants).
 
 A request naming no variant key resolves the card's default variant: the unsuffixed file, or the variant named by `[card_variants."<id>"].default` where one is declared.
 
@@ -723,7 +752,7 @@ A request naming no variant key resolves the card's default variant: the unsuffi
 
 Where resolution yields no file for a card in any image root of any kind:
 
-- Where the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#44-excluded_cards), the application SHOULD resolve the same card against that deck.
+- Where the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#45-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a card with a **canonical counterpart**, meaning a canonical minor arcanum or a major arcanum keyed `00` through `21`. A card the reference deck could only coincidentally share, meaning an [extended major arcanum](#13-terminology) or any custom-keyed card, MUST NOT be resolved against it: two decks that each define `major_arcana.23` have not agreed on a card ([§3.1.1](#311-a-canonical-id-is-a-slot)), and borrowing the image would show the user a card the deck does not contain.
 - Otherwise, this is a **resolution failure**, not a validation error. The application decides what to show, whether a placeholder, a card back or nothing. A deck is not non-conforming for lacking an asset for some card, and [§9](#9-conformance-and-validation) does not make it so.
 
 #### 5.7.7 Resolving a Card Back
@@ -741,7 +770,7 @@ Given a card, a variant key a kind and a target size, an application:
 1. Forms the stem from the card's base, plus `.<variant-key>` where one is requested, and the subpath `major_arcana/` or `minor_arcana/<suit>/`.
 2. Ranks the image roots of the requested kind by [§5.7.3](#573-size-selection-within-a-kind) and, best first, looks in `<root>/<subpath>` for that stem under the [extension chain](#574-the-extension-chain), taking the first file it can decode. Walking past a root it cannot decode costs it a fallback rather than the card.
 3. Failing that, and where a variant was requested, repeats step 2 for the card's default variant ([§5.7.5](#575-variants)).
-4. Failing that, resolves the card against the [reference deck](#13-terminology) where the library has one and the card is not excluded ([§5.7.6](#576-when-no-asset-is-found)). This step sits outside the per-deck lookup, so a reference deck is consulted once the deck itself is exhausted and never in the middle of size selection.
+4. Failing that, resolves the card against the [reference deck](#13-terminology) where the library has one, the card is not excluded, and the card has a canonical counterpart ([§5.7.6](#576-when-no-asset-is-found)). This step sits outside the per-deck lookup, so a reference deck is consulted once the deck itself is exhausted and never in the middle of size selection.
 
 Card backs follow the same shape with the differences [§5.7.7](#577-resolving-a-card-back) gives. An explicit `image` path wins outright, the subpath is `card_backs/` and the stem is the design key, the top-level `card_backs/` is consulted last, and there is no reference-deck step.
 
@@ -829,14 +858,16 @@ A resolved display string is used verbatim. Applications MUST NOT apply case con
 
 | Value | Resolution chain |
 | --- | --- |
-| Suit name | `[suits].<key>`, then `[custom_cards.minor_arcana.<key>].name` for a custom suit, then the title-cased key |
+| Suit name | `[suits].<key>` in the name file, then `[suits.<key>].name` in `deck.toml`, then the title-cased key |
 | Rank name | `[ranks].<key>`, then the title-cased key |
-| Major arcana name | `[major_arcana].<key>`, then `[custom_cards.major_arcana.<key>].name` for a custom card, then the [reference deck](#13-terminology)'s name for that ID, then [Appendix C](#appendix-c-canonical-card-names-informative) for a canonical key where no reference deck is configured. A custom key that reaches the end falls back to the title-cased key. |
-| Minor arcana name | `[minor_arcana.<suit>].<rank>`, then [composition](#631-minor-arcana-name-composition) from the card's suit and rank names |
+| Major arcana name | `[major_arcana].<key>`, then `[cards."major_arcana.<key>"].name`, then, **for a key `00` through `21` only**, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
+| Minor arcana name | `[minor_arcana.<suit>].<rank>`, then `[cards."minor_arcana.<suit>.<rank>"].name`, then [composition](#631-minor-arcana-name-composition) from the card's suit and rank names |
 | Card back design name | `[card_backs].<key>`, then `[card_backs.designs.<key>].name`, then the [title-cased key](#13-terminology) |
 | Card variant name | `[card_variants]."<variant-ref>"`, then `[card_variants."<canonical-id>".variants.<key>].name`, then the name of the card itself |
-| Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[custom_cards]`, `[card_backs.designs]` or variant entry |
+| Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[cards]`, `[card_backs.designs]` or variant entry |
 | Card variant alt text | `[alt_text.card_variants]."<variant-ref>"`, then the variant's `alt_text` field, then the card's own alt text |
+
+A major arcana key that reaches the end of its chain has **no name**. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits, which names nothing, so an application SHOULD instead present the card by its [number](#431-card-numbers). The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative) are both absent from this chain above `21` for the reason [§3.1.1](#311-a-canonical-id-is-a-slot) gives: no deck's twenty-third major arcanum names another's. A deck that has extended major arcana SHOULD name them in a name file, and a validator says so ([§9.4](#94-validation-rules)).
 
 #### 6.3.1 Minor Arcana Name Composition
 
@@ -856,7 +887,7 @@ Where a deck supplies no value of the minor arcana at any level, applications MA
 - Alt text SHOULD describe the visual elements of the card without interpretation.
 - A deck SHOULD include at least one language file carrying alt text.
 - Every card variant SHOULD carry its own alt text.
-- Alt text given in `[custom_cards]`, `[card_variants]` or `[card_backs.designs]` is a fallback only, and a name file always prevails.
+- Alt text given in `[cards]`, `[card_variants]` or `[card_backs.designs]` is a fallback only, and a name file always prevails.
 
 ## 7. Licensing and Attribution
 
@@ -983,20 +1014,24 @@ Each rule is labelled **E** for error or **W** for warning.
 | **E** | Every design key, whether a discovered stem or a `[card_backs.designs]` table key, is a well-formed [custom name](#32-custom-names), and every `image` path declared under `[card_backs.designs]` exists. |
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the author probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
-| **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[custom_cards.minor_arcana]` table key. |
+| **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier. |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
 | **W** | `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | **W** | Where a validator can see a whole library, no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement, such as a fork or two versions installed side by side, so this is only a warning. |
 | **E** | Every card referenced in `[card_variants]` is a card the deck defines, and every referenced variant image file exists. |
 | **E** | Where a variant table declares `default`, the named variant exists. |
-| **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.6](#46-card_variants)). A card with no files at all is a [resolution failure](#576-when-no-asset-is-found), not a violation of this rule. |
-| **E** | Every card declared in `[custom_cards]` is a card the deck has files for, since `[custom_cards]` does not define cards on its own. |
+| **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.7](#47-card_variants)). A card with no files at all is a [resolution failure](#576-when-no-asset-is-found), not a violation of this rule. |
+| **E** | Every `[cards]` table key is a well-formed [canonical ID](#31-canonical-ids), in particular a two-digit major arcana key written with both digits. A [variant reference](#312-card-references-and-the-variant-suffix) is not a valid key here. |
+| **E** | Every card declared in `[cards]` is a card the deck has files for, since `[cards]` does not define cards on its own. A canonical minor arcanum and a major arcanum keyed `00` through `21` are exempt, because those slots exist for every deck whether or not it ships the asset ([§4.3](#43-cards)). |
+| **E** | `number`, where present, is a non-empty string. A card is made unnumbered by the shape of its key, not by an empty `number` ([§4.3.1](#431-card-numbers)). |
+| **W** | A `position` declared on a minor arcanum, which an application ignores ([§4.3](#43-cards)). |
+| **W** | Every [extended major arcanum](#13-terminology) the deck has is named in at least one name file. Nothing else can name it ([§6.3](#63-display-name-resolution)), so one that is not will be shown to the user as a bare number. |
 | **E** | No custom major arcana key is a two-digit string and no custom rank or suit key shadows a canonical one, so that a custom ID can never collide with a canonical one. |
 | **E** | Every rank named in a `ranks` list has files in that suit, and no `ranks` list contains duplicates. |
-| **E** | No card is both excluded by `[excluded_cards]` and declared in `[custom_cards]`. |
-| **W** | No card listed in `[excluded_cards]` has an image file. An exclusion is a statement of intent ([§4.4](#44-excluded_cards)); a deck that ships the asset anyway has probably changed its mind and not updated the list. |
-| **W** | A `position` claimed by two cards. Ordering remains well defined ([§4.3.3](#433-ordering)). |
+| **E** | No card is both excluded by `[excluded_cards]` and declared in `[cards]`. |
+| **W** | No card listed in `[excluded_cards]` has an image file. An exclusion is a statement of intent ([§4.5](#45-excluded_cards)); a deck that ships the asset anyway has probably changed its mind and not updated the list. |
+| **W** | A `position` **declared** by two cards. Ordering remains well defined ([§4.3.2](#432-ordering)). A declared `position` that coincides with an implicit one is not reported, since seating a card against a numbered neighbour is the field's purpose. |
 | **E** | Where more than one edition is defined, `[editions].default` is present and names a defined edition, and every `[editions].<key>.card_back` names a card back design the deck has. |
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§10.1](#101-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
@@ -1107,7 +1142,7 @@ version = "1.0"
 schema_version = "2.0"
 description = "A fire-themed tarot deck with renamed suits and an additional elemental card."
 
-[custom_cards.major_arcana.elemental_force]
+[cards."major_arcana.elemental_force"]
 name = "The Elemental Force"
 position = 22
 
@@ -1221,17 +1256,20 @@ Applications MUST ignore these names in a 2.0 deck.
 | --- | --- | --- |
 | `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity).|
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
-| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#45-editions) in 2.0. The word "variant" now means a [card variant](#46-card_variants)|
+| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#46-editions) in 2.0. The word "variant" now means a [card variant](#47-card_variants)|
 | `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning.|
-| `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#44-excluded_cards) in 2.0 |
+| `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#45-excluded_cards) in 2.0 |
 | `[deck.companions]` | Never specified. Present in early implementations as a list of related documents, each with `id`, `name` and `uri` | Not defined by any version. Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
-| `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A custom card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
-| `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's key |
+| `[custom_cards]` | Custom major arcana, suits and ranks in 1.0 | Split in 2.0. Per-card metadata for every card, canonical or custom, moved to [`[cards]`](#43-cards), keyed by canonical ID; suit structure moved to [`[suits]`](#44-suits). A card is no longer "custom" for the purpose of describing it |
+| `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
+| `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's canonical ID |
 | `[remap_major_arcana]` | A table remapping major arcana display positions in 1.0 | Removed in 2.0. No published deck used it and it was unnecessary |
 
 ## Appendix C. Canonical Card Names (Informative)
 
-This appendix publishes conventional English names for the twenty-two major arcana as the last fallback of display name resolution ([§6.3](#63-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table.
+This appendix publishes conventional English names for the twenty-two canonical major arcana as the last fallback of display name resolution ([§6.3](#63-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table.
+
+The table stops at `21` and no future version of this specification will extend it. A major arcanum keyed `22` or above belongs to the deck that defines it and no convention names it ([§3.1.1](#311-a-canonical-id-is-a-slot)).
 
 | Key | Name |
 | --- | --- |
@@ -1268,7 +1306,7 @@ Recall that a [canonical ID is a slot](#311-a-canonical-id-is-a-slot), so a deck
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id`, `[editions].<key>.id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id`, `[editions].<key>.id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
 
 **Newly specified.**
 
@@ -1279,4 +1317,4 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
 
-**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made custom cards discoverable from the directory structure, added [card variants](#46-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
+**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
