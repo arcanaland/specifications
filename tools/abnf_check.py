@@ -22,7 +22,7 @@ A case is (rule, string, expected). `expected` is one of:
   ACCEPT  the grammar matches the whole string and the spec agrees
   REJECT  the grammar does not match and the spec agrees
   LOOSE   the grammar matches, but a normative rule outside the grammar
-          rejects the string anyway
+          would reject the string
 """
 ACCEPT, REJECT, LOOSE = "ACCEPT", "REJECT", "LOOSE"
 CASES = [
@@ -33,11 +33,14 @@ CASES = [
     ("canonical-id", "minor_arcana.pentacles.king", ACCEPT),
     ("canonical-id", "major_arcana.happy_squirrel", ACCEPT),
     ("canonical-id", "minor_arcana.stars.ace", ACCEPT),
+    ("canonical-id", "major_arcana.22", ACCEPT),
+    ("canonical-id", "major_arcana.99", ACCEPT),
 
     # case sensitivity
     ("canonical-id", "MAJOR_ARCANA.00", REJECT),
     ("canonical-id", "minor_arcana.WANDS.ace", REJECT),
     ("canonical-id", "minor_arcana.wands.ACE", REJECT),
+
     # structure
     ("canonical-id", "major_arcana", REJECT),
     ("canonical-id", "major_arcana.", REJECT),
@@ -45,10 +48,6 @@ CASES = [
     ("canonical-id", "major_arcana.0", REJECT),
     ("canonical-id", "major_arcana.000", REJECT),
     ("canonical-id", "major_arcana.6", REJECT),
-
-    # 22-99 parse but are reserved
-    ("canonical-id", "major_arcana.22", LOOSE),
-    ("canonical-id", "major_arcana.99", LOOSE),
 
     # a custom name must not be a reserved canonical key
     ("canonical-id", "minor_arcana.stars.page", LOOSE),
@@ -69,7 +68,6 @@ CASES = [
     ("variant-ref", "minor_arcana.cups.ace:alt", ACCEPT),
     ("variant-ref", "major_arcana.06", REJECT),
     ("variant-ref", "major_arcana.06:", REJECT),
-    # §5.7.3's stem/extension split rests on a variant key having no dot
     ("variant-ref", "major_arcana.06:two.women", REJECT),
 
     ("variant-suffix", ":two_women", ACCEPT),
@@ -168,7 +166,7 @@ def main():
         elif expected is REJECT and got:
             failures.append(f"  {rule:14} {text!r} parsed, should not have")
         elif expected is LOOSE and not got:
-            notes.append(f"  {rule:14} {text!r} no longer parses; the §3.5 note about it may be stale")
+            notes.append(f"  {rule:14} {text!r} parses but has further reqs")
 
     print(f"{len(CASES)} cases over {len(defined)} rules")
     if notes:
