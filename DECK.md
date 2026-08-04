@@ -128,7 +128,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. It is not a property of any deck. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
 | **card** | One addressable image in a deck, named by a canonical ID. |
 | **packager** | Whoever assembled a deck package. Not necessarily the artist and not necessarily the rights holder ([§1.2](#12-document-conventions)). |
-| **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [BlurHash](https://blurha.sh/). A surrogate is a card asset of its own kind, carried in the `surrogate/` [image root](#571-image-roots) ([§5.8](#58-surrogate-assets)). |
+| **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/). A surrogate is a card asset of its own kind, carried in the `surrogate/` [image root](#571-image-roots) ([§5.8](#58-surrogate-assets)). |
 | **surrogate deck** | A deck that carries surrogates and no other card assets, so that it can describe artwork it does not redistribute. It [signifies](#41-deck) the deck whose artwork that is ([§5.9](#59-surrogate-decks)). |
 | **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
 | **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99` |
@@ -173,7 +173,6 @@ The documents below are referenced normatively unless marked informative. A date
 | **SPDX License List** | [spdx.org/licenses](https://spdx.org/licenses/), with the [license expression syntax](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) | [§7](#7-licensing-and-attribution) |
 | **RightsStatements.org** | [Standardized international rights statements](https://rightsstatements.org/) | [§7.4](#74-rights-status) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§5.8.1](#581-the-surrogate-file) |
-| **BlurHash** (informative) | [blurha.sh](https://blurha.sh/) | [§5.8.1](#581-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§5.8.1](#581-the-surrogate-file) |
 | **XDG Base Directory Specification** | [specifications.freedesktop.org](https://specifications.freedesktop.org/basedir-spec/latest/) | [§2.2](#22-the-deck-library) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
@@ -885,9 +884,7 @@ ANSI files are exempt from the extension chain: [§5.4](#54-ansi-art) allows the
 
 ### 5.8 Surrogate Assets
 
-A **surrogate** is a derived, deliberately lossy stand-in for a card's artwork: enough to lay out, sort, theme or browse by, and far too little to reconstruct or substitute for the image.
-
-Surrogates live in the `surrogate/` [image root](#571-image-roots) and are discovered like any other card asset ([§5.1](#51-asset-discovery)):
+A surrogate is a derived, deliberately lossy stand-in for a card's artwork that lives in the `surrogate/` [image root](#571-image-roots) and are discovered like other card assets ([§5.1](#51-asset-discovery)):
 
 ```
 surrogate/
@@ -901,16 +898,12 @@ surrogate/
     classic.toml          # the "classic" design
 ```
 
-Because a surrogate is an ordinary asset, nothing about it is special-cased. The base and variant-key split of [§5.7.2](#572-extensions-stems-and-bases) applies, so a variant carries its own surrogate by the same infix convention that names its artwork. A [card back](#55-card-back-images) takes one by the same rule. A card that exists only in `surrogate/` is a card the deck defines, on exactly the terms as one that exists only in `h1200/`.
 
-Two differences from the other kinds:
+A deck MAY carry them instead of artwork, which makes it a [surrogate deck](#59-surrogate-decks). An application MUST NOT present a surrogate as though it were the artwork, and SHOULD make the distinction visible to the user.
 
-- **No reference deck.** [§5.7.6](#576-when-no-asset-is-found) resolves a missing asset against the library's reference deck where one is designated. An application MUST NOT do this for a surrogate. A surrogate is a claim about *particular* artwork, and borrowing one from another deck would describe the wrong picture rather than merely show a substitute for it.
-- **Never presented as artwork.** An application MUST NOT present a surrogate as though it were the artwork, and SHOULD make the distinction visible to the user.
+A deck MAY carry surrogates alongside its artwork, where an application could render them as progressive-loading placeholders. 
 
-A deck MAY carry surrogates alongside its artwork, where an application renders them as progressive-loading placeholders. A deck MAY carry them *instead of* artwork, which makes it a [surrogate deck](#59-surrogate-decks). `surrogate/` is a root like any other; carrying it does not classify a deck.
-
-Surrogates have no presence in `deck.toml`. There is no table to declare, no card to list and no default to choose: a deck acquires them by carrying the directory, exactly as it acquires artwork by carrying `h1200/`.
+In contrast to other assets, surrogates are not assoiciated with a reference deck.
 
 #### 5.8.1 The Surrogate File
 
@@ -919,9 +912,7 @@ A surrogate file is a TOML document ([§2.3](#23-file-format-and-encoding)) whos
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `palette` | Array of String | No | `[]` | Dominant colors, most prominent first, each an sRGB hex triplet written `#rrggbb` in lower case. |
-| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors), written as the name, in the same order. Snapping makes palettes comparable across decks, which raw extraction does not. |
-| `grid` | Array of Array of String | No | `[]` | A spatial color grid in row-major order, each cell an sRGB hex triplet. Every row MUST have the same length. The dimensions are the shape of the array, so a 4x4 grid is four arrays of four. |
-| `blurhash` | String | No | none | A [BlurHash](https://blurha.sh/) of the artwork. |
+| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors),|
 | `thumbhash` | String | No | none | A [ThumbHash](https://evanw.github.io/thumbhash/) of the artwork, Base64-encoded. |
 
 ```toml
@@ -929,36 +920,19 @@ A surrogate file is a TOML document ([§2.3](#23-file-format-and-encoding)) whos
 # generated by libarcana 0.4.2
 palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e", "#d9d2c4"]
 palette_snapped = ["wheat", "darkslateblue", "sienna", "lightgray"]
-blurhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+thumbhash = "1QcSHQRnh493V4dIh4eXh1h4kJUI"
 ```
 
-```toml
-# surrogate/major_arcana/01.toml
-grid = [
-  ["#1a2b3c", "#2b3c4d", "#3c4d5e", "#4d5e6f"],
-  ["#2b3c4d", "#3c4d5e", "#4d5e6f", "#5e6f70"],
-  ["#3c4d5e", "#4d5e6f", "#5e6f70", "#6f7081"],
-  ["#4d5e6f", "#5e6f70", "#6f7081", "#708192"],
-]
-```
 
-Every key is optional and independent. A deck MAY carry any combination and MAY carry different combinations for different cards. A file carrying none of them is a well-formed surrogate that says nothing, and defines a card all the same.
-
-This specification fixes how a surrogate is **encoded** but not how it is **extracted**. Color quantization, dominance ordering and hashing all admit many implementations, and two tools given the same image will not generally agree. A surrogate is therefore a claim by the [packager](#12-document-conventions) rather than a reproducible function of the artwork. An application MUST NOT assume that surrogates from different decks were produced comparably, except for `palette_snapped`, whose target palette this specification does fix.
-
-Nothing records which tool made a surrogate. This specification defines no field for it, because nothing acts on one: an application renders a surrogate on its own terms or not at all, and a value no consumer reads is documentation rather than data. A generator that wants to leave a note SHOULD write a TOML comment, as the examples above do. Applications MUST NOT attach meaning to such a comment.
+Every key is optional and independent. A deck MAY carry any combination and MAY carry different combinations for different cards. A file carrying none of them is a well-formed surrogate.
 
 ### 5.9 Surrogate Decks
 
-A **surrogate deck** is a deck whose only card assets are surrogates. In place of artwork it carries the deck's ordinary metadata: its name, author, publisher, card structure, display names, alt text, rights and links.
+A surrogate deck is a deck whose only card assets are surrogates. Because the artwork of most tarot decks is neither the packager's to give away nor, licensed for redistribution at all in many cases, surrogates allows for packaing a deck without shipping anyone else's art.
 
-A surrogate deck exists because the artwork of most tarot decks is neither the packager's to give away nor, in many cases, licensed for redistribution at all, while everything *about* a deck is ordinary factual description that anyone may publish. Separating the two lets a catalog, a library index or a collection listing be shared freely without shipping a single pixel of anyone's art.
+A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows application to recognize them as the same underlying deck and prefer the artwork.
 
-Nothing in this specification defines a surrogate deck as a distinct kind of document, and no field declares one. It is a deck that happens to ship one image root rather than another, and [§9.1](#91-conforming-deck) admits it on exactly the same terms as any other deck: it has card assets, so it has cards. The term names a practice, not a category.
-
-Resolving artwork in a surrogate deck fails at every step of [§5.7.8](#578-resolution-summary), which is not an error but the point. An application that meets such a failure and has a surrogate for the card SHOULD render the surrogate.
-
-A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. That field is what lets an application holding both packages recognize them as the same underlying deck and prefer the artwork: it is a **merge key**, which is why it names the other package's `[deck].identifier` rather than a URL. Where the packager is willing to say so, a surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD carry a `buy` [link](#411-links), since it names a work the reader cannot see here and may want.
+A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD contain a `buy` [link](#411-links).
 
 ## 6. Internationalization
 
@@ -1291,7 +1265,7 @@ Each rule is labelled **E** for error or **W** for warning.
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | `[deck].signifies`, where present, is a well-formed qualified identifier and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)). Whether it names a deck that exists is not checkable and is not checked. |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
-| **E** | Every entry of a `palette` or `grid` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color, and every row of a `grid` has the same length ([§5.8.1](#581-the-surrogate-file)). |
+| **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
 | **W** | A surrogate deck without `[deck].signifies`. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§5.9](#59-surrogate-decks)). |
 | **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§5.9](#59-surrogate-decks)). |
@@ -1556,14 +1530,14 @@ links = [
 # generated by libarcana 0.4.2
 palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e"]
 palette_snapped = ["wheat", "darkslateblue", "sienna"]
-blurhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+thumbhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 ```
 
 ```toml
 # surrogate/minor_arcana/wands/ace.toml
 palette = ["#c2452d", "#f0e4c8", "#3f6b3a"]
 palette_snapped = ["firebrick", "cornsilk", "darkolivegreen"]
-blurhash = "L6PZfSjE.AyE_3t7t7R**0o#DgR4"
+thumbhash = "L6PZfSjE.AyE_3t7t7R**0o#DgR4"
 ```
 
 Note what the package does and does not claim. `redistribution = "none"` says the collector passes on no artwork, which is consistent with there being none here. `derivation = "surrogate"` says they consider the surrogates themselves shareable. `rights_status` says the artwork is in copyright with no license granted, which `license` could not have expressed. The `buy` link points at the people who can sell the reader the real thing.
