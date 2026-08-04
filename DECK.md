@@ -100,7 +100,7 @@
 
 This specification defines a standard format for tarot decks used by tarot applications. The format is designed to:
 
-- Separate presentation (e.g., images and names) from interpretation (e.g., meanings, divination, etc).
+- Separate presentation (e.g., images and names) from interpretation (e.g., meanings and divination).
 - Establish a canonical identifier system for tarot objects that can be shared across various Arcana Land specifications.
 - Support internationalization (i18n) and localization (l10n).
 - Support decks with extra or missing cards.
@@ -133,7 +133,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/). A surrogate is a card asset of its own kind, carried in the `surrogate/` [image root](#571-image-roots) ([§5.8](#58-surrogate-assets)). |
 | **surrogate deck** | A deck that carries surrogates and no other card assets, so that it can describe artwork it does not redistribute. It [signifies](#41-deck) the deck whose artwork that is ([§5.9](#59-surrogate-decks)). |
 | **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
-| **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99` |
+| **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99`. |
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. Distinct from **kind** ([§5.7.1](#571-image-roots)), which distinguishes scalable, raster, ANSI and surrogate assets. |
 | **canonical ID** | The identifier by which this specification names a card: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
@@ -269,14 +269,14 @@ To support case-insensitive filesystems, applications MUST compare card asset st
 
 ## 3. Identity and Identifiers
 
-Cards are named by canonical IDs. Keys that a deck author creates that differ from canonical names are called custom names. Arcana Land entities, such as decks, esoterica and spreads are named by qualified identifiers.
+Cards are named by canonical IDs. Keys that a deck author creates that differ from canonical names are called custom names. Arcana Land entities, such as decks, esoterica and spreads, are named by qualified identifiers.
 
 ### 3.1 Canonical IDs
 
 Cards are referenced internally using canonical IDs, which are the only way this specification identifies a card:
 
-- Major Arcana: `major_arcana.00` to `major_arcana.99`, of which `00` to `21` are the canonical twenty-two
-- Minor Arcana: `minor_arcana.<suit>.<rank>` where:
+- Major arcana: `major_arcana.00` to `major_arcana.99`, of which `00` to `21` are the canonical twenty-two
+- Minor arcana: `minor_arcana.<suit>.<rank>` where:
   - `<suit>`: `wands`, `cups`, `swords`, `pentacles`
   - `<rank>`: `ace`, `two`, ..., `ten`, `page`, `knight`, `queen`, `king`
 
@@ -286,7 +286,7 @@ Custom cards extend this scheme using the author's own keys. For example: `major
 
 #### 3.1.1 A Canonical ID Is a Slot
 
-A canonical ID denotes the card a deck defines at a given position, not a particular card of tradition. A. E. Waite infamously swapped the positions of Strength and Justice from the Marseille ordering. In this specification `major_arcana.08` means the eighth major arcana card, so a deck following the Marseille ordering simply writes Justice under `[major_arcana].08` in its name file. [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
+A canonical ID denotes the card a deck defines at a given position, not a particular card of tradition. A. E. Waite infamously swapped the positions of Strength and Justice from the Marseille ordering. In this specification `major_arcana.08` means the major arcanum numbered eight, so a deck following the Marseille ordering simply writes Justice under `[major_arcana].08` in its name file. [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
 
 A deck whose extra card is not a numbered member of its sequence gives it a [custom name](#32-custom-names) instead, which denotes membership without asserting a number ([§4.3.1](#431-card-numbers)).
 
@@ -335,14 +335,14 @@ A qualified identifier is essentially a URI without the scheme, and Arcana Land 
 A deck has three distinct properties related to identity:
 
 | Property | Location | Description | Uniqueness |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Directory name | The filesystem | Library-scoped handle | Unique within a library root |
 | `identifier` | `[deck].identifier`, RECOMMENDED | The deck's [qualified identifier](#33-qualified-identifiers) | Globally |
 | `name` | `[deck].name`, REQUIRED | Display string shown to the user | Two unrelated decks can share a name |
 
 The three are independent. A directory name is not required to match `[deck].name` nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree and a validator MUST NOT report a disagreement.
 
-A deck SHOULD provide an `identifier`, since a deck without one cannot be referenced from another Arcana Land document. Applications and validators MUST NOT synthesise one for a deck that lacks it. Two decks in one library MAY declare the same `identifier` under different directory names, although a validator warns about it.
+A deck SHOULD provide an `identifier`, since a deck without one cannot be referenced from another Arcana Land document. Applications and validators MUST NOT synthesize one for a deck that lacks it. Two decks in one library MAY declare the same `identifier` under different directory names, although a validator warns about it.
 
 ### 3.5 Grammar
 
@@ -412,9 +412,9 @@ A key not listed here and not under `[app]` is not defined by this specification
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `schema_version` | String | Yes | n/a | The version of this specification the deck is written against as `"<major>.<minor>"` |
+| `schema_version` | String | **Yes** | n/a | The version of this specification the deck is written against as `"<major>.<minor>"` |
 | `name` | String | **Yes** | n/a | The deck's display name. Not required to be unique, and not required to match the directory name ([§3.4](#34-deck-identity)). |
-| `version` | String | Yes | n/a | The deck's own free-form version. |
+| `version` | String | **Yes** | n/a | The deck's own free-form version. |
 | `identifier` | String | RECOMMENDED | none | The deck's qualified identifier ([§3.3](#33-qualified-identifiers)). A deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | `signifies` | String | No | none | The [qualified identifier](#33-qualified-identifiers) of another deck, whose artwork this package describes but does not carry ([§4.1.2](#412-signifies)). |
 | `default_language` | String | No | `"en"` | BCP 47 tag of the deck's default name file ([§6.2](#62-language-resolution)). |
@@ -450,7 +450,6 @@ created_date = "1909-12-01"
 tags = ["traditional", "classic"]
 ```
 
-
 #### 4.1.1 Links
 
 `[deck].links` holds the deck's web addresses. A deck MAY declare any number, including several sharing a `rel`. Each entry is a table:
@@ -481,7 +480,7 @@ links = [
 publisher = "Example Press"
 ```
 
-The registry is open. An application MUST ignore a link whose `rel` it does not recognize, and MUST NOT treat an unrecognized `rel` as an error. A future version of this specification MAY add to the registry, so a deck author who needs a relation it does not define SHOULD prefix it, as in `X-kickstarter`, to avoid colliding with a later addition.
+The registry is open. An application MUST ignore a link whose `rel` it does not recognize, and MUST NOT treat an unrecognized `rel` as an error. A future version of this specification MAY add to the registry, so a deck author who needs a relation it does not define SHOULD prefix it, as in `x_kickstarter`, to avoid colliding with a later addition.
 
 #### 4.1.2 `signifies`
 
@@ -538,7 +537,6 @@ Declaring a design under `[card_backs.designs]` does not create it. A design the
 ### 4.3 `[cards]`
 
 Cards are [discovered from the directory structure](#51-asset-discovery) so the `[cards]` table supplies what is not available from the filename alone, such as the card's printed number, its place in the deck's sequence and fallback display strings. It is OPTIONAL in its entirety.
-
 
 ```toml
 [cards."major_arcana.23"]
@@ -602,7 +600,7 @@ ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight",
          "nine", "ten", "princess", "page", "knight", "queen", "king"]
 ```
 
-Providing  `ranks` for a canonical suit, such as in the above example, replaces that suit's canonical sequence. 
+Providing `ranks` for a canonical suit, such as in the above example, replaces that suit's canonical sequence.
 
 **`[suits.<key>]`** takes a [custom name](#32-custom-names) as the key, or one of the four canonical suits where the intent is to modify that suit.
 
@@ -626,7 +624,7 @@ reason = "This deck excludes these specific court cards."
 | `cards` | Array of String | No | `[]` | Canonical IDs of cards this deck deliberately does not contain. |
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
-An exclusion records that an absence of an expected card is deliberate, so that an application can tell a user "this deck has no court cards" rather than report missing assets.
+An exclusion records that the absence of an expected card is deliberate, so that an application can tell a user "this deck has no court cards" rather than report missing assets.
 
 ### 4.6 `[editions]`
 
@@ -780,15 +778,13 @@ An image root is a top-level directory of a deck root that discovery searches fo
 
 `<height>` and `<lines>` are decimal integers greater than zero, written without a sign, leading zeroes or separators. A deck MAY contain any number of raster and ANSI roots, and at most one `scalable/` and one `surrogate/`.
 
-
 Within an image root, assets are arranged by card type and suit as shown in [§2.1](#21-directory-skeleton): `major_arcana/` and `minor_arcana/<suit>`. An image root MAY also hold a `card_backs/` directory, which supplies card back designs at that root's kind and size ([§5.5](#55-card-back-images)). Any other subdirectory is ignored, and so is any file lying loose in the root itself rather than in one of those subdirectories.
 
 Every other top-level directory is ignored by discovery.
 
-
 #### 5.7.2 Extensions, Stems and Bases
 
-A card asset filename is read as three parts. Given `06.two_women.png`:
+A card asset filename is read as four parts. Given `06.two_women.png`:
 
 | Part | Value | Rule |
 | --- | --- | --- |
@@ -805,7 +801,7 @@ Card backs have no variants ([§5.5](#55-card-back-images)), so a stem containin
 
 #### 5.7.3 Size Selection Within a Kind
 
-Selection for `scalable/` and `surrogate/` are trivial due to those directories containing at most one file per card and variant.
+Selection for `scalable/` and `surrogate/` is trivial due to those directories containing at most one file per card and variant.
 
 For raster and ANSI, an application selects among the roots of that kind that supply a file for the card. The rules differ, because the two media degrade in opposite directions:
 
@@ -848,11 +844,11 @@ Otherwise, this is a resolution failure and it is up to the application to decid
 
 #### 5.7.7 Resolving a Card Back
 
-An application resolves a back the similar to the main algorithm, with three differences:
+An application resolves a back similarly to the main algorithm, with three differences:
 
 1. The subpath is `card_backs/` rather than `major_arcana/` or `minor_arcana/<suit>/` and the stem is the design key.
 2. Where no image root of the requested kind supplies the design, the top-level `card_backs/` directory is consulted last as a root of no size.
-3. There is no reference-deck and applications supply their own back.
+3. There is no reference-deck step and applications supply their own back.
 
 #### 5.7.8 Resolution Summary
 
@@ -869,7 +865,7 @@ ANSI files are exempt from the extension chain: [§5.4](#54-ansi-art) allows the
 
 ### 5.8 Surrogate Assets
 
-A surrogate is a derived, deliberately lossy stand-in for a card's artwork that lives in the `surrogate/` [image root](#571-image-roots) and are discovered like other card assets ([§5.1](#51-asset-discovery)):
+A surrogate is a derived, deliberately lossy stand-in for a card's artwork that lives in the `surrogate/` [image root](#571-image-roots) and is discovered like other card assets ([§5.1](#51-asset-discovery)):
 
 ```
 surrogate/
@@ -883,10 +879,9 @@ surrogate/
     classic.toml          # the "classic" design
 ```
 
-
 A deck MAY carry them instead of artwork, which makes it a [surrogate deck](#59-surrogate-decks). An application MUST NOT present a surrogate as though it were the artwork, and SHOULD make the distinction visible to the user.
 
-A deck MAY carry surrogates alongside its artwork, where an application could render them as progressive-loading placeholders. 
+A deck MAY carry surrogates alongside its artwork, where an application could render them as progressive-loading placeholders.
 
 In contrast to other assets, surrogates are not associated with a reference deck.
 
@@ -897,7 +892,7 @@ A surrogate file is a TOML document ([§2.3](#23-file-format-and-encoding)) whos
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `palette` | Array of String | No | `[]` | Dominant colors, most prominent first, each an sRGB hex triplet written `#rrggbb` in lower case. |
-| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors),|
+| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors). |
 | `thumbhash` | String | No | none | A [ThumbHash](https://evanw.github.io/thumbhash/) of the artwork, Base64-encoded. |
 
 ```toml
@@ -907,7 +902,6 @@ palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e", "#d9d2c4"]
 palette_snapped = ["wheat", "darkslateblue", "sienna", "lightgray"]
 thumbhash = "1QcSHQRnh493V4dIh4eXh1h4kJUI"
 ```
-
 
 Every key is optional and independent. A deck MAY carry any combination and MAY carry different combinations for different cards. A file carrying none of them is a well-formed surrogate.
 
@@ -919,10 +913,9 @@ A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the 
 
 A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD contain a `buy` [link](#411-links).
 
-The [`[deck].license`](#41-deck) covers the card assets the package carries ([§7](#7-licensing-and-attribution)), so in a surrogate deck it covers the surrogates rather than the artwork.. A surrogate deck SHOULD declare `license`.
+The [`[deck].license`](#41-deck) covers the card assets the package carries ([§7](#7-licensing-and-attribution)), so in a surrogate deck it covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
 
 A surrogate deck's `icon`, where it has one, MUST NOT be the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates the deck carries. A deck that has no icon it is entitled to ship declares none, and an application supplies its own presentation.
-
 
 ## 6. Internationalization
 
@@ -994,6 +987,7 @@ The `[metadata]` table is OPTIONAL and describes the name file itself rather tha
 | `license` | SPDX license expression governing the strings in this file |
 | `license_files` | Paths, relative to the deck root, to the full license text and any notices |
 | `copyright` | The copyright notice, verbatim as the rights holder wrote it |
+| `rights_status` | URI for the artwork's copyright status |
 | `attribution` | The credit line the license requires downstream users to display |
 
 The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Name File Licensing](#73-name-file-licensing).
@@ -1015,7 +1009,7 @@ A resolved display string is used verbatim. Applications MUST NOT apply case con
 | Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[cards]`, `[card_backs.designs]` or variant entry |
 | Card variant alt text | `[alt_text.card_variants]."<variant-ref>"`, then the variant's `alt_text` field, then the card's own alt text |
 
-A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers). 
+A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
 The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative) are both absent from this chain above `21`. A deck that has extended major arcana SHOULD name them in a name file, and a validator says so ([§9.4](#94-validation-rules)).
 
@@ -1030,7 +1024,7 @@ name_template = "{rank} of {suit}"
 
 `{rank}` and `{suit}` are replaced by the rank and suit names resolved above. No other placeholders are defined, and an application MUST leave any other braced text in the template alone. The template is resolved by the same [Language Resolution](#62-language-resolution) rules as any other key, so a translation supplies its own. Where no name file supplies one, the template is `"{rank} of {suit}"`.
 
-Where a deck supplies no value of the minor arcana at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology).
+Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology).
 
 ### 6.4 Alt Text Guidelines
 
@@ -1041,7 +1035,7 @@ Where a deck supplies no value of the minor arcana at any level, applications MA
 
 ## 7. Licensing and Attribution
 
-A deck is comprised of several components that can have separate licensing terms.
+A deck comprises several components that can have separate licensing terms.
 
 - The license specified by `[deck].license` covers the card assets the package contains. For most decks those assets are the artwork and the field says what may be done with it. For a [surrogate deck](#59-surrogate-decks) they are the surrogates and the artwork they describe is covered by [`rights_status`](#74-rights-status) instead.
 - The license in the `[metadata].license` field of a name file covers the strings in that file and `[metadata.alt_text]` narrows that to the alt text alone.
@@ -1119,14 +1113,13 @@ license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Paulo Freire."
 ```
 
-
-Typically, the strings in name file are the deck author's choice. A full set of one author's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them.
+Typically, the strings in a name file are the deck author's choice. A full set of one author's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them.
 
 ### 7.4 Rights Status
 
 Most tarot decks are not licensed to anyone. A deck packaged from a commercially available product the packager purchased has no license to grant.
 
-For this reason, `[deck].rights_status` records the artwork's copyright status instead. The `license` pertains to the files in this directory while `rights_status` is about the work they depict
+For this reason, `[deck].rights_status` records the artwork's copyright status instead. The `license` pertains to the files in this directory while `rights_status` is about the work they depict.
 
 For an ordinary deck these coincide and both describe the artwork. For a [surrogate deck](#59-surrogate-decks), a packager is free to license the surrogates they generated (or reused) while accurately recording that the artwork behind them is in copyright to someone else.
 
@@ -1157,15 +1150,14 @@ The same field is available in a name file's `[metadata]` and `[metadata.alt_tex
 
 ### 7.5 Redistribution and Derivation
 
-The two fields governing how a package can be redistributed or creating new works from it are [deck].redistribution` and `[deck].derivation`:
+The two fields governing how a package can be redistributed or used to create new works are `[deck].redistribution` and `[deck].derivation`:
 
 | Value | Meaning |
 | --- | --- |
 | `"full"` | The artwork may be passed on as it is. |
 | `"surrogate"` | The artwork may not be passed on, but a [surrogate](#58-surrogate-assets) derived from it may. |
 | `"none"` | Neither may be passed on. |
-| `"unstated"` |  The default. The packager has not said. |
-
+| `"unstated"` | The default. The packager has not said. |
 
 ```toml
 [deck]
@@ -1181,7 +1173,6 @@ The default value is `"unstated"` which does not grant permission. An applicatio
 
 The `packager` field is a free-form display string and this specification defines no syntax for it. A name, a handle, an email address or a project are reasonable values.
 
-
 ```toml
 [deck]
 name = "The Example Tarot"
@@ -1190,8 +1181,7 @@ publisher = "Example Press"     # who published it
 packager = "Jane Doe <jane@example.org>"   # who built this directory
 ```
 
-
-A deck SHOULD declare `packager` where the packager is not the artwork's `author`, and a package describing artwork it does not own SHOULD always declare it. 
+A deck SHOULD declare `packager` where the packager is not the artwork's `author`, and a package describing artwork it does not own SHOULD always declare it.
 
 ### 7.7 Deck Names and Trademarks
 
@@ -1202,9 +1192,9 @@ However, a package MUST NOT imply an endorsement, affiliation or origin it does 
 - A deck's `name`, `description` and `attribution` MUST NOT state or imply that the rights holder produced, approved or endorsed the package, unless they did.
 - A package assembled by a third party SHOULD declare [`packager`](#76-naming-the-packager).
 - A [`buy`](#411-links) or `publisher` link SHOULD point at the rights holder rather than at a reseller ([§4.1.1](#411-links)).
-- A packager SHOULD NOT reproduce the publisher's logo or wordmark as the deck's `icon`. 
+- A packager SHOULD NOT reproduce the publisher's logo or wordmark as the deck's `icon`.
 
-Nothing here is a legal determination and this specification does not make one. 
+Nothing here is a legal determination and this specification does not make one.
 
 ## 8. Extensibility
 
@@ -1219,7 +1209,7 @@ ansi_color_depth = "truecolor"  # ANSI art uses 24-bit SGR
 ansi_glyphs = "sextants"        # needs a font covering U+1FB00–U+1FBFF
 ```
 
-The subtable key MUST be written as a quoted TOML key because a realm always contains a '.' character.
+The subtable key MUST be written as a quoted TOML key because a realm always contains a `.` character.
 
 Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`.
 
@@ -1253,11 +1243,11 @@ An application need not implement editions, card variants, ANSI art, SVG, surrog
 
 ### 9.4 Validation Rules
 
-Each rule is labelled **E** for error or **W** for warning.
+Each rule is labeled **E** for error or **W** for warning.
 
 | | Rule |
 | --- | --- |
-| **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exists. |
+| **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exist. |
 | **E** | `[deck]` carries `schema_version`, `name` and `version` ([§4.1](#41-deck)). |
 | **E** | Every key in a name file corresponds to a card, suit, rank, card variant or card back design the deck defines, or is `[minor_arcana].name_template`, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
 | **E** | `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`. |
@@ -1284,7 +1274,7 @@ Each rule is labelled **E** for error or **W** for warning.
 | **E** | Every rank named in a `ranks` list has files in that suit, and no `ranks` list contains duplicates. |
 | **E** | No card is both excluded by `[excluded_cards]` and declared in `[cards]`. |
 | **W** | No card listed in `[excluded_cards]` has an image file. An exclusion is a statement of intent ([§4.5](#45-excluded_cards)); a deck that ships the asset anyway has probably changed its mind and not updated the list. |
-| **W** | A `position` **declared** by two cards. Ordering remains well defined ([§4.3.2](#432-ordering)). A declared `position` that coincides with an implicit one is not reported, since seating a card against a numbered neighbour is the field's purpose. |
+| **W** | A `position` **declared** by two cards. Ordering remains well defined ([§4.3.2](#432-ordering)). A declared `position` that coincides with an implicit one is not reported, since seating a card against a numbered neighbor is the field's purpose. |
 | **E** | Where more than one edition is defined, `[editions].default` is present and names a defined edition, and every `[editions].<key>.card_back` names a card back design the deck has. |
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§10.1](#101-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
@@ -1321,7 +1311,6 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 ### 10.2 Terminal Escape Injection
 
 ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
-
 
 ## Appendix A. Examples (Informative)
 
@@ -1523,7 +1512,7 @@ And `names/en.toml`:
 
 ### A.6 A Surrogate Deck
 
-A surrogate deck can be created for commercial decks with non-redistributable artwork by providing surrogate assets. 
+A surrogate deck can be created for commercial decks with non-redistributable artwork by providing surrogate assets.
 
 ```
 example-tarot/
@@ -1586,10 +1575,10 @@ Applications MUST ignore these names in a 2.0 deck.
 
 | Name | Was | Status |
 | --- | --- | --- |
-| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity).|
+| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
-| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#46-editions) in 2.0. The word "variant" now means a [card variant](#47-card_variants)|
-| `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning.|
+| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#46-editions) in 2.0. The word "variant" now means a [card variant](#47-card_variants) |
+| `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning. |
 | `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#45-excluded_cards) in 2.0 |
 | `[deck.companions]` | Never specified. Present in early implementations as a list of related documents, each with `id`, `name` and `uri` | Not defined by any version. Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
 | `[custom_cards]` | Custom major arcana, suits and ranks in 1.0 | Split in 2.0. Per-card metadata for every card, canonical or custom, moved to [`[cards]`](#43-cards), keyed by canonical ID; suit structure moved to [`[suits]`](#44-suits). A card is no longer "custom" for the purpose of describing it |
@@ -1640,7 +1629,7 @@ Recall that a [canonical ID is a slot](#311-a-canonical-id-is-a-slot), so a deck
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id`, `[editions].<key>.id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
 
 **Newly specified.**
 
@@ -1656,4 +1645,4 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck].packager`](#76-naming-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
-**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
+**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Clarified an ANSI type detection. Defined what `[app]` is for and reserved top-level table names outside it.
