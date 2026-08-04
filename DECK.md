@@ -919,7 +919,7 @@ A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status)
 
 The [`[deck].license`](#41-deck) covers the card assets the package carries ([§7](#7-licensing-and-attribution)), so in a surrogate deck it covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
 
-A surrogate deck's `icon`, where it has one, MUST NOT be the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates the deck carries. A deck that has no icon it is entitled to ship declares none, and an application supplies its own presentation.
+A surrogate deck's `icon`, where it has one, SHOULD avoid using the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates the deck carries.
 
 ## 6. Internationalization
 
