@@ -169,20 +169,18 @@ major_arcana.06             # a card reference
 major_arcana.06:two_women   # a card reference with a variant suffix
 ```
 
-A card reference with no variant suffix denotes the card's default variant. The suffix selects a *rendering* of the card and does not change which card is named. `major_arcana.06:two_women` and `major_arcana.06:two_men` are the same card in the same slot, drawn twice. This is why a consumer concerned with what a card means, above all the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discards the suffix ([§4.6](#46-card_variants)), and why a request for a variant a card does not have resolves to that card's default instead of failing ([§5.7.6](#576-variants)).
+A card reference with no variant suffix denotes the card's default variant. The suffix selects between different artwork of the card and does not change which card is named. `major_arcana.06:two_women` and `major_arcana.06:two_men` are the same card in the same slot with different artwork.
 
-The suffixed form on its own is a **variant reference**, and a name file's `[card_variants]` table is keyed by it. [§3.5](#35-grammar) gives both productions.
+The suffixed form on its own is a **variant reference**, and a name file's `[card_variants]` table is keyed by it.
 
 ### 3.2 Custom Names
 
-Custom names are the keys a deck author coins: custom major arcana keys, custom suit keys, custom rank keys, card back design keys, edition keys and card variant keys. Every one of them MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, and does not allow a leading digit.
+Custom names are the keys a deck author creates such as custom major arcana keys, custom suit keys, custom rank keys, card back design keys, edition keys and card variant keys. Every custom name MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, but does not allow a leading digit.
 
-Two further rules apply, and both exist to keep a custom ID from ever colliding with a canonical one:
+Further:
 
 - A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords` and `pentacles`, or the ranks `ace`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`, `page`, `knight`, `queen` and `king`.
 - A custom **major arcana** key additionally MUST NOT be a two-digit string. Two-digit major arcana keys are reserved: `00` through `21` are the canonical cards, and `22` through `99` are reserved for future versions of this specification.
-
-One position accepts a reserved key: a canonical suit as the table key of `[custom_cards.minor_arcana.<suit>]`, which [extends that suit's rank sequence](#432-custom-suits-and-ranks) rather than naming a new suit.
 
 ### 3.3 Qualified Identifiers
 
@@ -190,7 +188,7 @@ Qualified identifiers name Arcana Land entities such as tarot decks or spreads u
 
 - `land.arcana/deck/rider-waite-smith`
 - `land.arcana/spread/celtic-cross`
-- `my.personal.domain/deck/modern-witch-tarot`
+- `org.example.my.domain/deck/modern-witch-tarot`
 
 A qualified identifier is composed of a **realm** and an object **path**, separated by a slash, with an OPTIONAL **fragment** after a `#`. See [§3.5](#35-grammar) for the grammar.
 
@@ -963,13 +961,6 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 
 ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or DA, DSR, DECRQSS and other sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
 
-### 10.3 Identifiers Are Not Locations
-
-A [realm](#33-qualified-identifiers) looks like a domain name because it is one written backwards, and a [qualified identifier](#33-qualified-identifiers) borrows the shape of a URL path. Neither is a location, and an author supplies both.
-
-An application MUST NOT resolve a realm as a hostname, contact it, or otherwise derive a network request from any part of a qualified identifier, whether from `[deck].identifier` or from an `[app]` subtable key. A deck declaring `identifier = "attacker.example/deck/x"` is naming itself rather than nominating a server. An application that turns the declaration into a lookup lets any deck it merely *scans* direct traffic on the user's behalf, and leaks the fact of the scan to whoever owns that name.
-
-`[deck].website` is the one field this specification defines that does hold a URL, and it is a URL to **show or to open on the user's request**, never one to fetch while loading a deck.
 
 ## Appendix A. Examples (Informative)
 
@@ -1213,15 +1204,15 @@ Suit and rank names can be derived from their keys by the [title-cased key](#13-
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names), which also says what replaced it. In summary, 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id`, `[editions].<key>.id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id`, `[editions].<key>.id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
 
 **Newly specified.**
 
-- [The deck library](#22-the-deck-library), covering the XDG search path, non-recursive scanning, `deck.toml` as the marker and first-root-wins shadowing by directory name.
-- [Card image resolution](#57-card-image-resolution), covering image roots, size selection within a kind and the `png`/`webp`/`avif`/`jpeg` extension chain with PNG and JPEG as the mandatory decode baseline. Previously every consumer had to invent this.
-- [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions and in ANSI, which 1.0 gave no way to express.
-- [File format and encoding](#23-file-format-and-encoding), covering TOML 1.0.0, UTF-8, path base and separator, and the filename case rule.
-- [Security considerations](#10-security-considerations), covering path traversal, terminal escape injection and the rule that an identifier is never dereferenced as a location.
-- [Appendix C](#appendix-c-canonical-card-names-informative), so that the fallback the name-resolution chain ends in is resolvable without a reference deck installed.
+- [The deck library](#22-the-deck-library), covering XDG discovery.
+- [Card image resolution](#57-card-image-resolution), covering image roots and size selection.
+- [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
+- [File format and encoding](#23-file-format-and-encoding).
+- [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
+- [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains .
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made custom cards discoverable from the directory structure, added [card variants](#46-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`, and drew the boundary between alt text and `description` ([§6.4](#64-alt-text-guidelines)), which 1.0 defined on a card back without distinguishing. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
