@@ -3,6 +3,9 @@
 # requires-python = ">=3.11"
 # dependencies = ["abnf>=2.2"]
 # ///
+#
+# SPDX-FileCopyrightText: 2026 Adam Fidel
+# SPDX-License-Identifier: MIT
 """Check the ABNF grammar embedded in DECK.md against a corpus of cases.
 """
 

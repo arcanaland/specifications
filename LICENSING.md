@@ -1,0 +1,105 @@
+# Licensing
+
+Copyright (c) 2026 Adam Fidel
+
+This repository is licensed in three layers. Every license used is a standard,
+SPDX-recognized license — there is no bespoke Arcana Land license, and nothing
+downstream needs to refer to one. Per-file licensing is declared
+machine-readably in [`REUSE.toml`](./REUSE.toml), following the
+[REUSE specification](https://reuse.software/spec/). Full license texts are in
+[`LICENSES/`](./LICENSES/).
+
+## 1. Specification text — CC-BY-4.0
+
+The prose of the specification documents in this repository is licensed under
+the Creative Commons Attribution 4.0 International License (CC BY 4.0); see
+[`LICENSES/CC-BY-4.0.txt`](./LICENSES/CC-BY-4.0.txt).
+
+You are free to share and adapt these documents, including commercially,
+provided you give appropriate credit, link to the license, and indicate whether
+changes were made.
+
+Attribution suffices as, for example:
+
+    Based on the Arcana Land Tarot Deck Specification
+    licensed under CC BY 4.0.
+    https://github.com/arcanaland/specifications
+
+## 2. The machine-facing layer — CC0-1.0
+
+The following are dedicated to the public domain under CC0 1.0 Universal; see
+[`LICENSES/CC0-1.0.txt`](./LICENSES/CC0-1.0.txt) and
+<https://creativecommons.org/publicdomain/zero/1.0/>.
+
+  **(a) The identifier scheme.** The canonical identifiers for tarot objects
+  and the system that generates them, including but not limited to the forms
+
+      major_arcana.<NN>
+      minor_arcana.<suit>.<rank>
+
+  every canonical suit and rank name, the qualified identifier syntax, and any
+  identifier this specification or a successor mints.
+
+  **(b) The grammar.** The ABNF grammar and every production in it.
+
+  **(c) The vocabulary.** The names of every file, directory, table, key and
+  enumerated value this specification defines together with their types,
+  cardinality and defaults, as set out in the field reference tables.
+
+  **(d) The examples.** Every example `deck.toml`, name file, directory listing
+  and other code sample appearing in any document in this repository.
+
+To the extent that any of the foregoing is protected by copyright, database
+rights (including the sui generis database right of Directive 96/9/EC), or any
+neighbouring or related right anywhere in the world, those rights are waived
+under CC0 1.0.
+
+This layer is reinforced by the [non-assertion covenant](#4-non-assertion-covenant)
+below, which additionally covers patents — CC0 1.0 expressly does not license
+patent rights.
+
+**A note on file-level tags.** Layers 1 and 2 cut through individual files: a
+document such as `DECK.md` contains both CC BY prose and CC0 field tables. SPDX
+permits only one identifier per file, so those files are tagged `CC-BY-4.0`,
+the more restrictive of the two. The carve-out above still applies to their
+contents. If you only need identifiers, grammar, vocabulary or examples, you
+are under CC0 and owe no attribution.
+
+## 3. Tools — MIT
+
+The contents of [`tools/`](./tools/) are licensed under the MIT License; see
+[`LICENSES/MIT.txt`](./LICENSES/MIT.txt).
+
+## 4. Non-Assertion Covenant
+
+This covenant is additional to, and does not limit, the licenses granted above.
+It imposes no conditions on you. There is nothing here for you to comply with,
+propagate, or reproduce.
+
+> The author, on behalf of themselves and their heirs, successors and assigns,
+> does not now assert, and irrevocably undertakes never to assert, any
+> copyright, database right, patent, trademark, or other intellectual property
+> right against any person for using, implementing, publishing, tabulating,
+> cross-referencing, mapping, extending, or building a competing specification
+> upon the identifier scheme, grammar, or vocabulary described in the Arcana
+> Land specifications.
+>
+> No permission, notice, license, registration or fee is required to use them,
+> for any purpose, commercial or otherwise.
+>
+> This covenant runs with the works it describes and binds any party to whom
+> rights in those works are transferred.
+
+An identifier scheme earns its usefulness only when every implementer,
+cataloger, publisher and competitor can rely on it without asking anyone. A
+numbering system a single party can encumber is worth less than none at all.
+
+## SPDX
+
+There is deliberately no single repository-wide SPDX expression. An expression
+such as `CC-BY-4.0 AND CC0-1.0 AND MIT` is conjunctive: it would assert that
+every file is under all three licenses at once, requiring CC BY attribution for
+the grammar. That is the opposite of the intent. Consult `REUSE.toml` for the
+per-file answer, or run:
+
+    reuse lint

@@ -1,0 +1,33 @@
+version = 1
+SPDX-PackageName = "arcanaland-specifications"
+SPDX-PackageSupplier = "Adam Fidel <adam@fidel.cloud>"
+SPDX-PackageDownloadLocation = "https://github.com/arcanaland/specifications"
+
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Adam Fidel"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Specification prose.
+#
+# Note that the identifier scheme, grammar, vocabulary and
+# examples within these documents are CC0-1.0
+[[annotations]]
+path = [
+  "DECK.md",
+  "ESOTERICA.md",
+  "README.md",
+  "LICENSE",
+  "LICENSING.md",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Adam Fidel"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Tooling.
+[[annotations]]
+path = "tools/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Adam Fidel"
+SPDX-License-Identifier = "MIT"

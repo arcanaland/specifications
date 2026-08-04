@@ -12,6 +12,7 @@
   - [1.3 Terminology](#13-terminology)
   - [1.4 Versioning and Compatibility](#14-versioning-and-compatibility)
   - [1.5 References](#15-references)
+  - [1.6 Licensing of This Specification (Informative)](#16-licensing-of-this-specification-informative)
 - [2. Deck Structure](#2-deck-structure)
   - [2.1 Directory Skeleton](#21-directory-skeleton)
   - [2.2 The Deck Library](#22-the-deck-library)
@@ -163,6 +164,23 @@ The documents below are referenced normatively unless marked informative. A date
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#47-card_variants) |
 | **Spread Specification** (informative, proposed) | [SPREAD.md](https://github.com/arcanaland/specifications/blob/main/SPREAD.md) | [§1.1](#11-scope-and-design-goals) |
+
+### 1.6 Licensing of This Specification (Informative)
+
+This section describes the terms of the specification itself. It is not about the licensing of any deck, which [§7](#7-licensing-and-attribution) covers.
+
+The text of this document is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Its machine-facing parts are dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) and the author asserts no copyright, database right or trademark over them against anyone:
+
+- the canonical identifiers and the system that mints them ([§3](#3-identity-and-identifiers));
+- the ABNF grammar ([§3.5](#35-grammar));
+- the names, types and defaults of every file, directory, table and key this document defines ([§4](#4-decktoml-reference));
+- every example in this document.
+
+No permission, notice, registration or fee is required to implement this specification, to catalog decks against its identifiers, to cross-reference or map them to another scheme, or to build a competing specification on top of them, for any purpose, commercial or otherwise.
+
+See [LICENSE](https://github.com/arcanaland/specifications/blob/main/LICENSE) for the operative terms.
 
 ## 2. Deck Structure
 
@@ -936,9 +954,16 @@ Decks SHOULD ship the full license text in the deck directory.
 
 ### 7.3 Name File Licensing
 
-The strings in a name file are not necessarily the deck assembler's own work, since alt text might be written by a contributor or adapted from a published source. Each name file therefore states its own terms in its [`[metadata]`](#621-name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
+The strings in a name file are not necessarily the deck assembler's own work, since alt text might be written by a contributor or adapted from a published source. Each name file states its own terms in its [`[metadata]`](#621-name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
 
-Most decks need only to license their alt text, which `[metadata.alt_text]` does on its own. Where the whole file is a single person's work, as with a translation, `[metadata]` covers the entire file including its alt text. Where the two differ, `[metadata]` gives the file's terms and `[metadata.alt_text]` overrides them for alt text alone.
+```toml
+# names/en.toml
+[metadata.alt_text]
+source = "Descriptions contributed by Jane Doe."
+license = "CC0-1.0"
+```
+
+Most decks need only to license their alt text, which `[metadata.alt_text]` does on its own as shown above. Where the whole file is a single person's work, as with a translation, `[metadata]` covers the entire file including its alt text. Where the two differ, `[metadata]` gives the file's terms and `[metadata.alt_text]` overrides them for alt text alone.
 
 ```toml
 # names/pt-BR.toml
@@ -947,10 +972,6 @@ source = "Translated by Paulo Freire."
 license = "CC-BY-4.0"
 license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Paulo Freire."
-
-[metadata.alt_text]
-source = "Descriptions contributed by Jane Doe."
-license = "CC0-1.0"
 ```
 
 ## 8. Extensibility
