@@ -2,34 +2,25 @@
 
 Copyright (c) 2026 Adam Fidel
 
-This repository is licensed in three layers. Every license used is a standard,
-SPDX-recognized license — there is no bespoke Arcana Land license, and nothing
-downstream needs to refer to one. Per-file licensing is declared
-machine-readably in [`REUSE.toml`](./REUSE.toml), following the
-[REUSE specification](https://reuse.software/spec/). Full license texts are in
-[`LICENSES/`](./LICENSES/).
+Per-file licensing is declared machine-readably in [`REUSE.toml`](./REUSE.toml). Full license texts are in [`LICENSES/`](./LICENSES/).
 
-## 1. Specification text — CC-BY-4.0
+This repository is licensed in three layers.
 
-The prose of the specification documents in this repository is licensed under
-the Creative Commons Attribution 4.0 International License (CC BY 4.0); see
-[`LICENSES/CC-BY-4.0.txt`](./LICENSES/CC-BY-4.0.txt).
+## 1. Specification text - CC-BY-4.0
 
-You are free to share and adapt these documents, including commercially,
-provided you give appropriate credit, link to the license, and indicate whether
-changes were made.
+The prose of the specification documents in this repository is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to share and adapt these documents, including commercially, provided you give appropriate credit, link to the license and indicate whether changes were made.
 
 Attribution suffices as, for example:
 
     Based on the Arcana Land Tarot Deck Specification
     licensed under CC BY 4.0.
-    https://github.com/arcanaland/specifications
+    https://arcana.land
 
-## 2. The machine-facing layer — CC0-1.0
+## 2. The machine-facing layer - CC0-1.0
 
-The following are dedicated to the public domain under CC0 1.0 Universal; see
-[`LICENSES/CC0-1.0.txt`](./LICENSES/CC0-1.0.txt) and
-<https://creativecommons.org/publicdomain/zero/1.0/>.
+The following are dedicated to the public domain under CC0 1.0 Universal.
 
   **(a) The identifier scheme.** The canonical identifiers for tarot objects
   and the system that generates them, including but not limited to the forms
@@ -54,21 +45,9 @@ rights (including the sui generis database right of Directive 96/9/EC), or any
 neighbouring or related right anywhere in the world, those rights are waived
 under CC0 1.0.
 
-This layer is reinforced by the [non-assertion covenant](#4-non-assertion-covenant)
-below, which additionally covers patents — CC0 1.0 expressly does not license
-patent rights.
+## 3. Tools - MIT
 
-**A note on file-level tags.** Layers 1 and 2 cut through individual files: a
-document such as `DECK.md` contains both CC BY prose and CC0 field tables. SPDX
-permits only one identifier per file, so those files are tagged `CC-BY-4.0`,
-the more restrictive of the two. The carve-out above still applies to their
-contents. If you only need identifiers, grammar, vocabulary or examples, you
-are under CC0 and owe no attribution.
-
-## 3. Tools — MIT
-
-The contents of [`tools/`](./tools/) are licensed under the MIT License; see
-[`LICENSES/MIT.txt`](./LICENSES/MIT.txt).
+The contents of [`tools/`](./tools/) are licensed under the MIT License.
 
 ## 4. Non-Assertion Covenant
 
@@ -89,17 +68,3 @@ propagate, or reproduce.
 >
 > This covenant runs with the works it describes and binds any party to whom
 > rights in those works are transferred.
-
-An identifier scheme earns its usefulness only when every implementer,
-cataloger, publisher and competitor can rely on it without asking anyone. A
-numbering system a single party can encumber is worth less than none at all.
-
-## SPDX
-
-There is deliberately no single repository-wide SPDX expression. An expression
-such as `CC-BY-4.0 AND CC0-1.0 AND MIT` is conjunctive: it would assert that
-every file is under all three licenses at once, requiring CC BY attribution for
-the grammar. That is the opposite of the intent. Consult `REUSE.toml` for the
-per-file answer, or run:
-
-    reuse lint
