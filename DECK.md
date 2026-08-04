@@ -57,7 +57,7 @@ Every deck declares the version of this specification it is written against in `
 - A minor version update MUST be backward and forward compatible. It MAY add new tables, keys and values, and it MAY deprecate existing ones, but it MUST NOT change or remove the behavior of anything an earlier version of the same major version defined.
 - A major version update MAY be incompatible in any respect.
 
-`[deck].version` is the **deck's own** version and is unrelated to `schema_version`. It is a free-form string. This specification defines no syntax for it and no ordering over it, so applications MAY compare two values for equality to detect that a deck has changed, but MUST NOT infer from two values which is the later. A deck author who wants ordered versions is expected to adopt an ordered scheme such as [semantic versioning](https://semver.org/) and to state so outside this field.
+`[deck].version` is the deck's own version and is unrelated to `schema_version`. It is a free-form string. This specification defines no syntax for it and no ordering over it, so applications MAY compare two values for equality to detect that a deck has changed, but MUST NOT infer from two values which is the later. A deck author who wants ordered versions is expected to adopt an ordered scheme such as [semantic versioning](https://semver.org/) and to state so outside this field.
 
 ### 1.5 References
 
@@ -180,7 +180,7 @@ Custom names are the keys a deck author creates such as custom major arcana keys
 Further:
 
 - A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords` and `pentacles`, or the ranks `ace`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`, `page`, `knight`, `queen` and `king`.
-- A custom **major arcana** key additionally MUST NOT be a two-digit string. Two-digit major arcana keys are reserved: `00` through `21` are the canonical cards, and `22` through `99` are reserved for future versions of this specification.
+- A custom major arcana key additionally MUST NOT be a two-digit string. Two-digit major arcana keys are reserved: `00` through `21` are the canonical cards, and `22` through `99` are reserved for future versions of this specification.
 
 ### 3.3 Qualified Identifiers
 
@@ -192,7 +192,7 @@ Qualified identifiers name Arcana Land entities such as tarot decks or spreads u
 
 A qualified identifier is composed of a **realm** and an object **path**, separated by a slash, with an OPTIONAL **fragment** after a `#`. See [§3.5](#35-grammar) for the grammar.
 
-- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has **two labels or more**, each beginning with a letter and neither beginning nor ending with a hyphen. A single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form, and `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
+- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has two labels or more, each beginning with a letter and neither beginning nor ending with a hyphen. A single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form, and `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
 - The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
 - The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In *this* specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix): `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
 
@@ -540,18 +540,17 @@ Support for ANSI art is OPTIONAL for an application.
 Card backs are discovered, like cards. A `card_backs/` directory is a **card back directory**, and each file in one defines a [design](#42-card_backs) whose key is the file's stem:
 
 ```
-card_backs/classic.png          → design `classic`, no declared size
-h1200/card_backs/classic.png    → design `classic` at 1200px
-h2400/card_backs/classic.png    → design `classic` at 2400px
-ansi32/card_backs/classic.ans   → design `classic` at 32 rows
-scalable/card_backs/classic.svg → design `classic`, scalable
+card_backs/classic.png          # design classic with no declared size
+h1200/card_backs/classic.png    # design classic at 1200px
+ansi32/card_backs/classic.ans   # design classic at 32 rows
+scalable/card_backs/classic.svg # design classic scalable
 ```
 
-A card back directory appears in two places, and both are OPTIONAL. At the top level of the deck root, `card_backs/` holds backs of no declared kind or size. This is the simple form and for most decks the only one needed. Inside an [image root](#571-image-roots), `card_backs/` sits beside `major_arcana/` and `minor_arcana/` and its files carry that root's kind and size.
+A card back directory appears in two OPTIONAL locations. At the top level of the deck root, `card_backs/` holds backs of no declared kind or size. This is the simple form and for most decks the only one needed. Inside an [image root](#571-image-roots), `card_backs/` sits beside `major_arcana/` and `minor_arcana/` and its files carry that root's kind and size.
 
 The designs a deck has are the union of the stems found across every card back directory, together with every key declared under `[card_backs.designs]` that carries an `image` path. Further rules:
 
-- The **whole stem** is the design key, with no base-and-variant split ([§5.7.3](#573-extensions-stems-and-bases)). A back that looks different is a different design rather than a variant of one, so `card_backs/classic.dark.png` defines no design and is ignored. So is any file whose stem is not a well-formed [custom name](#32-custom-names).
+- The whole stem is the design key, with no base-and-variant split ([§5.7.3](#573-extensions-stems-and-bases)). A back that looks different is a different design rather than a variant of one, so `card_backs/classic.dark.png` defines no design and is ignored. So is any file whose stem is not a well-formed [custom name](#32-custom-names).
 - The [extension chain](#575-the-extension-chain) applies, as it does to cards. A deck SHOULD supply its card backs in a format every application can decode, since an application that cannot decode a card back has no fallback for it.
 - An explicit `image` path on `[card_backs.designs.<key>]` overrides discovery for that design in every kind and size, and escapes the extension chain.
 - Card backs MAY have different dimensions and aspect ratios from the card fronts. `[deck].aspect_ratio` describes the fronts and a back is not held to it, but an application still preserves a back's *own* aspect ratio when scaling it ([§5.6](#56-aspect-ratio)).
@@ -587,11 +586,11 @@ An **image root** is a top-level directory of a deck root that discovery searche
 
 Within an image root, assets are arranged by card type and suit, as [§2.1](#21-directory-skeleton) shows: `major_arcana/<base>.<ext>` and `minor_arcana/<suit>/<base>.<ext>`. An image root MAY also hold a `card_backs/` directory, which supplies card back designs at that root's kind and size ([§5.5](#55-card-back-images)). Any other subdirectory is ignored.
 
-Every other top-level directory is **ignored by discovery**. `names/` and the top-level `card_backs/` are given other meanings by this specification. A directory named anything else, such as `src/` or `previews/`, is not an image root and its contents are not cards.
+Every other top-level directory is ignored by discovery. `names/` and the top-level `card_backs/` are given other meanings by this specification. A directory named anything else, such as `src/` or `previews/`, is not an image root and its contents are not cards.
 
 #### 5.7.2 Choosing a Rendering Kind
 
-Which kind an application renders is **the application's choice**, made from its own capabilities and context. A terminal client renders ANSI, a compositing GUI prefers scalable where it has it, a thumbnailer takes the raster size nearest what it needs. This specification defines resolution *within* a kind and deliberately defines no preference *between* kinds, so a deck that ships all three is not asserting an order over them. An application that finds no asset of its preferred kind MAY fall back to another, and the choice of which is again its own.
+Which kind an application renders is the application's choice, made from its own capabilities and context. A terminal client renders ANSI, a compositing GUI prefers scalable where it has it, a thumbnailer takes the raster size nearest what it needs. This specification defines resolution *within* a kind and deliberately defines no preference *between* kinds, so a deck that ships all three is not asserting an order over them. An application that finds no asset of its preferred kind MAY fall back to another, and the choice of which is again its own.
 
 #### 5.7.3 Extensions, Stems and Bases
 
@@ -616,8 +615,8 @@ A file whose name contains no `.` at all has no extension. Discovery ignores it 
 
 For raster and ANSI, an application selects among the roots of that kind that supply a file for the card. The rules differ, because the two media degrade in opposite directions:
 
-- **Raster**: prefer the **smallest image at or above** the target height. Downscaling a raster image is well-behaved and upscaling is not.
-- **ANSI**: prefer the **largest art at or below** the target number of lines. Art taller than the space available is truncated, which is worse than art that leaves a gap.
+- **Raster**: prefer the smallest image at or above the target height. Downscaling a raster image is well-behaved and upscaling is not.
+- **ANSI**: prefer the largest art at or below the target number of lines. Art taller than the space available is truncated, which is worse than art that leaves a gap.
 
 Candidates on the preferred side of the target therefore rank ahead of those on the other side. Within a side the nearest to the target wins, and a tie between two equidistant candidates breaks toward the preferred side. An exact match always wins. Where no candidate lies on the preferred side, an application MUST take the nearest on the other side rather than fail.
 
@@ -635,8 +634,8 @@ Within one directory, an application considers extensions in this fixed order:
 In `scalable/`, the chain is `svg` alone.
 
 - Applications MUST support decoding **PNG** and **JPEG**. Support for WebP, AVIF and SVG is OPTIONAL.
-- This is a **fallback chain, not a negotiation**. An application MUST skip a file whose format it does not support, or whose bytes it fails to decode, and continue to the next entry in the chain.
-- Extensions outside the chain are **ignored by discovery entirely**. A `.tiff` or a `.gif` in `h1200/major_arcana/` does not define a card and is never chosen.
+- This is a fallback chain, not a negotiation. An application MUST skip a file whose format it does not support, or whose bytes it fails to decode, and continue to the next entry in the chain.
+- Extensions outside the chain are ignored by discovery entirely. A `.tiff` or a `.gif` in `h1200/major_arcana/` does not define a card and is never chosen.
 - A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning ([§9.4](#94-validation-rules)).
 - Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.4](#574-size-selection-within-a-kind).
 
