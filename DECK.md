@@ -48,7 +48,7 @@ This specification addresses three kinds of actors: deck authors who craft a `de
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** (a domain name the author controls, written in reverse) and a path ([§3.3](#33-qualified-identifiers)). |
 | **name file** | A `names/<tag>.toml` file holding **display strings** for one language tag, such as card, suit and rank names and alt text. |
 | **title-cased key** | The display string derived from a key where nothing else supplies one: each `_` becomes a space and the first character of each word is uppercased. |
-| **base** | The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06` ([§5.7.3](#573-extensions-stems-and-bases)). |
+| **base** | The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06` ([§5.7.2](#572-extensions-stems-and-bases)). |
 
 ### 1.4 Versioning and Compatibility
 
@@ -350,9 +350,9 @@ Where a deck has no card back at all, an application supplies its own. Otherwise
 | `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for this design, used where no name file supplies one. |
 | `description` | String | No | none | Prose *about* the design, such as its provenance or history, for display alongside the back in a picker or an info panel. Not localized, so it is written once in the deck's `default_language`. See [§6.4](#64-alt-text-guidelines). |
 | `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_backs]` takes precedence and is where a deck SHOULD put it ([§6.3](#63-display-name-resolution)). |
-| `image` | String (path) | No | found by discovery | An explicit path to this design's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.5](#575-the-extension-chain)). |
+| `image` | String (path) | No | found by discovery | An explicit path to this design's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.2](#572-the-extension-chain)). |
 
-Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#577-when-no-asset-is-found) rather than a validation error, exactly as for a card.
+Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#572-when-no-asset-is-found) rather than a validation error, exactly as for a card.
 
 ### 4.3 `[custom_cards]`
 
@@ -426,7 +426,7 @@ reason = "This deck excludes these specific court cards."
 | `cards` | Array of String | No | `[]` | Canonical IDs of cards this deck deliberately does not contain. |
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
-An exclusion is a statement of intent rather than a mechanism. A card is absent because the deck ships no asset for it ([§5.1](#51-asset-discovery)), and `[excluded_cards]` records that the absence is deliberate, so that an application can tell a user "this deck has no court cards" rather than report a gap, and so that resolution does not go looking for the card in a [reference deck](#13-terminology) ([§5.7.7](#577-when-no-asset-is-found)).
+An exclusion is a statement of intent rather than a mechanism. A card is absent because the deck ships no asset for it ([§5.1](#51-asset-discovery)), and `[excluded_cards]` records that the absence is deliberate, so that an application can tell a user "this deck has no court cards" rather than report a gap, and so that resolution does not go looking for the card in a [reference deck](#13-terminology) ([§5.7.2](#572-when-no-asset-is-found)).
 
 ### 4.5 `[editions]`
 
@@ -489,7 +489,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `default` | String | Required where the card has no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§5.7.6](#576-variants)). MUST name a variant of this card ([§9.4](#94-validation-rules)). |
+| `default` | String | Required where the card has no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§5.7.2](#572-variants)). MUST name a variant of this card ([§9.4](#94-validation-rules)). |
 
 **`[card_variants."<canonical-id>".variants.<key>]`** takes a [custom name](#32-custom-names) as the variant key.
 
@@ -497,7 +497,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 | --- | --- | --- | --- | --- |
 | `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for this variant, used where no name file supplies one. |
 | `alt_text` | String | No | none | Fallback alt text for this variant. Variants SHOULD carry their own ([§6.4](#64-alt-text-guidelines)). |
-| `image` | String (path) | No | found by discovery | An explicit path to this variant's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.5](#575-the-extension-chain)). |
+| `image` | String (path) | No | found by discovery | An explicit path to this variant's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.2](#572-the-extension-chain)). |
 
 Where `default` is omitted, the unsuffixed file such as `06.svg` is the default variant. A deck that provides only variant files for a card and no unsuffixed file MUST declare `default`.
 
@@ -509,7 +509,7 @@ Variants of a card are interchangeable and carry the same meaning, so consumers 
 
 Applications detect files placed in the expected directory structure and map them to cards without further configuration. An image at `h1200/minor_arcana/wands/ace.png` maps to the card with the canonical ID `minor_arcana.wands.ace`, so creating a deck can be as simple as placing files into the right directories.
 
-A file's stem is split on the first `.`, and the first portion is the base. Where the base names a card the deck already contains, the remainder is a [variant key](#46-card_variants) and the file is a variant of that card. Otherwise the base is a custom name and the file defines a custom card. For example:
+A file's stem is split on the first `.`, and the first portion is called the base. Where the base names a card the deck already contains, the remainder is a [variant key](#46-card_variants) and the file is a variant of that card. Otherwise the base is a custom name and the file defines a custom card. For example:
 
 - `major_arcana/06.two_women.png` is a variant of The Lovers
 - `major_arcana/the_morning.png` is a custom card
@@ -517,11 +517,11 @@ A file's stem is split on the first `.`, and the first portion is the base. Wher
 
 ### 5.2 Vector Graphics
 
-SVG card assets MUST be placed in the `scalable/` directory. SVG is the only vector format this specification defines, and support for rendering it is OPTIONAL for an application.
+SVG card assets MUST be placed in the `scalable/` directory. SVG is the only vector format this specification defines and support for rendering it is OPTIONAL for an application.
 
 ### 5.3 Raster Graphics
 
-Raster card assets are discovered only under an `h<height>/` root, where `<height>` is the height of the image in pixels; a raster image anywhere else is not a card asset and is ignored ([§5.7.1](#571-image-roots)). Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.5](#575-the-extension-chain). PNG with an alpha channel is RECOMMENDED for images requiring transparency.
+Raster card assets are discovered only under an `h<height>/` root, where `<height>` is the height of the image in pixels; a raster image anywhere else is not a card asset and is ignored ([§5.7.1](#571-image-roots)). Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.2](#572-the-extension-chain). PNG with an alpha channel is RECOMMENDED for images requiring transparency.
 
 Conventionally, `h750` serves mobile applications and thumbnails, `h1200` standard desktop and web viewing, and `h2400` high-resolution displays.
 
@@ -537,35 +537,27 @@ Support for ANSI art is OPTIONAL for an application.
 
 ### 5.5 Card Back Images
 
-Card backs are discovered, like cards. A `card_backs/` directory is a **card back directory**, and each file in one defines a [design](#42-card_backs) whose key is the file's stem:
+A `card_backs/` directory is a **card back directory** and each file in one defines a [design](#42-card_backs) whose key is the file's stem:
 
 ```
-card_backs/classic.png          # design classic with no declared size
-h1200/card_backs/classic.png    # design classic at 1200px
-ansi32/card_backs/classic.ans   # design classic at 32 rows
-scalable/card_backs/classic.svg # design classic scalable
+card_backs/classic.png          # "classic" with no declared size
+h1200/card_backs/classic.png    # "classic" at 1200px
+ansi32/card_backs/classic.ans   # "classic" at 32 rows
+scalable/card_backs/classic.svg # scalable "classic"
 ```
 
 A card back directory appears in two OPTIONAL locations. At the top level of the deck root, `card_backs/` holds backs of no declared kind or size. This is the simple form and for most decks the only one needed. Inside an [image root](#571-image-roots), `card_backs/` sits beside `major_arcana/` and `minor_arcana/` and its files carry that root's kind and size.
 
 The designs a deck has are the union of the stems found across every card back directory, together with every key declared under `[card_backs.designs]` that carries an `image` path. Further rules:
 
-- The whole stem is the design key, with no base-and-variant split ([§5.7.3](#573-extensions-stems-and-bases)). A back that looks different is a different design rather than a variant of one, so `card_backs/classic.dark.png` defines no design and is ignored. So is any file whose stem is not a well-formed [custom name](#32-custom-names).
-- The [extension chain](#575-the-extension-chain) applies, as it does to cards. A deck SHOULD supply its card backs in a format every application can decode, since an application that cannot decode a card back has no fallback for it.
-- An explicit `image` path on `[card_backs.designs.<key>]` overrides discovery for that design in every kind and size, and escapes the extension chain.
-- Card backs MAY have different dimensions and aspect ratios from the card fronts. `[deck].aspect_ratio` describes the fronts and a back is not held to it, but an application still preserves a back's *own* aspect ratio when scaling it ([§5.6](#56-aspect-ratio)).
-
-#### 5.5.1 Resolving a Card Back
-
-Given a design key, a kind and a target size, an application resolves a back by [§5.7](#57-card-image-resolution), with three differences:
-
-1. The subpath is `card_backs/` rather than `major_arcana/` or `minor_arcana/<suit>/`, and the stem is the design key.
-2. Where no image root of the requested kind supplies the design, the top-level `card_backs/` directory is consulted last, as a root of no size. Because it declares no kind either, an application that finds nothing there under the chain for the kind it asked for MAY take any file in it whose stem is the design key and whose format it can decode. A deck that ships only `card_backs/classic.png` therefore answers a request for `classic` at any target size.
-3. There is no reference-deck step ([§5.7.7](#577-when-no-asset-is-found)): borrowing another deck's back misrepresents the deck. Where resolution finds nothing, the application supplies its own back.
+- The whole stem is the design key and card backs have no notion of variants.
+- The [extension chain](#572-the-extension-chain) applies.
+- An explicit `image` path on `[card_backs.designs.<key>]` overrides discovery for that design in every kind and size.
+- Card backs MAY have different dimensions and aspect ratios from the card fronts.
 
 ### 5.6 Aspect Ratio
 
-- Standard assumed aspect ratio is **11:19** (~0.5789), declared by [`[deck].aspect_ratio`](#41-deck).
+- Standard assumed aspect ratio is 11:19 (~0.5789) declared by [`[deck].aspect_ratio`](#41-deck).
 - Applications MUST preserve the aspect ratio when scaling images.
 
 ### 5.7 Card Image Resolution
@@ -578,21 +570,17 @@ An **image root** is a top-level directory of a deck root that discovery searche
 
 | Form | Kind | Size |
 | --- | --- | --- |
-| `scalable/` | scalable | none, since a vector image has no intrinsic size |
-| `h<height>/` | raster | `<height>`, in pixels |
-| `ansi<lines>/` | ANSI | `<lines>`, in terminal rows |
+| `scalable/` | scalable | none |
+| `h<height>/` | raster | Height in pixels |
+| `ansi<lines>/` | ANSI | Lines in terminal rows |
 
-`<height>` and `<lines>` are decimal integers greater than zero, written without a sign, leading zeroes or separators. Any such integer is legal: `h750`, `h1200` and `h2400` are conventions this specification recommends and no more, `h900` and `ansi48` are equally well-formed, and an application MUST NOT restrict itself to the conventional set. A deck MAY carry any number of image roots of each form, and MUST NOT carry two roots naming the same kind and size.
+`<height>` and `<lines>` are decimal integers greater than zero, written without a sign, leading zeroes or separators. A deck MAY contain any number of image roots of each form.
 
-Within an image root, assets are arranged by card type and suit, as [§2.1](#21-directory-skeleton) shows: `major_arcana/<base>.<ext>` and `minor_arcana/<suit>/<base>.<ext>`. An image root MAY also hold a `card_backs/` directory, which supplies card back designs at that root's kind and size ([§5.5](#55-card-back-images)). Any other subdirectory is ignored.
+Within an image root, assets are arranged by card type and suit as shown in [§2.1](#21-directory-skeleton): `major_arcana/` and `minor_arcana/<suit>`. An image root MAY also hold a `card_backs/` directory, which supplies card back designs at that root's kind and size ([§5.5](#55-card-back-images)). Any other subdirectory is ignored.
 
-Every other top-level directory is ignored by discovery. `names/` and the top-level `card_backs/` are given other meanings by this specification. A directory named anything else, such as `src/` or `previews/`, is not an image root and its contents are not cards.
+Every other top-level directory is ignored by discovery.
 
-#### 5.7.2 Choosing a Rendering Kind
-
-Which kind an application renders is the application's choice, made from its own capabilities and context. A terminal client renders ANSI, a compositing GUI prefers scalable where it has it, a thumbnailer takes the raster size nearest what it needs. This specification defines resolution *within* a kind and deliberately defines no preference *between* kinds, so a deck that ships all three is not asserting an order over them. An application that finds no asset of its preferred kind MAY fall back to another, and the choice of which is again its own.
-
-#### 5.7.3 Extensions, Stems and Bases
+#### 5.7.2 Extensions, Stems and Bases
 
 A card asset filename is read as three parts. Given `06.two_women.png`:
 
@@ -609,7 +597,7 @@ A file whose name contains no `.` at all has no extension. Discovery ignores it 
 
 **In a card back directory this parse does not apply.** The extension is read the same way, but everything before it is the [design key](#42-card_backs), undivided. Card backs have no variants ([§5.5](#55-card-back-images)), so a stem containing a `.` is not a design at all, and discovery ignores it.
 
-#### 5.7.4 Size Selection Within a Kind
+#### 5.7.2 Size Selection Within a Kind
 
 `scalable/` holds at most one image per card and variant, so selection there is trivial: the file is the file.
 
@@ -622,7 +610,7 @@ Candidates on the preferred side of the target therefore rank ahead of those on 
 
 *Example.* A deck ships `h750/`, `h1200/` and `h2400/`. A raster request for target 1000 resolves to `h1200`, the smallest at or above. A request for 3000 resolves to `h2400`, the nearest below, since no candidate is at or above. A request for 975 is equidistant from 750 and 1200 and resolves to `h1200`.
 
-#### 5.7.5 The Extension Chain
+#### 5.7.2 The Extension Chain
 
 Within one directory, an application considers extensions in this fixed order:
 
@@ -637,13 +625,13 @@ In `scalable/`, the chain is `svg` alone.
 - This is a fallback chain, not a negotiation. An application MUST skip a file whose format it does not support, or whose bytes it fails to decode, and continue to the next entry in the chain.
 - Extensions outside the chain are ignored by discovery entirely. A `.tiff` or a `.gif` in `h1200/major_arcana/` does not define a card and is never chosen.
 - A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning ([§9.4](#94-validation-rules)).
-- Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.4](#574-size-selection-within-a-kind).
+- Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.2](#572-size-selection-within-a-kind).
 
 A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.6](#46-card_variants)) or card back design ([§4.2](#42-card_backs)). Discovery is a convention and an explicit path is an instruction.
 
 > **Note (informative).** Unlike the usual web ordering, this order favours fidelity and universal decodability over recency. A deck is already on disk, so a second encoding of the same card buys no bandwidth and is usually an authoring accident rather than progressive enhancement. The consequence is that where a PNG is present it always wins, and the optional formats matter only where they stand alone.
 
-#### 5.7.6 Variants
+#### 5.7.2 Variants
 
 A request MAY name a [variant key](#46-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged: the same size selection, the same extension chain.
 
@@ -651,23 +639,31 @@ Where the requested card has no variant under that key, the application MUST res
 
 A request naming no variant key resolves the card's default variant: the unsuffixed file, or the variant named by `[card_variants."<id>"].default` where one is declared.
 
-#### 5.7.7 When No Asset Is Found
+#### 5.7.2 When No Asset Is Found
 
 Where resolution yields no file for a card in any image root of any kind:
 
 - Where the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#44-excluded_cards), the application SHOULD resolve the same card against that deck.
 - Otherwise, this is a **resolution failure**, not a validation error. The application decides what to show, whether a placeholder, a card back or nothing. A deck is not non-conforming for lacking an asset for some card, and [§9](#9-conformance-and-validation) does not make it so.
 
-#### 5.7.8 Resolution Summary
+#### 5.7.2 Resolving a Card Back
 
-Given a card, a variant key, a kind and a target size, an application:
+An application resolves a back by with three differences:
+
+1. The subpath is `card_backs/` rather than `major_arcana/` or `minor_arcana/<suit>/` and the stem is the design key.
+2. Where no image root of the requested kind supplies the design, the top-level `card_backs/` directory is consulted last as a root of no size. Because it declares no kind either, an application that finds nothing there under the chain for the kind it asked for MAY take any file in it whose stem is the design key and whose format it can decode. 
+3. There is no reference-deck and applications supply their own back.
+
+#### 5.7.2 Resolution Summary
+
+Given a card, a variant key a kind and a target size, an application:
 
 1. Forms the stem from the card's base, plus `.<variant-key>` where one is requested, and the subpath `major_arcana/` or `minor_arcana/<suit>/`.
-2. Ranks the image roots of the requested kind by [§5.7.4](#574-size-selection-within-a-kind) and, best first, looks in `<root>/<subpath>` for that stem under the [extension chain](#575-the-extension-chain), taking the first file it can decode. Walking past a root it cannot decode costs it a fallback rather than the card.
-3. Failing that, and where a variant was requested, repeats step 2 for the card's default variant ([§5.7.6](#576-variants)).
-4. Failing that, resolves the card against the [reference deck](#13-terminology) where the library has one and the card is not excluded ([§5.7.7](#577-when-no-asset-is-found)). This step sits outside the per-deck lookup, so a reference deck is consulted once the deck itself is exhausted and never in the middle of size selection.
+2. Ranks the image roots of the requested kind by [§5.7.2](#572-size-selection-within-a-kind) and, best first, looks in `<root>/<subpath>` for that stem under the [extension chain](#572-the-extension-chain), taking the first file it can decode. Walking past a root it cannot decode costs it a fallback rather than the card.
+3. Failing that, and where a variant was requested, repeats step 2 for the card's default variant ([§5.7.2](#572-variants)).
+4. Failing that, resolves the card against the [reference deck](#13-terminology) where the library has one and the card is not excluded ([§5.7.2](#572-when-no-asset-is-found)). This step sits outside the per-deck lookup, so a reference deck is consulted once the deck itself is exhausted and never in the middle of size selection.
 
-Card backs follow the same shape with the differences [§5.5.1](#551-resolving-a-card-back) gives. An explicit `image` path wins outright, the subpath is `card_backs/` and the stem is the design key, the top-level `card_backs/` is consulted last, and there is no reference-deck step.
+Card backs follow the same shape with the differences [§5.7.2](#572-resolving-a-card-back) gives. An explicit `image` path wins outright, the subpath is `card_backs/` and the stem is the design key, the top-level `card_backs/` is consulted last, and there is no reference-deck step.
 
 ANSI files are exempt from the extension chain: [§5.4](#54-ansi-art) allows them any extension, so in an ANSI root a lookup matches on stem alone and determines the file's kind from its content. An application MUST apply [§10.2](#102-terminal-escape-injection) to any ANSI file it writes to a terminal.
 
@@ -677,17 +673,15 @@ Display strings such as card, suit and rank names and alt text are declared in `
 
 ### 6.1 Language Tags
 
-`<tag>` MUST be a well-formed IETF BCP 47 language tag, as in `names/en.toml`, `names/pt-BR.toml` or `names/zh-Hans.toml`.
+`<tag>` MUST be a well-formed IETF BCP 47 language tag.
 
 - Tags SHOULD be canonical, using the shortest available ISO 639 subtag (`en`, not `eng`), lowercase language, titlecase script and uppercase region.
-- Applications MUST compare tags case-insensitively, since some filesystems are. A deck MUST NOT ship two name files whose tags differ only in case.
-- `[deck].default_language` declares the tag of the deck's default name file. Where it is absent, applications assume `en`.
+- Applications MUST compare tags case-insensitively. A deck MUST NOT ship two name files whose tags differ only in case.
+- `[deck].default_language` declares the tag of the deck's default name file. Where absent, applications assume `en`.
 
 ### 6.2 Language Resolution
 
-Given a requested tag, applications resolve it using the *Lookup* scheme of RFC 4647, trying the requested tag, then progressively shorter forms of it, then the deck's `default_language`. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`, then the default language file. A key that no name file supplies falls through to the further fallbacks in [§6.3](#63-display-name-resolution).
-
-Resolution happens per key rather than per file, so a `pt-BR` file that overrides only a handful of names inherits the rest from `pt`, and anything neither supplies comes from the default language file.
+Given a requested tag, applications resolve it using the Lookup scheme of RFC 4647, trying the requested tag, then progressively shorter forms of it, then the deck's `default_language`. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`, then the default language file. A key that no name file supplies falls through to the further fallbacks in [§6.3](#63-display-name-resolution).
 
 ```toml
 [metadata]                          # Optional, see §7.3
@@ -731,7 +725,7 @@ classic = "A blue and white geometric pattern featuring roses and lilies."
 "major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure."
 ```
 
-Name files are sparse, so a name file MAY contain only the keys it wishes to supply. Applications MUST merge name files key by key rather than requiring a complete set, and MUST NOT treat a missing key as an error.
+Name files are sparse and MAY contain a subset of keys. Applications MUST merge name files key by key rather than requiring a complete set, and MUST NOT treat a missing key as an error.
 
 #### 6.2.1 Name File Metadata
 
@@ -749,9 +743,9 @@ The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides th
 
 ### 6.3 Display Name Resolution
 
-Each chain below is applied to name files in the order given by [Language Resolution](#62-language-resolution) before moving on to the next fallback.
+Each chain below is applied to name files in the order given by [Language Resolution](#62-language-resolution).
 
-A resolved display string is used **verbatim**. Applications MUST NOT apply case conversion or any other transformation to a string a deck supplies, since a deck that writes `"ace of torches"` means those exact characters. Case transformation appears in this specification only as a fallback for keys the deck never gave a string for.
+A resolved display string is used verbatim. Applications MUST NOT apply case conversion or any other transformation to a string a deck supplies. Case transformation appears in this specification only as a fallback for keys the deck does not define a string for.
 
 | Value | Resolution chain |
 | --- | --- |
@@ -764,8 +758,6 @@ A resolved display string is used **verbatim**. Applications MUST NOT apply case
 | Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[custom_cards]`, `[card_backs.designs]` or variant entry |
 | Card variant alt text | `[alt_text.card_variants]."<variant-ref>"`, then the variant's `alt_text` field, then the card's own alt text |
 
-A back discovered with no declaration anywhere is therefore still displayable, and `card_backs/classic.png` shows as "Classic". A card's own alt text describes a variant only approximately, so variants SHOULD carry their own.
-
 #### 6.3.1 Minor Arcana Name Composition
 
 Because a deck MAY rename its suits and ranks, most decks need not write out all 56 minor arcana names. Where a name file gives no explicit name for a minor arcana card, its name is composed from a template:
@@ -777,39 +769,22 @@ name_template = "{rank} of {suit}"
 
 `{rank}` and `{suit}` are replaced by the rank and suit names resolved above. No other placeholders are defined, and an application MUST leave any other braced text in the template alone. The template is resolved by the same [Language Resolution](#62-language-resolution) rules as any other key, so a translation supplies its own. Where no name file supplies one, the template is `"{rank} of {suit}"`.
 
-Composition applies to custom suits and custom ranks exactly as it does to canonical ones. A suit or rank name always resolves, falling back to the title-cased key, so composition always yields a name.
-
-Because the template interpolates already-resolved strings and is itself never case-converted, a deck expresses its typographic convention simply by writing its suit and rank names in the case it wants. A deck whose cards read "ace of torches" writes `wands = "torches"` and `ace = "ace"`, and one that reads "Ace of Torches" writes `"Torches"` and `"Ace"`. Cards that do not follow the deck's own pattern keep an explicit entry under `[minor_arcana.<suit>]`, which always wins over the template.
-
-Where a deck supplies no value at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology).
+Where a deck supplies no value of the minor arcana at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology).
 
 ### 6.4 Alt Text Guidelines
 
 - Alt text SHOULD describe the visual elements of the card without interpretation.
-- A deck SHOULD include at least one language file carrying alt text, so that the deck is usable with a screen reader.
-- Every card variant SHOULD carry its own alt text, since what distinguishes variants is exactly what alt text describes.
-- Alt text for custom cards follows the same pattern in the name files, using the custom card's canonical ID.
-- Alt text given in `[custom_cards]`, `[card_variants]` or `[card_backs.designs]` is a fallback only, and a name file always wins.
-
-**Alt text and `description` are not the same field twice.** Several tables carry both, including `[deck]`, `[editions]` and `[card_backs.designs]`, and they differ in three ways:
-
-| | alt text | `description` |
-| --- | --- | --- |
-| Stands in for the image, for a reader who cannot see it | Yes | No, it is shown *beside* the image |
-| Localized | Yes, in every name file | No, written once in `default_language` |
-| MAY interpret, credit or give provenance | No | Yes |
-
-Anything a screen-reader user needs therefore belongs in alt text, because alt text is the copy that gets translated. A `description` that paraphrases the alt text is redundant in one language and absent in every other.
-
-Note: a deck reproducing well-known artwork such as the Rider-Waite-Smith is a good candidate for comprehensive alt text in its default language file, because the same descriptions serve every deck that reproduces it.
+- A deck SHOULD include at least one language file carrying alt text.
+- Every card variant SHOULD carry its own alt text.
+- Alt text given in `[custom_cards]`, `[card_variants]` or `[card_backs.designs]` is a fallback only, and a name file always prevails.
 
 ## 7. Licensing and Attribution
 
 A deck is comprised of several components that can have separate licensing terms.
 
 - The license specified by `[deck].license` describes the artwork.
-- The license in the `[metadata].license` field of a names file covers the strings in that file, and `[metadata.alt_text]` narrows that to the alt text alone.
-- A `LICENSE` file at the root of the deck, where one is present, conveys terms for whoever assembled the deck.
+- The license in the `[metadata].license` field of a name file covers the strings in that file and `[metadata.alt_text]` narrows that to the alt text alone.
+- A `LICENSE` file at the root of the deck conveys terms for whoever assembled the deck.
 
 ### 7.1 License Expressions
 
@@ -846,11 +821,11 @@ copyright = "© 1995-2010 Andreas Schröter"
 attribution = "\"Aquatic Tarot\" by Andreas Schröter (http://www.aquatictarot.net/), licensed under CC BY-NC-SA 3.0."
 ```
 
-Decks SHOULD ship the full license text in the deck directory rather than relying on `license` alone.
+Decks SHOULD ship the full license text in the deck directory.
 
 ### 7.3 Name File Licensing
 
-The strings in a name file are usually not the deck assembler's own work, since alt text might be written by a contributor or adapted from a published source. Each name file therefore states its own terms in its [`[metadata]`](#621-name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
+The strings in a name file are not necessarily the deck assembler's own work, since alt text might be written by a contributor or adapted from a published source. Each name file therefore states its own terms in its [`[metadata]`](#621-name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
 
 Most decks need only to license their alt text, which `[metadata.alt_text]` does on its own. Where the whole file is a single person's work, as with a translation, `[metadata]` covers the entire file including its alt text. Where the two differ, `[metadata]` gives the file's terms and `[metadata.alt_text]` overrides them for alt text alone.
 
@@ -880,9 +855,11 @@ ansi_color_depth = "truecolor"  # ANSI art uses 24-bit SGR
 ansi_glyphs = "sextants"        # needs a font covering U+1FB00–U+1FBFF
 ```
 
-A realm always contains a `.`, which is TOML's key separator, so the subtable key MUST be written as a **quoted** TOML key. The quotes are not decoration. `[app.land.arcana]` is well-formed TOML and defines a subtable `arcana` nested inside a subtable `land`, which is not what the author meant and which no parse error announces. Requiring a realm to have two labels or more ([§3.3](#33-qualified-identifiers)) is what lets a validator catch the mistake, since the key it finds under `[app]` is the bare label `land`, which is not a realm ([§9.4](#94-validation-rules)).
+The subtable key MUST be written as a quoted TOML key because a realm always contains a '.' character.
 
-Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`. An application owns the subtable whose key is bytewise equal to its own realm ([§3.3](#33-qualified-identifiers)). Top-level table names outside `[app]` are reserved for future versions of this specification.
+Applications MUST ignore any `[app]` subtable they do not own, and validators MUST NOT report unknown keys within `[app]`.
+
+Top-level table names outside `[app]` are reserved for future versions of this specification.
 
 ## 9. Conformance and Validation
 
@@ -897,14 +874,14 @@ A conforming deck:
 
 ### 9.2 Errors and Warnings
 
-A validator reports two kinds of violations. An **error** makes a deck non-conforming, meaning the deck is broken in a way this specification defines an outcome for, and an application MAY refuse it. A **warning** marks something an author probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings.
+A validator reports two kinds of violations. An **error** makes a deck non-conforming and an application MAY refuse it. A **warning** marks something an author probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings.
 
 ### 9.3 Conforming Applications and Validators
 
 A conforming application:
 
 - MUST implement deck discovery ([§2.2](#22-the-deck-library), [§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution)).
-- MUST support decoding PNG and JPEG ([§5.7.5](#575-the-extension-chain)).
+- MUST support decoding PNG and JPEG ([§5.7.2](#572-the-extension-chain)).
 - MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
@@ -933,7 +910,7 @@ Each rule is labelled **E** for error or **W** for warning.
 | **W** | Where a validator can see a whole library, no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement, such as a fork or two versions installed side by side, so this is only a warning. |
 | **E** | Every card referenced in `[card_variants]` is a card the deck defines, and every referenced variant image file exists. |
 | **E** | Where a variant table declares `default`, the named variant exists. |
-| **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.6](#46-card_variants)). A card with no files at all is a [resolution failure](#577-when-no-asset-is-found), not a violation of this rule. |
+| **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.6](#46-card_variants)). A card with no files at all is a [resolution failure](#572-when-no-asset-is-found), not a violation of this rule. |
 | **E** | Every card declared in `[custom_cards]` is a card the deck has files for, since `[custom_cards]` does not define cards on its own. |
 | **E** | No custom major arcana key is a two-digit string and no custom rank or suit key shadows a canonical one, so that a custom ID can never collide with a canonical one. |
 | **E** | Every rank named in a `ranks` list has files in that suit, and no `ranks` list contains duplicates. |
@@ -944,13 +921,13 @@ Each rule is labelled **E** for error or **W** for warning.
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§10.1](#101-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
 | **E** | Every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike, and `[metadata.alt_text]` contains no key that is not defined for `[metadata]`. |
-| **W** | Two files in one directory sharing a stem and differing only in a chain extension, such as `06.png` beside `06.webp`. Resolution is well defined ([§5.7.5](#575-the-extension-chain)), but one of the two is usually a conversion left behind. |
+| **W** | Two files in one directory sharing a stem and differing only in a chain extension, such as `06.png` beside `06.webp`. Resolution is well defined ([§5.7.2](#572-the-extension-chain)), but one of the two is usually a conversion left behind. |
 | **W** | A card asset whose own aspect ratio differs from `[deck].aspect_ratio` by more than 10%, measured as `\|actual - declared\| / declared` ([§4.1](#41-deck)). Card backs are exempt, since `[deck].aspect_ratio` describes the fronts, and so is ANSI art, whose extent is counted in character cells rather than pixels and is not comparable to a ratio of lengths. |
 | **W** | A `license` field that is not a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected ([§7](#7-licensing-and-attribution)). |
 
 ## 10. Security Considerations
 
-A deck arrives from outside the system and carries data an author can abuse. This section describes the security concerns that arise.
+A deck arrives from outside the system and carries data an author can abuse. This section describes the security concerns that can arise.
 
 ### 10.1 Path Traversal
 
@@ -958,7 +935,7 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 
 ### 10.2 Terminal Escape Injection
 
-ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or DA, DSR, DECRQSS and other sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
+ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
 
 
 ## Appendix A. Examples (Informative)
@@ -976,16 +953,17 @@ my-custom-deck/
     major_arcana/
       00.png          # The Fool, through 21.png, The World
     minor_arcana/
-      wands/
-        ace.png       # through king.png
       cups/
+        ace.png       # through king.png
+      wands/
         ace.png
   names/
     en.toml           # Card names and alt text
 ```
 
+And a small `deck.toml`:
+
 ```toml
-# deck.toml, in its entirety
 [deck]
 name = "My Custom Deck"
 version = "1.0"
@@ -1004,14 +982,16 @@ name = "Rider-Waite-Smith"
 identifier = "land.arcana/deck/rider-waite-smith"
 version = "1.0"
 author = "Pamela Colman Smith"
+
 license = "LicenseRef-PublicDomain AND CC0-1.0"
 license_files = ["LICENSE"]
 copyright = "Artwork © 1909 Pamela Colman Smith (copyright expired)"
-attribution = "Original artwork by Pamela Colman Smith (1909). Digital restoration by Luciella Elisabeth Scarlett."
+attribution = "Original artwork by Pamela Colman Smith (1909)."
+
 default_language = "en"
 created_date = "1909-12-01"
 updated_date = "2025-04-28"
-website = "https://luciellaes.itch.io/rider-waite-smith-tarot-cards-cc0"
+website = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot"
 tags = ["traditional", "classic", "beginner-friendly"]
 
 [card_backs]
@@ -1022,8 +1002,9 @@ name = "Classic RWS Back"
 description = "The 1909 Rider back, digitally restored from the original printing."
 ```
 
+And `names/en.toml`:
+
 ```toml
-# names/en.toml
 [metadata.alt_text]
 source = "Written by Jane Doe."
 license = "CC-BY-4.0"
@@ -1069,8 +1050,9 @@ name = "Elemental Torches (Deluxe Edition)"
 card_back = "embers"
 ```
 
+And `names/en.toml`:
+
 ```toml
-# names/en.toml
 [major_arcana]
 00 = "The Wanderer"   # This deck's name for The Fool
 
@@ -1085,7 +1067,7 @@ page = "Student"
 knight = "Warrior"
 
 [alt_text.major_arcana]
-00 = "A traveler with a backpack walks toward a fiery mountain, unaware of the cliff edge ahead."
+00 = "A traveler with a backpack walks toward a fiery mountain."
 elemental_force = "A vortex of the elements swirling together in harmony."
 
 [alt_text.card_backs]
@@ -1112,6 +1094,7 @@ knight = "prince"
 
 [minor_arcana.pentacles]
 ace = "one of pentacles"
+# other suits are still "ace"
 
 [major_arcana]
 00 = "the Fool"
@@ -1133,19 +1116,19 @@ inclusive-tarot/
     minor_arcana/
       cups/
         two.png
-        two.two_women.png
   names/
     en.toml
 ```
 
+And `names/en.toml`:
+
 ```toml
-# names/en.toml
 [alt_text.major_arcana]
-06 = "A man and a woman stand hand in hand beneath a winged figure, a tree behind each of them."
+06 = "A man and a woman stand hand in hand beneath a winged figure."
 
 [alt_text.card_variants]
-"major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure, a tree behind each of them."
-"major_arcana.06:two_men" = "Two men stand hand in hand beneath a winged figure, a tree behind each of them."
+"major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure."
+"major_arcana.06:two_men" = "Two men stand hand in hand beneath a winged figure."
 ```
 
 ## Appendix B. Reserved and Deprecated Names
@@ -1168,7 +1151,7 @@ Applications MUST ignore these names in a 2.0 deck.
 
 ## Appendix C. Canonical Card Names (Informative)
 
-This appendix publishes conventional English names for the twenty-two major arcana, as the last fallback of display name resolution ([§6.3](#63-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table, and no conforming application does either.
+This appendix publishes conventional English names for the twenty-two major arcana as the last fallback of display name resolution ([§6.3](#63-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table.
 
 | Key | Name |
 | --- | --- |
@@ -1195,7 +1178,9 @@ This appendix publishes conventional English names for the twenty-two major arca
 | `20` | Judgement |
 | `21` | The World |
 
-Suit and rank names can be derived from their keys by the [title-cased key](#13-terminology) rule. Remember that a [canonical ID is a slot](#311-a-canonical-id-is-a-slot), so a deck following the Marseille ordering of Justice and Strength simply supplies the appropriate strings in its name file.
+Suit and rank names can be derived from their keys by the [title-cased key](#13-terminology) rule.
+
+Recall that a [canonical ID is a slot](#311-a-canonical-id-is-a-slot), so a deck following the Marseille ordering of Justice and Strength can denote this by swapping the appropriate strings in its name file.
 
 ## Appendix D. Changelog
 
@@ -1214,4 +1199,4 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains .
 
-**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made custom cards discoverable from the directory structure, added [card variants](#46-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`, and drew the boundary between alt text and `description` ([§6.4](#64-alt-text-guidelines)), which 1.0 defined on a card back without distinguishing. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
+**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made custom cards discoverable from the directory structure, added [card variants](#46-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
