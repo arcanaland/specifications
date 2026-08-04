@@ -72,6 +72,8 @@
   - [7.3 Name File Licensing](#73-name-file-licensing)
   - [7.4 Rights Status](#74-rights-status)
   - [7.5 Redistribution and Derivation](#75-redistribution-and-derivation)
+  - [7.6 Naming the Packager](#76-naming-the-packager)
+  - [7.7 Deck Names and Trademarks](#77-deck-names-and-trademarks)
 - [8. Extensibility](#8-extensibility)
 - [9. Conformance and Validation](#9-conformance-and-validation)
   - [9.1 Conforming Deck](#91-conforming-deck)
@@ -185,16 +187,19 @@ This section describes the terms of the specification itself. It is not about th
 
 The text of this document is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
-Its machine-facing parts are dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) and the author asserts no copyright, database right or trademark over them against anyone:
+Its machine-facing parts are dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) and the author asserts no copyright, database right, patent or trademark over them against anyone:
 
 - the canonical identifiers and the system that mints them ([§3](#3-identity-and-identifiers));
 - the ABNF grammar ([§3.5](#35-grammar));
-- the names, types and defaults of every file, directory, table and key this document defines ([§4](#4-decktoml-reference));
+- the names, types, defaults and enumerated values of every file, directory, table and key this document defines ([§4](#4-decktoml-reference)), together with every registry of values it publishes, such as the link relations of [§4.1.1](#411-links) and the `redistribution` and `derivation` vocabularies of [§7.5](#75-redistribution-and-derivation);
+- the canonical card names of [Appendix C](#appendix-c-canonical-card-names-informative) and the reserved names of [Appendix B](#appendix-b-reserved-and-deprecated-names);
 - every example in this document.
 
-No permission, notice, registration or fee is required to implement this specification, to catalog decks against its identifiers, to cross-reference or map them to another scheme, or to build a competing specification on top of them, for any purpose, commercial or otherwise.
+No permission, notice, registration or fee is required to implement this specification, to catalog decks against its identifiers, to cross-reference or map them to another scheme, or to build a competing specification on top of them, for any purpose, commercial or otherwise. The author irrevocably undertakes never to assert any such right against anyone who does.
 
-See [LICENSE](https://github.com/arcanaland/specifications/blob/main/LICENSE) for the operative terms.
+Appendix C is called out above because it is the one table an implementation is most likely to embed verbatim: it is the last fallback of display name resolution ([§6.3](#63-display-name-resolution)), so an application that resolves a name at all carries a copy of it. Its contents are conventional names of long standing that this specification does not claim to have authored, and nothing about reproducing them is conditioned on anything.
+
+See [LICENSING.md](https://github.com/arcanaland/specifications/blob/main/LICENSING.md) for the operative terms, which govern where this section and they disagree.
 
 ## 2. Deck Structure
 
@@ -416,8 +421,9 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
 | `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
 | `author` | String | No | none | The artwork's author. |
+| `packager` | String | No | none | Whoever assembled this package, where that is not the author ([§7.6](#76-naming-the-packager)). |
 | `description` | String | No | none | A prose description of the deck written once in `default_language` ([§6.4](#64-alt-text-guidelines)). |
-| `license` | String | No | none | SPDX license expression governing the artwork ([§7.1](#71-license-expressions)). |
+| `license` | String | No | none | SPDX license expression governing the card assets this package carries ([§7.1](#71-license-expressions)). |
 | `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
 | `copyright` | String | No | none | Copyright notice, displayed verbatim. |
 | `attribution` | String | No | none | Credit line to display ([§7.2](#72-attribution-and-notices)). |
@@ -546,7 +552,7 @@ Declaring a design under `[card_backs.designs]` does not create it. A design the
 
 ### 4.3 `[cards]`
 
-Cards are [discovered from the directory structure](#51-asset-discovery) so the `[cards]` table supplies what is not availble from the filename alone, such as the card's printed number, its place in the deck's sequence and fallback display strings. It is OPTIONAL in its entirety.
+Cards are [discovered from the directory structure](#51-asset-discovery) so the `[cards]` table supplies what is not available from the filename alone, such as the card's printed number, its place in the deck's sequence and fallback display strings. It is OPTIONAL in its entirety.
 
 
 ```toml
@@ -861,6 +867,10 @@ Where resolution yields no file for a card in any image root of any kind:
 - Where the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#45-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a card with a **canonical counterpart**, meaning a canonical minor arcanum or a major arcanum keyed `00` through `21`. A card the reference deck could only coincidentally share, meaning an [extended major arcanum](#13-terminology) or any custom-keyed card, MUST NOT be resolved against it: two decks that each define `major_arcana.23` have not agreed on a card ([§3.1.1](#311-a-canonical-id-is-a-slot)), and borrowing the image would show the user a card the deck does not contain.
 - Otherwise, this is a **resolution failure**, not a validation error. The application decides what to show, whether a placeholder, a card back or nothing. A deck is not non-conforming for lacking an asset for some card, and [§9](#9-conformance-and-validation) does not make it so.
 
+An application MUST NOT present a borrowed image as though it were the deck's own, and SHOULD make the substitution visible to the user, on the same terms as a [surrogate](#58-surrogate-assets) ([§5.8](#58-surrogate-assets)). This one needs saying more than the surrogate case does, not less: a surrogate is visibly a placeholder and announces itself, whereas a card resolved from the reference deck is a finished image sitting in the grid beside the deck's own, and nothing in it tells the user that another artist drew it.
+
+Where an application displays attribution, licensing or rights metadata for a borrowed card, it MUST take that metadata from the reference deck rather than from the deck under display. A borrowed image carries the reference deck's terms, which may be narrower than those of the deck it is standing in for, and an application that exports, prints or shares a spread containing one is passing on that deck's artwork under that deck's license.
+
 #### 5.7.7 Resolving a Card Back
 
 An application resolves a back the same way, with three differences:
@@ -871,7 +881,7 @@ An application resolves a back the same way, with three differences:
 
 #### 5.7.8 Resolution Summary
 
-Given a card, a variant key a kind and a target size, an application:
+Given a card, a variant key, a kind and a target size, an application:
 
 1. Forms the stem from the card's base, plus `.<variant-key>` where one is requested, and the subpath `major_arcana/` or `minor_arcana/<suit>/`.
 2. Ranks the image roots of the requested kind by [§5.7.3](#573-size-selection-within-a-kind) and, best first, looks in `<root>/<subpath>` for that stem under the [extension chain](#574-the-extension-chain), taking the first file it can decode. Walking past a root it cannot decode costs it a fallback rather than the card.
@@ -903,7 +913,7 @@ A deck MAY carry them instead of artwork, which makes it a [surrogate deck](#59-
 
 A deck MAY carry surrogates alongside its artwork, where an application could render them as progressive-loading placeholders. 
 
-In contrast to other assets, surrogates are not assoiciated with a reference deck.
+In contrast to other assets, surrogates are not associated with a reference deck.
 
 #### 5.8.1 The Surrogate File
 
@@ -928,11 +938,19 @@ Every key is optional and independent. A deck MAY carry any combination and MAY 
 
 ### 5.9 Surrogate Decks
 
-A surrogate deck is a deck whose only card assets are surrogates. Because the artwork of most tarot decks is neither the packager's to give away nor, licensed for redistribution at all in many cases, surrogates allows for packaing a deck without shipping anyone else's art.
+A surrogate deck is a deck whose only card assets are surrogates. Because the artwork of most tarot decks is neither the packager's to give away nor, in many cases, licensed for redistribution at all, surrogates allow a deck to be packaged without shipping anyone else's art.
 
-A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows application to recognize them as the same underlying deck and prefer the artwork.
+A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows applications to recognize them as the same underlying deck and prefer the artwork.
 
 A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD contain a `buy` [link](#411-links).
+
+**Licensing the surrogates.** [`[deck].license`](#41-deck) covers the card assets the package carries ([§7](#7-licensing-and-attribution)), so in a surrogate deck it covers the surrogates rather than the artwork. This is the one case where the two come apart, and it is the case the split exists for: the packager generated the surrogates and can license them, while `rights_status` says accurately that the artwork behind them belongs to someone else. A surrogate deck SHOULD declare `license`, since [`derivation`](#75-redistribution-and-derivation) of `"surrogate"` invites a downstream user to pass the surrogates on and `license` is what tells them on what terms.
+
+> **Note (informative).** A deck carrying artwork *and* surrogates has one `license` field for both, which is imprecise where the two are under different terms, as when a packager generates surrogates from artwork they did not license. In practice the packager generating surrogates for a deck they already ship is licensing both under the same terms, so a single field describes the package correctly. Splitting them would need a new field and is left to a later minor version should the case arise.
+
+**The icon.** [`[deck].icon`](#41-deck) is not a card asset, so the rule above does not reach it and a package could otherwise satisfy every requirement of this section while shipping the artwork as its preview image. A surrogate deck's `icon`, where it has one, MUST NOT be the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates the deck carries. A deck that has no icon it is entitled to ship declares none, and an application supplies its own presentation.
+
+No validator can check this, since whether one image derives from another is not decidable from the package. It is stated as a requirement rather than a recommendation because a surrogate deck exists precisely to not redistribute the artwork, and an icon that does defeats the whole package rather than blemishing it.
 
 ## 6. Internationalization
 
@@ -1051,9 +1069,10 @@ Where a deck supplies no value of the minor arcana at any level, applications MA
 
 A deck is comprised of several components that can have separate licensing terms.
 
-- The license specified by `[deck].license` describes the artwork.
+- The license specified by `[deck].license` covers the card assets the package carries. For most decks those assets are the artwork and the field says what may be done with it. For a [surrogate deck](#59-surrogate-decks) they are the surrogates, which the packager generated and is therefore in a position to license, and the artwork they describe is covered by [`rights_status`](#74-rights-status) instead.
 - The license in the `[metadata].license` field of a name file covers the strings in that file and `[metadata.alt_text]` narrows that to the alt text alone.
-- A `LICENSE` file at the root of the deck conveys terms for whoever assembled the deck.
+
+Each of these names its own license texts through its own `license_files`, and no filename is special. In particular a file named `LICENSE` at the deck root carries no meaning this specification assigns: it is the artwork's license only where `[deck].license_files` says so, and a deck whose packaging is licensed separately from its artwork names that file too. Nothing is picked up by convention, because a deck assembled from someone else's artwork usually has two sets of terms in one directory and guessing between them is how the wrong one gets displayed.
 
 Not every deck has a license to name. Where the artwork is published commercially and the packager holds nothing but a copy of it, [`[deck].rights_status`](#74-rights-status) states the artwork's copyright status instead, and [`[deck].redistribution` and `[deck].derivation`](#75-redistribution-and-derivation) state what the packager passes on.
 
@@ -1079,8 +1098,8 @@ license_files = ["LICENSE"]
 
 | Field | Purpose |
 | --- | --- |
-| `license` | SPDX license expression governing the artwork |
-| `license_files` | Paths, relative to the deck root, to the full license text and any notices. Defaults to `["LICENSE"]` when that file exists |
+| `license` | SPDX license expression governing the card assets the package carries |
+| `license_files` | Paths, relative to the deck root, to the full license text and any notices. Empty by default; no filename is picked up by convention ([§7](#7-licensing-and-attribution)) |
 | `copyright` | The copyright notice, verbatim as the rights holder wrote it |
 | `attribution` | The credit line the license requires downstream users to display |
 
@@ -1093,6 +1112,16 @@ attribution = "\"Aquatic Tarot\" by Andreas Schröter (http://www.aquatictarot.n
 ```
 
 Decks SHOULD ship the full license text in the deck directory.
+
+**Modified artwork.** Several public licenses, Creative Commons Attribution among them, require a downstream user who alters the work to say that they altered it. A packaged deck is very often altered: scans get deskewed, borders cropped, colors corrected, images upscaled. This specification defines no separate field for it, so a deck whose artwork is a modified version of someone else's SHOULD say so in `attribution`, which is the string an application displays and therefore the only place the statement reaches a reader. Where the artwork was obtained from a particular scan or archive rather than from the rights holder, a [`source` link](#411-links) SHOULD name it.
+
+```toml
+[deck]
+license = "CC-BY-4.0"
+copyright = "© 2018 Some Artist"
+attribution = "\"The Example Tarot\" by Some Artist, licensed under CC BY 4.0. Cropped and color-corrected for this package."
+links = [{ rel = "source", url = "https://example.org/archive/example-tarot" }]
+```
 
 ### 7.3 Name File Licensing
 
@@ -1116,11 +1145,15 @@ license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Paulo Freire."
 ```
 
+A name file that transcribes another deck's own names for its cards, as a package describing a deck it does not carry usually does, is reproducing that deck author's choices and not only the packager's: an individual card name is a short phrase, but a full set of one author's renamings is a compilation, and the packager did not write it. Such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them rather than a `license` the packager is in no position to grant.
+
 ### 7.4 Rights Status
 
-A license is a *grant*. Every SPDX identifier names terms under which someone gave permission, so `[deck].license` can only describe artwork that somebody licensed. Most tarot decks are not licensed to anyone. A deck packaged from a commercially published deck the packager owns a copy of has no grant to record, and leaving `license` empty says only that the field was not filled in.
+A license is a *grant*. Every SPDX identifier names terms under which someone gave permission, so `[deck].license` can only speak for assets that somebody licensed. Most tarot decks are not licensed to anyone. A deck packaged from a commercially published deck the packager owns a copy of has no grant to record, and leaving `license` empty says only that the field was not filled in.
 
-`[deck].rights_status` records the artwork's copyright *status* instead, which is a statement about the world rather than a permission. It SHOULD be one of:
+`[deck].rights_status` records the *artwork's* copyright status instead, which is a statement about the world rather than a permission. The two fields therefore need not be about the same thing: `license` is about the files in this directory and `rights_status` is about the work they depict. For an ordinary deck these coincide and both describe the artwork. For a [surrogate deck](#59-surrogate-decks) they come apart, and that is the point of having both, since the packager can license the surrogates they generated while saying accurately that the artwork behind them is in copyright to someone else.
+
+`rights_status` SHOULD be one of:
 
 - a [RightsStatements.org](https://rightsstatements.org/) URI, which covers the cases SPDX structurally cannot: in copyright with no license granted, in copyright with the holder unknown or unlocatable, and status undetermined or not evaluated;
 - a [Creative Commons](https://creativecommons.org/) URI, including the public domain marks `publicdomain/mark/1.0/` and `publicdomain/zero/1.0/`.
@@ -1141,13 +1174,13 @@ license = "CC0-1.0"
 rights_status = "https://creativecommons.org/publicdomain/mark/1.0/"
 ```
 
-`license` and `rights_status` answer different questions and a deck MAY carry both, one, or neither. Where both are present they MUST NOT contradict each other, though a validator cannot check this and does not try.
+`license` and `rights_status` answer different questions about, in general, different objects, and a deck MAY carry both, one, or neither. Where both are present and both are about the artwork, which is the case for any deck that carries its artwork, they MUST NOT contradict each other; a validator cannot check this in general and does not try, beyond the coarse cases [§9.4](#94-validation-rules) lists.
 
 The same field is available in a name file's `[metadata]` and `[metadata.alt_text]` tables, with the same meaning ([§7.3](#73-name-file-licensing)). Freely licensed alt text describing artwork that is not freely licensed is the ordinary case for a deck packaged from a published one, and the two tables are how a deck says so.
 
 ### 7.5 Redistribution and Derivation
 
-`license` and `rights_status` describe the artwork. Neither answers the question an application actually has to act on, which is what it may do with *this package*. `[deck].redistribution` and `[deck].derivation` answer it. Each takes one of:
+`license` covers the assets carried and `rights_status` describes the artwork behind them. Neither answers the question an application actually has to act on, which is what it may do with *this package*. `[deck].redistribution` and `[deck].derivation` answer it. Each takes one of:
 
 | Value | Meaning |
 | --- | --- |
@@ -1171,6 +1204,37 @@ Three rules bound what these fields mean.
 - **They are declarations, not grants.** The [packager](#12-document-conventions) says here what they believe they are passing on. Nobody can grant permission they do not hold, and a `redistribution` of `"full"` over artwork the packager had no right to redistribute conveys nothing.
 - **Absence is not permission.** `"unstated"` means the question was not answered. An application MUST NOT read it as `"full"`, and one that redistributes decks on a user's behalf SHOULD treat `"unstated"` as it treats `"none"`.
 - **They do not narrow a license.** Where `license` grants more than these fields state, the license governs; a deck cannot use these fields to take back permissions it has already given under CC BY or any other public license. They are for artwork no public license covers, which is the case they exist for.
+
+### 7.6 Naming the Packager
+
+Nearly every field in this section is a statement by the [packager](#12-document-conventions): `rights_status` is their reading of the artwork's status, `redistribution` and `derivation` are what they believe they are passing on, and `attribution` is the credit line they judged the license to require. `[deck].packager` names who that was.
+
+```toml
+[deck]
+name = "The Example Tarot"
+author = "Some Artist"          # who drew it
+publisher = "Example Press"     # who published it
+packager = "Jane Doe <jane@example.org>"   # who built this directory
+```
+
+The field is a free-form display string and this specification defines no syntax for it. A name, a handle, an email address or a project is each a reasonable value.
+
+A deck SHOULD declare `packager` where the packager is not the artwork's `author`, and a package describing artwork it does not own SHOULD always declare it. Two things follow from the packager being identifiable. A reader can weigh a rights assertion by who made it, which matters because nothing in this specification verifies one. And a rights holder who disagrees with the assertion has someone to raise it with, which is the difference between a package that can be corrected and one that can only be removed. A [`support` link](#411-links) serves the same end and a deck SHOULD carry one.
+
+`packager` is metadata about the package rather than about the artwork, so it is not localized and an application MUST NOT display it as the deck's author.
+
+### 7.7 Deck Names and Trademarks
+
+The name of a published tarot deck is frequently a trademark of its publisher, and `[deck].name` is displayed verbatim to the user. This raises no issue for the ordinary use of the field. A package that names the deck it contains or describes is referring to that deck, which is what a trademark is for and what its owner wants; using a mark to identify the thing it marks is not an infringement of it.
+
+What a package MUST NOT do is imply an endorsement, affiliation or origin it does not have. Concretely:
+
+- A deck's `name`, `description` and `attribution` MUST NOT state or imply that the rights holder produced, approved or endorsed the package, unless they did.
+- A package assembled by a third party SHOULD declare [`packager`](#76-naming-the-packager), which distinguishes it from an official one more plainly than any wording could.
+- A [`buy`](#411-links) or `publisher` link SHOULD point at the rights holder rather than at a reseller ([§4.1.1](#411-links)).
+- A packager SHOULD NOT reproduce the publisher's logo or wordmark as the deck's `icon`. An icon is the packager's own presentational choice and a mark is not needed to identify a deck already named.
+
+Nothing here is a legal determination and this specification does not make one. Trademark turns on likelihood of confusion, which is a question about a particular package in a particular market, and no field can settle it. These are the practices that keep the question from arising.
 
 ## 8. Extensibility
 
@@ -1261,6 +1325,12 @@ Each rule is labelled **E** for error or **W** for warning.
 | **W** | A `rights_status` that is not a RightsStatements.org or Creative Commons URI, in `[deck]` and in every name file's `[metadata]` alike. As with `license`, a deck that fails this check MUST NOT be rejected ([§7.4](#74-rights-status)). |
 | **E** | `redistribution` and `derivation`, where present, are one of `full`, `surrogate`, `none` or `unstated` ([§7.5](#75-redistribution-and-derivation)). |
 | **W** | A deck that declares neither `license` nor `rights_status`. One of the two is how a deck says what may be done with its artwork, and a deck that says neither leaves every downstream user guessing ([§7](#7-licensing-and-attribution)). |
+| **W** | A `redistribution` or `derivation` of `full` alongside a `rights_status` asserting the artwork is in copyright with no license granted, meaning a RightsStatements.org `InC` URI or one of its refinements. The deck says both that nobody granted permission and that the packager passes it on ([§7.5](#75-redistribution-and-derivation)). One of the two fields is wrong, and a validator cannot tell which. |
+| **W** | A `redistribution` or `derivation` narrower than `full` on a deck whose `license` is a public license granting redistribution or derivation outright. The license governs and the field does not take it back ([§7.5](#75-redistribution-and-derivation)), so the field misleads a reader without binding anyone. A validator checks this only for licenses it recognizes, and reporting nothing is a conforming outcome. |
+| **W** | A [surrogate deck](#59-surrogate-decks) declaring `redistribution = "full"`. The field governs passing on the artwork and the package carries none ([§5.9](#59-surrogate-decks)). A `license` on such a deck is not reported, since it covers the surrogates and a surrogate deck SHOULD carry one. |
+| **W** | A [surrogate deck](#59-surrogate-decks) with no `license`. Its surrogates are the packager's own work and `derivation = "surrogate"` invites them to be passed on, so a reader who takes them up has no terms to go by ([§5.9](#59-surrogate-decks)). |
+| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying `signifies`, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§7.6](#76-naming-the-packager)). Every rights assertion in the package is then unattributable. |
+| **W** | A `packager` equal to `author`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-naming-the-packager)). |
 | **E** | Every `[deck].links` entry carries a `rel` that is a well-formed [custom name](#32-custom-names) and a `url` that is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | `[deck].signifies`, where present, is a well-formed qualified identifier and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)). Whether it names a deck that exists is not checkable and is not checked. |
@@ -1510,9 +1580,11 @@ signifies = "com.example/deck/example-tarot"
 version = "1.0"
 author = "Some Artist"
 publisher = "Example Press"
+packager = "Jane Doe <jane@example.org>"
 aspect_ratio = 0.5789
 
-rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+license = "CC0-1.0"                 # covers the surrogates, which are Jane's work
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"   # covers the artwork
 copyright = "© 2012 Some Artist"
 attribution = "The Example Tarot by Some Artist, published by Example Press."
 redistribution = "none"
@@ -1540,7 +1612,7 @@ palette_snapped = ["firebrick", "cornsilk", "darkolivegreen"]
 thumbhash = "L6PZfSjE.AyE_3t7t7R**0o#DgR4"
 ```
 
-Note what the package does and does not claim. `redistribution = "none"` says the collector passes on no artwork, which is consistent with there being none here. `derivation = "surrogate"` says they consider the surrogates themselves shareable. `rights_status` says the artwork is in copyright with no license granted, which `license` could not have expressed. The `buy` link points at the people who can sell the reader the real thing.
+Note what the package does and does not claim. `redistribution = "none"` says the collector passes on no artwork, which is consistent with there being none here. `derivation = "surrogate"` says they consider the surrogates themselves shareable, and `license` says on what terms: the surrogates are Jane's own work and she puts them in the public domain. `rights_status` is about a different object, the artwork the surrogates describe, and says it is in copyright with no license granted, which `license` could not have expressed ([§7.4](#74-rights-status)). `packager` names who made all of these assertions, none of which the artist or the publisher has agreed to. The `buy` link points at the people who can sell the reader the real thing.
 
 `signifies` points at `com.example/deck/example-tarot`, in the publisher's realm rather than the collector's. The collector did not mint that identifier and could not have; they are pointing at one Example Press published. Their own package has its own `identifier` in their own realm, and the two are different packages describing one deck. A user whose library holds both this package and the publisher's full one has a single deck with artwork, and this package's alt text and links besides.
 
@@ -1568,6 +1640,8 @@ Applications MUST ignore these names in a 2.0 deck.
 ## Appendix C. Canonical Card Names (Informative)
 
 This appendix publishes conventional English names for the twenty-two canonical major arcana as the last fallback of display name resolution ([§6.3](#63-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table.
+
+This table is dedicated to the public domain under CC0 1.0, along with its selection and arrangement, and is not subject to the attribution term the rest of this document carries ([§1.6](#16-licensing-of-this-specification-informative)). Copy it into an implementation freely.
 
 The table stops at `21` and no future version of this specification will extend it. A major arcanum keyed `22` or above belongs to the deck that defines it and no convention names it ([§3.1.1](#311-a-canonical-id-is-a-slot)).
 
@@ -1616,9 +1690,10 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [File format and encoding](#23-file-format-and-encoding).
 - [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
-- [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers.
+- [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
+- [`[deck].packager`](#76-naming-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.

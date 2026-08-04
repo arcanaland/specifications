@@ -35,9 +35,17 @@ The following are dedicated to the public domain under CC0 1.0 Universal.
 
   **(c) The vocabulary.** The names of every file, directory, table, key and
   enumerated value this specification defines together with their types,
-  cardinality and defaults, as set out in the field reference tables.
+  cardinality and defaults, as set out in the field reference tables, and every
+  registry of values published anywhere in these documents, including the link
+  relations and the redistribution and derivation vocabularies.
 
-  **(d) The examples.** Every example `deck.toml`, name file, directory listing
+  **(d) The tabulations.** Every table of names, keys or values appearing in an
+  appendix, including the canonical card names and the reserved and deprecated
+  names of the deck specification. These are conventional designations of long
+  standing which the author does not claim to have authored, and the selection,
+  arrangement and ordering of them is waived along with the entries themselves.
+
+  **(e) The examples.** Every example `deck.toml`, name file, directory listing
   and other code sample appearing in any document in this repository.
 
 To the extent that any of the foregoing is protected by copyright, database
@@ -60,8 +68,9 @@ propagate, or reproduce.
 > copyright, database right, patent, trademark, or other intellectual property
 > right against any person for using, implementing, publishing, tabulating,
 > cross-referencing, mapping, extending, or building a competing specification
-> upon the identifier scheme, grammar, or vocabulary described in the Arcana
-> Land specifications.
+> upon the identifier scheme, grammar, vocabulary, or tabulations described in
+> the Arcana Land specifications, that is, upon anything enumerated in section 2
+> above.
 >
 > No permission, notice, license, registration or fee is required to use them,
 > for any purpose, commercial or otherwise.
