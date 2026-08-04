@@ -10,15 +10,13 @@ Implemented by [libarcana](https://github.com/arcanaland/libarcana) (full v1.0) 
 
 ## Esoterica
 
-The [Esoterica Specification](./ESOTERICA.md) provides meanings for the cards.
-
-*Draft, in progress.*
+The [Esoterica Specification](./ESOTERICA.md) provides meanings for the cards. (Draft in progress)
 
 ## Canonical Identifiers
 
 Both specifications address tarot objects by the same identifiers, which any project is free to adopt:
 
-```toml
+```bash
 major_arcana.00                 # The Fool
 major_arcana.21                 # The World
 minor_arcana.wands.ace          # Ace of Wands

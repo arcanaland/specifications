@@ -755,7 +755,7 @@ Support for ANSI art is OPTIONAL for an application.
 
 ### 5.5 Card Back Images
 
-A `card_backs/` directory is a **card back directory** and each file in one defines a [design](#42-card_backs) whose key is the file's stem:
+Files in the card back directory `card_backs/` define a [design](#42-card_backs) whose key is the file's stem:
 
 ```
 card_backs/classic.png          # "classic" with no declared size
@@ -784,7 +784,7 @@ Given a card, a rendering kind and a target size, an application resolves a file
 
 #### 5.7.1 Image Roots
 
-An **image root** is a top-level directory of a deck root that discovery searches for card assets. There are three forms:
+An image root is a top-level directory of a deck root that discovery searches for card assets. There are four forms:
 
 | Form | Kind | Size |
 | --- | --- | --- |
@@ -795,11 +795,11 @@ An **image root** is a top-level directory of a deck root that discovery searche
 
 `<height>` and `<lines>` are decimal integers greater than zero, written without a sign, leading zeroes or separators. A deck MAY contain any number of raster and ANSI roots, and at most one `scalable/` and one `surrogate/`.
 
+
 Within an image root, assets are arranged by card type and suit as shown in [§2.1](#21-directory-skeleton): `major_arcana/` and `minor_arcana/<suit>`. An image root MAY also hold a `card_backs/` directory, which supplies card back designs at that root's kind and size ([§5.5](#55-card-back-images)). Any other subdirectory is ignored, and so is any file lying loose in the root itself rather than in one of those subdirectories.
 
 Every other top-level directory is ignored by discovery.
 
-A surrogate is not an image, but it is discovered, keyed, sized against and resolved exactly as one, so this specification treats it as a fourth kind rather than as a mechanism of its own. Everything in [§5.7](#57-card-image-resolution) that speaks of a kind therefore includes it, with the two differences [§5.8](#58-surrogate-assets) gives.
 
 #### 5.7.2 Extensions, Stems and Bases
 
@@ -820,63 +820,53 @@ A file whose name contains no `.` at all has no extension. Discovery ignores it 
 
 #### 5.7.3 Size Selection Within a Kind
 
-`scalable/` and `surrogate/` hold at most one file per card and variant, so selection there is trivial: the file is the file.
+Selection for `scalable/` and `surrogate/` are trivial due to those directories containing at most one file per card and variant.
 
 For raster and ANSI, an application selects among the roots of that kind that supply a file for the card. The rules differ, because the two media degrade in opposite directions:
 
-- **Raster**: prefer the smallest image at or above the target height. Downscaling a raster image is well-behaved and upscaling is not.
-- **ANSI**: prefer the largest art at or below the target number of lines. Art taller than the space available is truncated, which is worse than art that leaves a gap.
+- Raster: prefer the smallest image at or above the target height. Downscaling a raster image is well-behaved and upscaling is not.
+- ANSI: prefer the largest art at or below the target number of lines. Art taller than the space available is truncated.
 
 Candidates on the preferred side of the target therefore rank ahead of those on the other side. Within a side the nearest to the target wins, and a tie between two equidistant candidates breaks toward the preferred side. An exact match always wins. Where no candidate lies on the preferred side, an application MUST take the nearest on the other side rather than fail.
 
-*Example.* A deck ships `h750/`, `h1200/` and `h2400/`. A raster request for target 1000 resolves to `h1200`, the smallest at or above. A request for 3000 resolves to `h2400`, the nearest below, since no candidate is at or above. A request for 975 is equidistant from 750 and 1200 and resolves to `h1200`.
-
 #### 5.7.4 The Extension Chain
 
-Within one directory, an application considers extensions in this fixed order:
+Within a raster directory, an application considers extensions in this fixed order:
 
 1. `png`
 2. `webp`
 3. `avif`
-4. `jpeg` and `jpg`, which are one entry rather than two. Where a directory holds both, the choice between them is unspecified.
+4. `jpeg` and `jpg`. Where a directory holds both, the choice between them is unspecified.
 
 In `scalable/`, the chain is `svg` alone. In `surrogate/`, it is `toml` alone.
 
-- Applications MUST support decoding **PNG** and **JPEG**. Support for WebP, AVIF and SVG is OPTIONAL.
-- This is a fallback chain, not a negotiation. An application MUST skip a file whose format it does not support, or whose bytes it fails to decode, and continue to the next entry in the chain.
-- Extensions outside the chain are ignored by discovery entirely. A `.tiff` or a `.gif` in `h1200/major_arcana/` does not define a card and is never chosen.
-- A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning ([§9.4](#94-validation-rules)).
-- Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card, and the application MUST continue with the remaining candidates under [§5.7.3](#573-size-selection-within-a-kind).
+- Applications MUST support decoding PNG and JPEG. Support for WebP, AVIF and SVG is OPTIONAL.
+- Extensions outside the chain are ignored by discovery entirely.
+- A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning.
+- Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card and the application MUST continue with the remaining candidates under [§5.7.3](#573-size-selection-within-a-kind).
 
-A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.7](#47-card_variants)) or card back design ([§4.2](#42-card_backs)). Discovery is a convention and an explicit path is an instruction.
-
-> **Note (informative).** Unlike the usual web ordering, this order favours fidelity and universal decodability over recency. A deck is already on disk, so a second encoding of the same card buys no bandwidth and is usually an authoring accident rather than progressive enhancement. The consequence is that where a PNG is present it always wins, and the optional formats matter only where they stand alone.
+A deck that wants a format outside the chain declares an explicit `image` path on the card variant ([§4.7](#47-card_variants)) or card back design ([§4.2](#42-card_backs)).
 
 #### 5.7.5 Variants
 
-A request MAY name a [variant key](#47-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged: the same size selection, the same extension chain.
+A request MAY name a [variant key](#47-card_variants). Resolution then looks for files whose stem is `<base>.<key>`, and is otherwise unchanged.
 
-Where the requested card has no variant under that key, the application MUST resolve that card's **default** variant instead, and MUST NOT treat the absence as an error. Variant keys are deck-wide and a card need not carry every key the deck uses. This is the asset-resolution statement of the rule in [§4.7](#47-card_variants).
-
-A request naming no variant key resolves the card's default variant: the unsuffixed file, or the variant named by `[card_variants."<id>"].default` where one is declared.
+Where the requested card has no variant under that key, the application MUST resolve that card's default variant instead, and MUST NOT treat the absence as an error.
 
 #### 5.7.6 When No Asset Is Found
 
-Where resolution yields no file for a card in any image root of any kind:
+Where resolution yields no file for a card in any image root of any kind and the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#45-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a canonical minor arcanum or a major arcanum keyed `00` through `21`.
 
-- Where the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#45-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a card with a **canonical counterpart**, meaning a canonical minor arcanum or a major arcanum keyed `00` through `21`. A card the reference deck could only coincidentally share, meaning an [extended major arcanum](#13-terminology) or any custom-keyed card, MUST NOT be resolved against it: two decks that each define `major_arcana.23` have not agreed on a card ([§3.1.1](#311-a-canonical-id-is-a-slot)), and borrowing the image would show the user a card the deck does not contain.
-- Otherwise, this is a **resolution failure**, not a validation error. The application decides what to show, whether a placeholder, a card back or nothing. A deck is not non-conforming for lacking an asset for some card, and [§9](#9-conformance-and-validation) does not make it so.
+An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets). This needs saying more than the surrogate case does, not less: a surrogate announces itself, whereas a borrowed card is a finished image sitting beside the deck's own with nothing to say that another artist drew it. Where an application displays attribution or rights metadata for a borrowed card, it MUST take that metadata from the reference deck, whose terms may be narrower than those of the deck it stands in for.
 
-An application MUST NOT present a borrowed image as though it were the deck's own, and SHOULD make the substitution visible to the user, on the same terms as a [surrogate](#58-surrogate-assets) ([§5.8](#58-surrogate-assets)). This one needs saying more than the surrogate case does, not less: a surrogate is visibly a placeholder and announces itself, whereas a card resolved from the reference deck is a finished image sitting in the grid beside the deck's own, and nothing in it tells the user that another artist drew it.
-
-Where an application displays attribution, licensing or rights metadata for a borrowed card, it MUST take that metadata from the reference deck rather than from the deck under display. A borrowed image carries the reference deck's terms, which may be narrower than those of the deck it is standing in for, and an application that exports, prints or shares a spread containing one is passing on that deck's artwork under that deck's license.
+Otherwise, this is a resolution failure and it is up to the application to decide what to show.
 
 #### 5.7.7 Resolving a Card Back
 
-An application resolves a back the same way, with three differences:
+An application resolves a back the similar to the main algorithm, with three differences:
 
 1. The subpath is `card_backs/` rather than `major_arcana/` or `minor_arcana/<suit>/` and the stem is the design key.
-2. Where no image root of the requested kind supplies the design, the top-level `card_backs/` directory is consulted last as a root of no size. Because it declares no kind either, an application that finds nothing there under the chain for the kind it asked for MAY take any file in it whose stem is the design key and whose format it can decode.
+2. Where no image root of the requested kind supplies the design, the top-level `card_backs/` directory is consulted last as a root of no size.
 3. There is no reference-deck and applications supply their own back.
 
 #### 5.7.8 Resolution Summary
@@ -940,7 +930,7 @@ Every key is optional and independent. A deck MAY carry any combination and MAY 
 
 A surrogate deck is a deck whose only card assets are surrogates. Because the artwork of most tarot decks is neither the packager's to give away nor, in many cases, licensed for redistribution at all, surrogates allow a deck to be packaged without shipping anyone else's art.
 
-A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows applications to recognize them as the same underlying deck and prefer the artwork.
+A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows applications to recognize them as the same underlying deck and prefer the artwork over the surrogate.
 
 A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD contain a `buy` [link](#411-links).
 
@@ -1043,7 +1033,9 @@ A resolved display string is used verbatim. Applications MUST NOT apply case con
 | Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[cards]`, `[card_backs.designs]` or variant entry |
 | Card variant alt text | `[alt_text.card_variants]."<variant-ref>"`, then the variant's `alt_text` field, then the card's own alt text |
 
-A major arcana key that reaches the end of its chain has **no name**. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits, which names nothing, so an application SHOULD instead present the card by its [number](#431-card-numbers). The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative) are both absent from this chain above `21` for the reason [§3.1.1](#311-a-canonical-id-is-a-slot) gives: no deck's twenty-third major arcanum names another's. A deck that has extended major arcana SHOULD name them in a name file, and a validator says so ([§9.4](#94-validation-rules)).
+A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers). 
+
+The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative) are both absent from this chain above `21`. A deck that has extended major arcana SHOULD name them in a name file, and a validator says so ([§9.4](#94-validation-rules)).
 
 #### 6.3.1 Minor Arcana Name Composition
 
@@ -1408,7 +1400,7 @@ derivation = "full"
 
 default_language = "en"
 created_date = "1909-12-01"
-updated_date = "2025-04-28"
+updated_date = "2026-08-01"
 tags = ["traditional", "classic", "beginner-friendly"]
 links = [
   { rel = "homepage", url = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot" },
@@ -1553,7 +1545,7 @@ And `names/en.toml`:
 
 ### A.6 A Surrogate Deck
 
-A collector holds a commercially published deck and wants to list it in a public catalog. The artwork is not theirs to redistribute, but the description of the deck is ordinary fact and the surrogates are derived data. The package carries a `surrogate/` root and no other.
+A surrogate deck can be created for commercial decks with non-redistributable artwork by providing surrogate assets. 
 
 ```
 example-tarot/
@@ -1570,8 +1562,9 @@ example-tarot/
         …
 ```
 
+In the main `deck.toml`:
+
 ```toml
-# deck.toml
 [deck]
 schema_version = "2.0"
 name = "The Example Tarot"
@@ -1597,6 +1590,8 @@ links = [
 ]
 ```
 
+With a surrogate for The Fool:
+
 ```toml
 # surrogate/major_arcana/00.toml
 # generated by libarcana 0.4.2
@@ -1604,19 +1599,6 @@ palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e"]
 palette_snapped = ["wheat", "darkslateblue", "sienna"]
 thumbhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 ```
-
-```toml
-# surrogate/minor_arcana/wands/ace.toml
-palette = ["#c2452d", "#f0e4c8", "#3f6b3a"]
-palette_snapped = ["firebrick", "cornsilk", "darkolivegreen"]
-thumbhash = "L6PZfSjE.AyE_3t7t7R**0o#DgR4"
-```
-
-Note what the package does and does not claim. `redistribution = "none"` says the collector passes on no artwork, which is consistent with there being none here. `derivation = "surrogate"` says they consider the surrogates themselves shareable, and `license` says on what terms: the surrogates are Jane's own work and she puts them in the public domain. `rights_status` is about a different object, the artwork the surrogates describe, and says it is in copyright with no license granted, which `license` could not have expressed ([§7.4](#74-rights-status)). `packager` names who made all of these assertions, none of which the artist or the publisher has agreed to. The `buy` link points at the people who can sell the reader the real thing.
-
-`signifies` points at `com.example/deck/example-tarot`, in the publisher's realm rather than the collector's. The collector did not mint that identifier and could not have; they are pointing at one Example Press published. Their own package has its own `identifier` in their own realm, and the two are different packages describing one deck. A user whose library holds both this package and the publisher's full one has a single deck with artwork, and this package's alt text and links besides.
-
-The deck names its cards, orders them, and carries alt text in `names/en.toml`. Card resolution finds nothing for any kind but `surrogate`. An application shows the surrogates, the metadata and the links.
 
 ## Appendix B. Reserved and Deprecated Names
 
