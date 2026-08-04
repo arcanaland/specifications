@@ -38,6 +38,8 @@
   - [4.5 `[excluded_cards]`](#45-excluded_cards)
   - [4.6 `[editions]`](#46-editions)
   - [4.7 `[card_variants]`](#47-card_variants)
+    - [4.1.1 Links](#411-links)
+  - [4.8 `[surrogate]`](#48-surrogate)
 - [5. Card Assets](#5-card-assets)
   - [5.1 Asset Discovery](#51-asset-discovery)
   - [5.2 Vector Graphics](#52-vector-graphics)
@@ -54,6 +56,7 @@
     - [5.7.6 When No Asset Is Found](#576-when-no-asset-is-found)
     - [5.7.7 Resolving a Card Back](#577-resolving-a-card-back)
     - [5.7.8 Resolution Summary](#578-resolution-summary)
+  - [5.8 Surrogate Decks](#58-surrogate-decks)
 - [6. Internationalization](#6-internationalization)
   - [6.1 Language Tags](#61-language-tags)
   - [6.2 Language Resolution](#62-language-resolution)
@@ -65,6 +68,8 @@
   - [7.1 License Expressions](#71-license-expressions)
   - [7.2 Attribution and Notices](#72-attribution-and-notices)
   - [7.3 Name File Licensing](#73-name-file-licensing)
+  - [7.4 Rights Status](#74-rights-status)
+  - [7.5 Redistribution and Derivation](#75-redistribution-and-derivation)
 - [8. Extensibility](#8-extensibility)
 - [9. Conformance and Validation](#9-conformance-and-validation)
   - [9.1 Conforming Deck](#91-conforming-deck)
@@ -82,6 +87,7 @@
   - [A.5 Deck with Card Variants](#a5-deck-with-card-variants)
   - [A.6 A Deck with Extra Major Arcana](#a6-a-deck-with-extra-major-arcana)
   - [A.7 A Second Card at a Number Already Taken](#a7-a-second-card-at-a-number-already-taken)
+  - [A.8 A Surrogate Deck](#a8-a-surrogate-deck)
 - [Appendix B. Reserved and Deprecated Names](#appendix-b-reserved-and-deprecated-names)
 - [Appendix C. Canonical Card Names (Informative)](#appendix-c-canonical-card-names-informative)
 - [Appendix D. Changelog](#appendix-d-changelog)
@@ -119,6 +125,8 @@ This specification addresses three kinds of actors: deck authors who craft a `de
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. It is not a property of any deck. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
 | **card** | One addressable image in a deck, named by a canonical ID. |
+| **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [BlurHash](https://blurha.sh/), carried in `deck.toml` rather than as a file ([§4.9](#48-surrogate)). |
+| **surrogate deck** | A deck that carries surrogates and no card assets, so that it can describe artwork it does not redistribute ([§5.8](#58-surrogate-decks)). |
 | **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
 | **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99` |
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
@@ -160,6 +168,10 @@ The documents below are referenced normatively unless marked informative. A date
 | **RFC 3339 §5.6** | Date and Time on the Internet, `full-date` | [§4.1](#41-deck) |
 | **TOML 1.0.0** | [toml.io/en/v1.0.0](https://toml.io/en/v1.0.0) | [§2.3](#23-file-format-and-encoding) |
 | **SPDX License List** | [spdx.org/licenses](https://spdx.org/licenses/), with the [license expression syntax](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) | [§7](#7-licensing-and-attribution) |
+| **RightsStatements.org** | [Standardized international rights statements](https://rightsstatements.org/) | [§7.4](#74-rights-status) |
+| **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§4.9](#48-surrogate) |
+| **BlurHash** (informative) | [blurha.sh](https://blurha.sh/) | [§4.9](#48-surrogate) |
+| **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§4.9](#48-surrogate) |
 | **XDG Base Directory Specification** | [specifications.freedesktop.org](https://specifications.freedesktop.org/basedir-spec/latest/) | [§2.2](#22-the-deck-library) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#47-card_variants) |
@@ -400,10 +412,13 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
 | `copyright` | String | No | none | Copyright notice, displayed verbatim. |
 | `attribution` | String | No | none | Credit line to display ([§7.2](#72-attribution-and-notices)). |
+| `rights_status` | String (URI) | No | none | The artwork's copyright *status*, as distinct from any license granted over it ([§7.4](#74-rights-status)). |
+| `redistribution` | String | No | `"unstated"` | Whether the assembler passes on the artwork for republication ([§7.5](#75-redistribution-and-derivation)). |
+| `derivation` | String | No | `"unstated"` | Whether the assembler passes on the artwork for making derived works ([§7.5](#75-redistribution-and-derivation)). |
 | `created_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`), as described below. |
 | `updated_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`), as described below. |
 | `publisher` | String | No | none | The deck's publisher. |
-| `website` | String | No | none | An absolute URL for the deck. |
+| `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
 
 ```toml
@@ -425,6 +440,44 @@ tags = ["traditional", "classic"]
 **Aspect ratio.** `aspect_ratio` is the width of a card divided by its height, so the traditional 11:19 card is `0.5789`. It governs **layout**, meaning an application reserves space for a card by this ratio. Where an asset's own pixel ratio disagrees with it, the application MUST still preserve the asset's own ratio when scaling it, never stretching an image to fit the declared value, and SHOULD report the mismatch to the author. An `icon` is assumed to share the cards' aspect ratio.
 
 `[deck]` holds the deck's identity and the human-facing metadata about it. Everything that is *content*, such as card backs, cards, suits, card variants, editions and exclusions, is a top-level table of its own. No table nests under `[deck]`.
+
+#### 4.1.1 Links
+
+`[deck].links` holds the deck's web addresses. A deck MAY declare any number, including several sharing a `rel`. Each entry is a table:
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `rel` | String | **Yes** | n/a | What the target is, from the registry below. MUST be a [custom name](#32-custom-names). |
+| `url` | String (URI) | **Yes** | n/a | An absolute URL with a scheme of `http` or `https`. |
+| `title` | String | No | none | A label for the link, in the deck's `default_language`. |
+
+The registry:
+
+| `rel` | The target is |
+| --- | --- |
+| `homepage` | The deck's own page, wherever its author considers it to live |
+| `buy` | Somewhere a reader can obtain the physical or digital deck |
+| `artist` | The artist, illustrator or creator of the artwork |
+| `publisher` | The publisher named in `[deck].publisher` |
+| `source` | Where the deck's assets were obtained, such as an archive or a scan repository |
+| `documentation` | A companion booklet, guidebook or other explanatory material |
+| `support` | Where to report a problem with the deck package |
+
+```toml
+[deck]
+name = "The Example Tarot"
+links = [
+  { rel = "buy", url = "https://example.com/shop/the-deck", title = "Buy from the artist" },
+  { rel = "artist", url = "https://example.com/about" },
+]
+publisher = "Example Press"
+```
+
+`links` is written as an array of inline tables, which makes it an ordinary key of `[deck]` that MAY appear anywhere among its other keys. Writing it instead as `[[deck.links]]`, a TOML array-of-tables header, would silently capture every `[deck]` key that followed it: the `publisher` line above would become a key of the last link rather than of the deck, TOML would report no error, and `[deck]` could not be reopened to recover. An author who keeps `links` last avoids this, but nothing makes them, so this specification does not offer the shape.
+
+The registry is open. An application MUST ignore a link whose `rel` it does not recognize, and MUST NOT treat an unrecognized `rel` as an error. A future version of this specification MAY add to the registry, so a deck author who needs a relation it does not define SHOULD prefix it, as in `mydeck_kickstarter`, to avoid colliding with a later addition.
+
+A `buy` link is the deck author's own; it is not a statement by anyone else that the deck may be sold. Where a deck is packaged from artwork the assembler does not own, a `buy` link pointing at the rights holder is the most useful thing the package can carry, and applications SHOULD surface it.
 
 ### 4.2 `[card_backs]`
 
@@ -627,6 +680,50 @@ Where `default` is omitted, the unsuffixed file such as `06.svg` is the default 
 
 Variants of a card are interchangeable and carry the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
 
+### 4.8 `[surrogate]`
+
+A **surrogate** is a derived, deliberately lossy stand-in for a card's artwork: enough to lay out, sort, theme or browse by, and far too little to reconstruct or substitute for the image. A deck MAY carry surrogates alongside its artwork, where they serve as progressive-loading placeholders. A deck MAY also carry surrogates *instead of* artwork, which makes it a [surrogate deck](#58-surrogate-decks).
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `derived_from` | String | No | none | The [qualified identifier](#33-qualified-identifiers) of the deck these surrogates were derived from, where it differs from this one. |
+| `method` | String | No | none | How the surrogates were produced, as free text naming a tool and version, such as `"libarcana 0.4.2"`. Informative. |
+
+**`[surrogate.cards."<canonical-id>"]`** takes a card's canonical ID as the table key, quoted because it contains dots. A [variant reference](#312-card-references-and-the-variant-suffix) is also a valid key here, so that a variant may carry its own surrogate.
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `palette` | Array of String | No | `[]` | Dominant colors, most prominent first, each an sRGB hex triplet written `#rrggbb` in lower case. |
+| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors), written as the name, in the same order. Snapping makes palettes comparable across decks, which raw extraction does not. |
+| `grid` | Array of Array of String | No | `[]` | A spatial color grid in row-major order, each cell an sRGB hex triplet. Every row MUST have the same length. The dimensions are the shape of the array, so a 4x4 grid is four arrays of four. |
+| `blurhash` | String | No | none | A [BlurHash](https://blurha.sh/) of the artwork. |
+| `thumbhash` | String | No | none | A [ThumbHash](https://evanw.github.io/thumbhash/) of the artwork, Base64-encoded. |
+| `phash` | String | No | none | A perceptual hash of the artwork, as lower-case hexadecimal. Identifies the artwork without depicting it, which lets an application match a card against a deck the user holds locally. |
+
+```toml
+[surrogate]
+derived_from = "land.arcana/deck/some-commercial-deck"
+method = "libarcana 0.4.2"
+
+[surrogate.cards."major_arcana.00"]
+palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e", "#d9d2c4"]
+palette_snapped = ["wheat", "darkslateblue", "sienna", "lightgray"]
+blurhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+phash = "9f8a7b6c5d4e3f21"
+
+[surrogate.cards."major_arcana.01"]
+grid = [
+  ["#1a2b3c", "#2b3c4d", "#3c4d5e", "#4d5e6f"],
+  ["#2b3c4d", "#3c4d5e", "#4d5e6f", "#5e6f70"],
+  ["#3c4d5e", "#4d5e6f", "#5e6f70", "#6f7081"],
+  ["#4d5e6f", "#5e6f70", "#6f7081", "#708192"],
+]
+```
+
+Every field is optional and independent; a deck MAY carry any combination, and MAY carry different combinations for different cards.
+
+This specification fixes how a surrogate is **encoded** but not how it is **extracted**. Color quantization, dominance ordering and hashing all admit many implementations, and two tools given the same image will not generally agree. A surrogate is therefore a claim by whoever assembled the deck, not a reproducible function of the artwork, which is what `method` exists to record. An application MUST NOT assume that surrogates from different decks were produced comparably, except for `palette_snapped`, whose target palette this specification does fix.
+
 ## 5. Card Assets
 
 ### 5.1 Asset Discovery
@@ -794,6 +891,23 @@ Card backs follow the same shape with the differences [§5.7.7](#577-resolving-a
 
 ANSI files are exempt from the extension chain: [§5.4](#54-ansi-art) allows them any extension, so in an ANSI root a lookup matches on stem alone and determines the file's kind from its content. An application MUST apply [§10.2](#102-terminal-escape-injection) to any ANSI file it writes to a terminal.
 
+### 5.8 Surrogate Decks
+
+A **surrogate deck** is a deck that carries no card assets at all. In place of artwork it carries [surrogates](#48-surrogate), together with the deck's ordinary metadata: its name, author, publisher, card structure, display names, alt text, rights and links.
+
+A surrogate deck exists because the artwork of most tarot decks is neither the assembler's to give away nor, in many cases, licensed for redistribution at all, while everything *about* a deck is ordinary factual description that anyone may publish. Separating the two lets a catalog, a library index or a collection listing be shared freely without shipping a single pixel of anyone's art.
+
+Two rules make this work.
+
+- **Cards come from surrogates.** In a deck with no image files, [discovery](#51-asset-discovery) finds nothing, so a key in `[surrogate.cards]` defines a card exactly as a file would. Everything else about a card, including `[cards]`, `[suits]`, `[excluded_cards]` and name files, behaves unchanged.
+- **A surrogate deck is conforming.** [§9.1](#91-conforming-deck) requires a deck to have at least one card asset *or* at least one entry in `[surrogate.cards]`. A deck with neither has nothing to show and is not a deck.
+
+Resolving a card in a surrogate deck fails at every step of [§5.7.8](#578-resolution-summary), which is not an error but the point. An application that meets such a failure and has a surrogate for the card SHOULD render the surrogate. An application MUST NOT present a surrogate as though it were the artwork.
+
+A surrogate deck SHOULD declare `[surrogate].derived_from` naming the deck it stands for, so that an application holding both can recognize them as the same deck and prefer the artwork. Where the assembler is willing to say so, it SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD carry a `buy` [link](#411-links), since a surrogate deck names a work the reader cannot see here and may want.
+
+Nothing prevents a deck from carrying both artwork and surrogates. That is the ordinary case for a deck the assembler *may* redistribute, where surrogates serve as placeholders while images load. `[surrogate]` describes a deck; it does not classify one.
+
 ## 6. Internationalization
 
 Display strings such as card, suit and rank names and alt text are declared in `names/<tag>.toml`.
@@ -915,6 +1029,8 @@ A deck is comprised of several components that can have separate licensing terms
 - The license in the `[metadata].license` field of a name file covers the strings in that file and `[metadata.alt_text]` narrows that to the alt text alone.
 - A `LICENSE` file at the root of the deck conveys terms for whoever assembled the deck.
 
+Not every deck has a license to name. Where the artwork is published commercially and the assembler holds nothing but a copy of it, [`[deck].rights_status`](#74-rights-status) states the artwork's copyright status instead, and [`[deck].redistribution` and `[deck].derivation`](#75-redistribution-and-derivation) state what the assembler passes on.
+
 ### 7.1 License Expressions
 
 The `[deck].license` field SHOULD be a valid [SPDX license expression](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) and compose:
@@ -974,6 +1090,62 @@ license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Paulo Freire."
 ```
 
+### 7.4 Rights Status
+
+A license is a *grant*. Every SPDX identifier names terms under which someone gave permission, so `[deck].license` can only describe artwork that somebody licensed. Most tarot decks are not licensed to anyone. A deck packaged from a commercially published deck the assembler owns a copy of has no grant to record, and leaving `license` empty says only that the field was not filled in.
+
+`[deck].rights_status` records the artwork's copyright *status* instead, which is a statement about the world rather than a permission. It SHOULD be one of:
+
+- a [RightsStatements.org](https://rightsstatements.org/) URI, which covers the cases SPDX structurally cannot: in copyright with no license granted, in copyright with the holder unknown or unlocatable, and status undetermined or not evaluated;
+- a [Creative Commons](https://creativecommons.org/) URI, including the public domain marks `publicdomain/mark/1.0/` and `publicdomain/zero/1.0/`.
+
+```toml
+# A deck packaged from a copy the assembler owns. No license exists to name.
+[deck]
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+copyright = "© 2012 Some Artist"
+attribution = "The Example Tarot by Some Artist."
+```
+
+```toml
+# A deck whose artwork is old enough that its copyright has expired. Note that a
+# faithful reproduction of a public-domain work generally creates no new copyright.
+[deck]
+license = "CC0-1.0"
+rights_status = "https://creativecommons.org/publicdomain/mark/1.0/"
+```
+
+`license` and `rights_status` answer different questions and a deck MAY carry both, one, or neither. Where both are present they MUST NOT contradict each other, though a validator cannot check this and does not try.
+
+The same field is available in a name file's `[metadata]` and `[metadata.alt_text]` tables, with the same meaning ([§7.3](#73-name-file-licensing)). Freely licensed alt text describing artwork that is not freely licensed is the ordinary case for a deck packaged from a published one, and the two tables are how a deck says so.
+
+### 7.5 Redistribution and Derivation
+
+`license` and `rights_status` describe the artwork. Neither answers the question an application actually has to act on, which is what it may do with *this package*. `[deck].redistribution` and `[deck].derivation` answer it. Each takes one of:
+
+| Value | Meaning |
+| --- | --- |
+| `"full"` | The artwork may be passed on as it is. |
+| `"surrogate"` | The artwork may not be passed on, but a [surrogate](#48-surrogate) derived from it may. |
+| `"none"` | Neither may be passed on. |
+| `"unstated"` | The assembler has not said. The default. |
+
+`redistribution` governs republishing the artwork; `derivation` governs making new work from it. They vary independently, and the combination that motivates having both is `redistribution = "none"` with `derivation = "surrogate"`: keep the images to yourself, but generate and share a [surrogate deck](#58-surrogate-decks) from them.
+
+```toml
+[deck]
+name = "The Example Tarot"
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+redistribution = "none"
+derivation = "surrogate"
+```
+
+Three rules bound what these fields mean.
+
+- **They are declarations, not grants.** Whoever assembled a deck says here what they believe they are passing on. Nobody can grant permission they do not hold, and a `redistribution` of `"full"` over artwork the assembler had no right to redistribute conveys nothing.
+- **Absence is not permission.** `"unstated"` means the question was not answered. An application MUST NOT read it as `"full"`, and one that redistributes decks on a user's behalf SHOULD treat `"unstated"` as it treats `"none"`.
+- **They do not narrow a license.** Where `license` grants more than these fields state, the license governs; a deck cannot use these fields to take back permissions it has already given under CC BY or any other public license. They are for artwork no public license covers, which is the case they exist for.
+
 ## 8. Extensibility
 
 The `[app]` table is reserved for applications to record data about a deck that this specification does not model. Each application takes a subtable keyed by a [realm](#33-qualified-identifiers):
@@ -1001,7 +1173,7 @@ A conforming deck:
 
 - MUST contain a readable `deck.toml` well-formed under [§2.3](#23-file-format-and-encoding).
 - MUST contain a `[deck]` table carrying the required fields from [§4.1](#41-deck).
-- MUST have at least one card asset, discoverable under [§5.1](#51-asset-discovery).
+- MUST have at least one card asset discoverable under [§5.1](#51-asset-discovery), or, where it has none, at least one entry in `[surrogate.cards]` ([§5.8](#58-surrogate-decks)).
 - MUST produce no errors under [§9.4](#94-validation-rules).
 
 ### 9.2 Errors and Warnings
@@ -1017,7 +1189,7 @@ A conforming application:
 - MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
-An application need not implement editions, card variants, ANSI art, SVG or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. A conforming validator implements the rules in [§9.4](#94-validation-rules).
+An application need not implement editions, card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates treats a [surrogate deck](#58-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
 
 ### 9.4 Validation Rules
 
@@ -1060,6 +1232,16 @@ Each rule is labelled **E** for error or **W** for warning.
 | **W** | Two files in one directory sharing a stem and differing only in a chain extension, such as `06.png` beside `06.webp`. Resolution is well defined ([§5.7.4](#574-the-extension-chain)), but one of the two is usually a conversion left behind. |
 | **W** | A card asset whose own aspect ratio differs from `[deck].aspect_ratio` by more than 10%, measured as `\|actual - declared\| / declared` ([§4.1](#41-deck)). Card backs are exempt, since `[deck].aspect_ratio` describes the fronts, and so is ANSI art, whose extent is counted in character cells rather than pixels and is not comparable to a ratio of lengths. |
 | **W** | A `license` field that is not a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected ([§7](#7-licensing-and-attribution)). |
+| **W** | A `rights_status` that is not a RightsStatements.org or Creative Commons URI, in `[deck]` and in every name file's `[metadata]` alike. As with `license`, a deck that fails this check MUST NOT be rejected ([§7.4](#74-rights-status)). |
+| **E** | `redistribution` and `derivation`, where present, are one of `full`, `surrogate`, `none` or `unstated` ([§7.5](#75-redistribution-and-derivation)). |
+| **W** | A deck that declares neither `license` nor `rights_status`. One of the two is how a deck says what may be done with its artwork, and a deck that says neither leaves every downstream user guessing ([§7](#7-licensing-and-attribution)). |
+| **E** | Every `[deck].links` entry carries a `rel` that is a well-formed [custom name](#32-custom-names) and a `url` that is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). |
+| **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
+| **E** | Every `[surrogate.cards]` key is a well-formed [canonical ID](#31-canonical-ids) or [variant reference](#312-card-references-and-the-variant-suffix), and, where the deck has assets, names a card the deck defines. In a deck with no assets these keys define the cards ([§5.8](#58-surrogate-decks)). |
+| **E** | Every entry of a `palette` or `grid` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color, and every row of a `grid` has the same length ([§4.9](#48-surrogate)). |
+| **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§4.9](#48-surrogate)). |
+| **W** | A surrogate deck without `[surrogate].derived_from`. Nothing can then connect it to the deck it stands for ([§5.8](#58-surrogate-decks)). |
+| **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§5.8](#58-surrogate-decks)). |
 
 ## 10. Security Considerations
 
@@ -1123,12 +1305,17 @@ license = "LicenseRef-PublicDomain AND CC0-1.0"
 license_files = ["LICENSE"]
 copyright = "Artwork © 1909 Pamela Colman Smith (copyright expired)"
 attribution = "Original artwork by Pamela Colman Smith (1909)."
+rights_status = "https://creativecommons.org/publicdomain/mark/1.0/"
+redistribution = "full"
+derivation = "full"
 
 default_language = "en"
 created_date = "1909-12-01"
 updated_date = "2025-04-28"
-website = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot"
 tags = ["traditional", "classic", "beginner-friendly"]
+links = [
+  { rel = "homepage", url = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot" },
+]
 
 [card_backs]
 default = "classic"
@@ -1267,6 +1454,59 @@ And `names/en.toml`:
 "major_arcana.06:two_men" = "Two men stand hand in hand beneath a winged figure."
 ```
 
+### A.8 A Surrogate Deck
+
+A collector holds a commercially published deck and wants to list it in a public catalog. The artwork is not theirs to redistribute, but the description of the deck is ordinary fact and the surrogates are derived data. The package is a single file.
+
+```
+example-tarot/
+  deck.toml
+  names/en.toml
+```
+
+```toml
+# deck.toml
+[deck]
+schema_version = "2.0"
+name = "The Example Tarot"
+identifier = "my.personal.domain/deck/example-tarot-surrogate"
+version = "1.0"
+author = "Some Artist"
+publisher = "Example Press"
+aspect_ratio = 0.5789
+
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+copyright = "© 2012 Some Artist"
+attribution = "The Example Tarot by Some Artist, published by Example Press."
+redistribution = "none"
+derivation = "surrogate"
+
+tags = ["indie", "modern"]
+links = [
+  { rel = "buy", url = "https://example.com/shop/the-example-tarot", title = "Buy from Example Press" },
+  { rel = "artist", url = "https://example.com/artist" },
+]
+
+[surrogate]
+derived_from = "my.personal.domain/deck/example-tarot"
+method = "libarcana 0.4.2"
+
+[surrogate.cards."major_arcana.00"]
+palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e"]
+palette_snapped = ["wheat", "darkslateblue", "sienna"]
+blurhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+phash = "9f8a7b6c5d4e3f21"
+
+[surrogate.cards."minor_arcana.wands.ace"]
+palette = ["#c2452d", "#f0e4c8", "#3f6b3a"]
+palette_snapped = ["firebrick", "cornsilk", "darkolivegreen"]
+blurhash = "L6PZfSjE.AyE_3t7t7R**0o#DgR4"
+```
+
+Note what the file does and does not claim. `redistribution = "none"` says the collector passes on no artwork, which is consistent with there being none in the package. `derivation = "surrogate"` says they consider the surrogates themselves shareable. `rights_status` says the artwork is in copyright with no license granted, which `license` could not have expressed. The `buy` link points at the people who can sell the reader the real thing.
+
+The deck names its cards, orders them, carries alt text in `names/en.toml`, and resolves nothing. An application shows the surrogates, the metadata and the links.
+
 ## Appendix B. Reserved and Deprecated Names
 
 The names below were defined by an earlier version of this specification and are no longer defined by this one. A future version of this specification MUST NOT reuse any of them with a new meaning.
@@ -1337,5 +1577,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [File format and encoding](#23-file-format-and-encoding).
 - [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
+- [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers.
+- [Surrogates](#48-surrogate) and [surrogate decks](#58-surrogate-decks), so that a deck can be described without its artwork being redistributed.
+- [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 
-**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
+**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe, and relaxed [§9.1](#91-conforming-deck) so that a deck may have surrogates in place of assets. Required an ANSI file's kind to be detected from its content and recommended honoring a SAUCE record. Defined what `[app]` is for and reserved top-level table names outside it.
