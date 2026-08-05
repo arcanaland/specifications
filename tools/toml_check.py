@@ -5,7 +5,7 @@
 #
 # SPDX-FileCopyrightText: 2026 Adam Fidel
 # SPDX-License-Identifier: MIT
-"""Check that every TOML example embedded in DECK.md parses.
+"""Check that every TOML example embedded in a specification document parses.
 
 Each ```toml fence is parsed on its own. A fence preceded by the comment
 
@@ -22,7 +22,10 @@ import sys
 import tomllib
 from pathlib import Path
 
-DOC = Path(__file__).resolve().parent.parent / "DECK.md"
+ROOT = Path(__file__).resolve().parent.parent
+
+# ESOTERICA.md is currently busted
+DOCS = [ROOT / "DECK.md"]
 
 FENCE = re.compile(r"^```(\w*)[^\n]*\n(.*?)^```", re.S | re.M)
 INVALID_MARKER = re.compile(r"<!--\s*toml-check:\s*invalid\s*-->\s*\Z")
@@ -43,27 +46,28 @@ def strip_comments(body):
 
 
 def main():
-    text = DOC.read_text(encoding="utf-8")
-
     checked = 0
     failures, notes = [], []
-    for line, lang, body, expect_invalid in fences(text):
-        if lang != "toml":
-            if lang == "" and LOOKS_LIKE_TOML.search(strip_comments(body)):
-                notes.append(f"  {DOC.name}:{line} untagged fence looks like TOML")
-            continue
+    for doc in DOCS:
+        text = doc.read_text(encoding="utf-8")
 
-        checked += 1
-        try:
-            tomllib.loads(body)
-        except tomllib.TOMLDecodeError as e:
-            if not expect_invalid:
-                failures.append(f"  {DOC.name}:{line} does not parse: {e}")
-        else:
-            if expect_invalid:
-                failures.append(f"  {DOC.name}:{line} marked invalid but parses")
+        for line, lang, body, expect_invalid in fences(text):
+            if lang != "toml":
+                if lang == "" and LOOKS_LIKE_TOML.search(strip_comments(body)):
+                    notes.append(f"  {doc.name}:{line} untagged fence looks like TOML")
+                continue
 
-    print(f"{checked} toml fences in {DOC.name}")
+            checked += 1
+            try:
+                tomllib.loads(body)
+            except tomllib.TOMLDecodeError as e:
+                if not expect_invalid:
+                    failures.append(f"  {doc.name}:{line} does not parse: {e}")
+            else:
+                if expect_invalid:
+                    failures.append(f"  {doc.name}:{line} marked invalid but parses")
+
+    print(f"{checked} toml fences in {', '.join(d.name for d in DOCS)}")
     if notes:
         print("\nnotes:")
         print("\n".join(notes))
