@@ -24,9 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# ESOTERICA.md is not checked yet: two of its examples do not parse, and one of
-# them needs a design decision rather than a fix. Add it here once they are
-# sorted out.
+# ESOTERICA.md is currently busted
 DOCS = [ROOT / "DECK.md"]
 
 FENCE = re.compile(r"^```(\w*)[^\n]*\n(.*?)^```", re.S | re.M)
