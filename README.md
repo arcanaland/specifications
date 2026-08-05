@@ -15,7 +15,7 @@ The [Tarot Deck Specification](./DECK.md) describes how a deck is laid out on di
 
 ### Esoterica
 
-The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early not implemented anywhere.
+The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere.
 
 ## Canonical Identifiers
 
@@ -35,6 +35,18 @@ Each specification carries a version of the form `MAJOR.MINOR`.
 Major versions may change or remove existing requirements. A conforming artifact valid under one major version is not guaranteed to be valid under the next.
 
 A substantial revision of the deck specification is in development on the [`deck-v2`](https://github.com/arcanaland/specifications/tree/deck-v2) branch.
+
+## Releases
+
+Released versions are tagged in this repo.
+
+| Tag | Specification | Released |
+| --- | --- | --- |
+| [`deck/v1.0`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv1.0) | Tarot Deck 1.0 | 2025-04-30 |
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Licensing
 
