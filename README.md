@@ -38,13 +38,11 @@ A substantial revision of the deck specification is in development on the [`deck
 
 ## Releases
 
-Released versions are tagged and are not edited in place. Corrections are published as a new version.
+Released versions are tagged in this repo.
 
 | Tag | Specification | Released |
 | --- | --- | --- |
 | [`deck/v1.0`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv1.0) | Tarot Deck 1.0 | 2025-04-30 |
-
-Each specification is tagged on its own version line. Esoterica 0.1 is a draft and is not tagged.
 
 ## Contributing
 
