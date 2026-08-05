@@ -1,0 +1,14 @@
+name: TOML check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  toml-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: ./tools/toml_check.py
