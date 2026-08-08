@@ -2,7 +2,7 @@
 
 > Maintained By: [Arcana Land](https://github.com/arcanaland)
 >
-> Version: 2.0
+> Version: 2.0 (draft)
 
 ## Table of Contents
 
@@ -324,7 +324,7 @@ A qualified identifier is composed of a **realm** and an object **path**, separa
 
 - The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has two labels or more, each beginning with a letter and neither beginning nor ending with a hyphen. A single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form, and `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
 - The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
-- The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In *this* specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix): `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
+- The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In this specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix): `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`. A fragment is therefore admissible only where a card is what is being named, and a field of this specification that names a deck accepts no fragment.
 
 Realms are compared bytewise. Qualified identifiers are not locations and nothing in this specification implies that one can be fetched.
 
@@ -341,6 +341,8 @@ A deck has three distinct properties related to identity:
 | `name` | `[deck].name`, REQUIRED | Display string shown to the user | Two unrelated decks can share a name |
 
 The three are independent. A directory name is not required to match `[deck].name` nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree and a validator MUST NOT report a disagreement.
+
+An `identifier` names the deck as a whole and MUST NOT carry a fragment.
 
 A deck SHOULD provide an `identifier`, since a deck without one cannot be referenced from another Arcana Land document. Applications and validators MUST NOT synthesize one for a deck that lacks it. Two decks in one library MAY declare the same `identifier` under different directory names, although a validator warns about it.
 
@@ -501,6 +503,7 @@ Rules:
 
 - The value MUST be the `[deck].identifier` of the package it signifies, so that it can serve as a merge key ([§5.9](#59-surrogate-decks)).
 - It MUST NOT equal this deck's own `identifier`. A package does not signify itself.
+- It MUST NOT carry a fragment. Neither a [card reference](#312-card-references-and-the-variant-suffix) nor a [variant reference](#312-card-references-and-the-variant-suffix) is a value this field accepts.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator can check that the value is well formed and no more.
 
 ### 4.2 `[card_backs]`
@@ -559,11 +562,11 @@ position = 22
 | `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
 | `position` | Integer | No | see [§4.3.2](#432-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 
-`name` and `alt_text` are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized ([§6.3](#63-display-name-resolution)). There is no `image` field, because a card's images are found by the same convention as every other card's, which is what lets one card exist in several resolutions and formats at once.
+`name` and `alt_text` are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized ([§6.3](#63-display-name-resolution)).
 
 An entry for a canonical minor arcanum or for `major_arcana.00` through `major_arcana.21` is always accepted, since those slots exist for every deck. An entry for any other card is an error unless the deck has files for it ([§9.4](#94-validation-rules)).
 
-`position` is meaningful only for a major arcanum. A minor arcanum takes its place from its suit's [`ranks`](#44-suits) sequence and an application MUST ignore a `position` declared on one.
+`position` is meaningful only for major arcana. A minor arcanum takes its place from its suit's [`ranks`](#44-suits) sequence and an application MUST ignore a `position` declared on one.
 
 #### 4.3.1 Card Numbers
 
@@ -626,7 +629,7 @@ reason = "This deck excludes these specific court cards."
 | `cards` | Array of String | No | `[]` | Canonical IDs of cards this deck deliberately does not contain. |
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
-An exclusion records that the absence of an expected card is deliberate, so that an application can tell a user "this deck has no court cards" rather than report missing assets.
+An exclusion records that the absence of an expected card is deliberate.
 
 ### 4.6 `[editions]`
 
@@ -915,11 +918,11 @@ A surrogate deck is a deck whose only card assets are surrogates. Because the ar
 
 A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows applications to recognize them as the same underlying deck and prefer the artwork over the surrogate.
 
-A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and it SHOULD contain a `buy` [link](#411-links).
+A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and MAY contain a `buy` [link](#411-links) where available.
 
-The [`[deck].license`](#41-deck) covers the card assets the package carries ([§7](#7-licensing-and-attribution)), so in a surrogate deck it covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
+Because [`[deck].license`](#41-deck) covers the card assets in the package ([§7](#7-licensing-and-attribution)), a surrogate deck covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
 
-A surrogate deck's `icon`, where it has one, SHOULD avoid using the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates the deck carries.
+A surrogate deck's `icon`, where it has one, SHOULD avoid using the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates inside the deck.
 
 ## 6. Internationalization
 
@@ -1265,7 +1268,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
 | **W** | A card back design supplied in no format every application must decode ([§5.7.4](#574-the-extension-chain)). Unlike a card, a back has no reference deck to fall back on ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode it substitutes its own and the design is never seen ([§5.5](#55-card-back-images)). |
 | **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[suits]` table key. |
-| **E** | `[deck].identifier`, where present, is a well-formed qualified identifier. |
+| **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment. It names the deck as a whole ([§3.4](#34-deck-identity)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
 | **W** | `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | **W** | Where a validator can see a whole library, no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement, such as a fork or two versions installed side by side, so this is only a warning. |
@@ -1300,7 +1303,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A `packager` equal to `author`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-naming-the-packager)). |
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
-| **E** | `[deck].signifies`, where present, is a well-formed qualified identifier and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)). Whether it names a deck that exists is not checkable and is not checked. |
+| **E** | `[deck].signifies`, where present, is a well-formed qualified identifier, carries no fragment, and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)).Whether it names a deck that exists is not checkable and is not checked. |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
