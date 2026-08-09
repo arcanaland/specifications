@@ -32,6 +32,8 @@
   - [4.1 `[deck]`](#41-deck)
     - [4.1.1 Links](#411-links)
     - [4.1.2 `signifies`](#412-signifies)
+    - [4.1.3 `follows`](#413-follows)
+    - [4.1.4 `pips`](#414-pips)
   - [4.2 `[card_backs]`](#42-card_backs)
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
@@ -417,6 +419,8 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `version` | String | **Yes** | n/a | The deck's own free-form version. |
 | `identifier` | String | RECOMMENDED | none | The deck's qualified identifier ([§3.3](#33-qualified-identifiers)). A deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | `signifies` | String | No | none | The [qualified identifier](#33-qualified-identifiers) of another deck, whose artwork this package describes but does not carry ([§4.1.2](#412-signifies)). |
+| `follows` | String | No | none | The [qualified identifier](#33-qualified-identifiers) of the deck whose structure and iconography this deck is patterned on ([§4.1.3](#413-follows)). |
+| `pips` | String | No | `"unstated"` | Whether the deck's numbered minor arcana carry narrative illustrations ([§4.1.4](#414-pips)). |
 | `default_language` | String | No | `"en"` | BCP 47 tag of the deck's default name file ([§6.2](#62-language-resolution)). |
 | `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
 | `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
@@ -504,6 +508,52 @@ Rules:
 - It MUST NOT equal this deck's own `identifier`. A package does not signify itself.
 - It MUST NOT carry a fragment. Neither a [card reference](#312-card-references-and-the-variant-suffix) nor a [variant reference](#312-card-references-and-the-variant-suffix) is a value this field accepts.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator can check that the value is well formed and no more.
+
+#### 4.1.3 `follows`
+
+`[deck].follows` contains the [qualified identifier](#33-qualified-identifiers) of the deck whose structure and iconography this deck is patterned on. Most tarot decks published since the twentieth century are patterned on another deck, and a deck that says which one allows an application to tell whether borrowing from a [reference deck](#13-terminology) is safe ([§5.7.6](#576-when-no-asset-is-found)).
+
+```toml
+[deck]
+name = "The Example Tarot"
+identifier = "com.example/deck/example-tarot"
+follows = "land.arcana/deck/rider-waite-smith"
+pips = "scenic"
+```
+
+Rules:
+
+- The value MUST be a well-formed qualified identifier and MUST NOT carry a fragment. Neither a [card reference](#312-card-references-and-the-variant-suffix) nor a [variant reference](#312-card-references-and-the-variant-suffix) is a value this field accepts.
+- It MUST NOT equal this deck's own `identifier`. A deck does not follow itself.
+- It MUST NOT equal this deck's [`signifies`](#412-signifies). A [surrogate deck](#59-surrogate-decks) describes the artwork of the deck it signifies; it does not follow it.
+- `follows` carries no merge semantics. A deck that follows another is a different deck with different artwork, and an application MUST NOT treat the two as one deck, in contrast to `signifies` ([§5.9](#59-surrogate-decks)).
+- `follows` is not a rights claim. It asserts a resemblance in structure and iconography, not that the artwork is derived from the followed deck's, and it grants and implies no permission. Rights are stated in `license`, `rights_status`, `redistribution` and `derivation` ([§7](#7-licensing-and-attribution)), and [§7.7](#77-deck-names-and-trademarks)'s prohibition on implying endorsement applies to how a deck's lineage is presented as it does to its name.
+- Following is not transitive for any purpose this specification defines. A deck that follows a deck that itself follows a third deck does not thereby follow the third.
+- Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator can check that the value is well formed and no more.
+
+Three `[deck]` fields hold the qualified identifier of another deck and they mean different things. `identifier` names this deck. `signifies` names the deck whose artwork this package describes but does not carry, and is a merge key. `follows` names a deck this one resembles, and is neither a merge key nor a claim about artwork.
+
+#### 4.1.4 `pips`
+
+`[deck].pips` states whether the deck's numbered minor arcana carry narrative illustrations:
+
+| Value | Meaning |
+| --- | --- |
+| `"scenic"` | The numbered minors carry narrative illustrations. |
+| `"abstract"` | The numbered minors are arrangements of suit symbols, as in the Marseille pattern and most historical decks. |
+| `"unstated"` | The default. The packager has not said. |
+
+The field describes the *numbered* minors, `ace` through `ten`, in every suit the deck has. Court cards are illustrated in substantially every tradition and are not described by it, and neither are the major arcana.
+
+```toml
+[deck]
+name = "The Example Marseille"
+pips = "abstract"
+```
+
+The default value is `"unstated"`. An application MUST NOT read it as either of the other two.
+
+A deck whose suits differ among themselves in this respect has no accurate value to declare and SHOULD declare none.
 
 ### 4.2 `[card_backs]`
 
@@ -847,6 +897,14 @@ Where resolution yields no file for a card in any image root of any kind and the
 
 An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets). This needs saying more than the surrogate case does, not less: a surrogate announces itself, whereas a borrowed card is a finished image sitting beside the deck's own with nothing to say that another artist drew it. Where an application displays attribution or rights metadata for a borrowed card, it MUST take that metadata from the reference deck, whose terms may be narrower than those of the deck it stands in for.
 
+The borrow assumes the two decks agree about what the card is, and three conditions say when they do not. Each is checked against the deck's own declarations; a deck that declares nothing fails none of them, so a deck written before this version borrows exactly as it did.
+
+- **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage. Two decks are lineage-compatible where the borrowing deck's [`follows`](#413-follows) is the reference deck's `identifier`, or the reference deck's `follows` is the borrowing deck's `identifier`, or both declare the same `follows`, or either declares no `follows`.
+- **Pip style.** An application SHOULD NOT borrow an image for a numbered minor arcanum where both decks declare a [`pips`](#414-pips) value and the values differ. The major arcana and the court cards are unaffected.
+- **Name coherence.** An application SHOULD NOT borrow an image for a card where the borrowing deck supplies its own name for that card and the reference deck's name for the same [canonical ID](#31-canonical-ids) differs. Because a canonical ID is a [slot](#311-a-canonical-id-is-a-slot) rather than a fixed card, two decks may put different cards in it — a deck following the Marseille pattern names `major_arcana.08` Justice, where a Rider-Waite-Smith reference deck names it Strength — and an image borrowed across that disagreement is rendered under a name that contradicts it. Both names are resolved by [§6.3](#63-display-name-resolution) in the language being displayed, and where either does not resolve to a deck-supplied string the condition does not apply.
+
+These conditions gate the borrow only. Where one blocks it, the outcome is the one below for a card no reference deck supplies.
+
 Otherwise, this is a resolution failure and it is up to the application to decide what to show.
 
 #### 5.7.7 Resolving a Card Back
@@ -1019,6 +1077,8 @@ A resolved display string is used verbatim. Applications MUST NOT apply case con
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
+The reference deck steps of these chains are subject to the lineage condition of [§5.7.6](#576-when-no-asset-is-found): an application SHOULD NOT borrow a name where the two decks declare incompatible lineage, and resolution continues to the next step of the chain instead. The pip-style and name-coherence conditions govern images alone and do not apply here.
+
 The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative) are both absent from this chain above `21`. A deck that has extended major arcana SHOULD name them in a name file, and a validator says so ([§9.4](#94-validation-rules)).
 
 #### 6.3.1 Minor Arcana Name Composition
@@ -1032,7 +1092,7 @@ name_template = "{rank} of {suit}"
 
 `{rank}` and `{suit}` are replaced by the rank and suit names resolved above. No other placeholders are defined, and an application MUST leave any other braced text in the template alone. The template is resolved by the same [Language Resolution](#62-language-resolution) rules as any other key, so a translation supplies its own. Where no name file supplies one, the template is `"{rank} of {suit}"`.
 
-Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology).
+Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology), subject to the same lineage condition.
 
 ### 6.4 Alt Text Guidelines
 
@@ -1307,6 +1367,9 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | `[deck].signifies`, where present, is a well-formed qualified identifier, carries no fragment, and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)).Whether it names a deck that exists is not checkable and is not checked. |
+| **E** | `[deck].follows`, where present, is a well-formed qualified identifier and carries no fragment ([§4.1.3](#413-follows)). As with `signifies`, whether it names a deck that exists is not checkable and is not checked. |
+| **E** | `[deck].follows` is equal to neither `[deck].identifier` nor `[deck].signifies` ([§4.1.3](#413-follows)). |
+| **E** | `pips`, where present, is one of `scenic`, `abstract` or `unstated` ([§4.1.4](#414-pips)). |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
@@ -1666,6 +1729,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
+- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck names the deck it is patterned on and says whether its numbered minors are illustrated, together with the conditions in [§5.7.6](#576-when-no-asset-is-found) that stop a reference deck from lending across a disagreement about what a card is.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
