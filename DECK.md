@@ -125,29 +125,28 @@ A packager is whoever assembles the package. They may be the artist who made the
 | Term | Meaning |
 | --- | --- |
 | **base** | The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06` ([§5.7.2](#572-extensions-stems-and-bases)). |
-| **canonical ID** | The identifier by which this specification names a card: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
-| **card** | One addressable card in a deck named by a canonical ID. |
-| **card back design** | One of the card back images a deck ships, named by a design key ([§4.2](#42-card_backs)). |
-| **card number** | The number printed on a card's face, held as a display string ([§4.3.1](#431-card-numbers)). Distinct from **position**, which orders cards and is never displayed. |
+| **canonical ID** | The identifier by which a card is uniquely addressed: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
+| **card back design** | One of the card back images inside a deck, named by a design key ([§4.2](#42-card_backs)). |
+| **card number** | The number printed on a card's face as a display string ([§4.3.1](#431-card-numbers)). Distinct from **position**, which orders cards relative to each other. |
 | **card reference** | A canonical ID, optionally followed by a **variant suffix** (`:` and a variant key). `major_arcana.06` and `major_arcana.06:two_women` are both card references. The suffixed form is also called a **variant reference**. |
-| **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. Distinct from **kind** ([§5.7.1](#571-image-roots)), which distinguishes scalable, raster, ANSI and surrogate assets. |
-| **card variant** | An alternative artwork for a card the deck already contains, named by a variant key. Variants of a card are interchangeable and denote the same meaning. |
-| **custom name** | An identifier the deck author coins: custom card, suit, rank, card back design, edition and card variant keys ([§3.2](#32-custom-names)). |
+| **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. |
+| **card variant** | An alternative artwork for a card. Variants of a card are interchangeable and denote the same meaning. |
+| **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs, editions and card variant keys ([§3.2](#32-custom-names)). |
 | **deck** | A directory containing a `deck.toml`, together with the card assets and name files arranged around it. |
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
-| **deck root** | The directory that directly contains a deck's `deck.toml`. Every path in `deck.toml` is relative to it. |
-| **directory name** | The name of the deck root's own directory: the deck's handle within a library ([§3.4](#34-deck-identity)). |
-| **edition** | A printing of a deck that shares the deck's card fronts but selects a different card back and has its own metadata ([§4.6](#46-editions)). |
+| **deck root** | The directory that directly contains a deck's `deck.toml`. |
+| **edition** | A printing of a deck that shares the card fronts but different card backs. ([§4.6](#46-editions)). |
 | **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99`. |
 | **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
-| **name file** | A `names/<tag>.toml` file holding **display strings** for one language tag, such as card, suit and rank names and alt text. |
+| **name file** | A `names/<tag>.toml` file enumerating display strings for one language tag. |
 | **packager** | Whoever assembled a deck package. Not necessarily the artist and not necessarily the rights holder ([§1.2](#12-document-conventions)). |
 | **position** | An integer sort key placing a major arcanum in the deck's sequence ([§4.3.2](#432-ordering)). |
-| **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** (a domain name the author controls, written in reverse) and a path ([§3.3](#33-qualified-identifiers)). |
+| **realm** | A domain name (preferably, one the author controls) written in reverse ([§3.3](#33-qualified-identifiers)). |
+| **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** and a path ([§3.3](#33-qualified-identifiers)). |
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
-| **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/). A surrogate is a card asset of its own kind, carried in the `surrogate/` [image root](#571-image-roots) ([§5.8](#58-surrogate-assets)). |
-| **surrogate deck** | A deck that carries surrogates and no other card assets, so that it can describe artwork it does not redistribute. It [signifies](#41-deck) the deck whose artwork that is ([§5.9](#59-surrogate-decks)). |
+| **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/) ([§5.8](#58-surrogate-assets)). |
+| **surrogate deck** | A deck that carries surrogates and no other card assets. It [signifies](#41-deck) the deck whose artwork for which it is a surrogate ([§5.9](#59-surrogate-decks)). |
 | **title-cased key** | The display string derived from a key where nothing else supplies one: each `_` becomes a space and the first character of each word is uppercased. |
 
 ### 1.4 Versioning and Compatibility
