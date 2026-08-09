@@ -28,6 +28,7 @@
   - [3.3 Qualified Identifiers](#33-qualified-identifiers)
   - [3.4 Deck Identity](#34-deck-identity)
   - [3.5 Grammar](#35-grammar)
+  - [3.6 Identifiers in TOML](#36-identifiers-in-toml)
 - [4. deck.toml Reference](#4-decktoml-reference)
   - [4.1 `[deck]`](#41-deck)
     - [4.1.1 Links](#411-links)
@@ -311,6 +312,7 @@ Further:
 
 - A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords` and `pentacles`, or the ranks `ace`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`, `page`, `knight`, `queen` and `king`.
 - A custom major arcana key additionally MUST NOT be a two-digit string.
+- A custom suit key additionally MUST NOT be `name_template`.
 
 ### 3.3 Qualified Identifiers
 
@@ -402,7 +404,23 @@ DIGIT           = %x30-39               ; 0-9, from RFC 5234 Appendix B.1
 Two constraints are not expressible in the grammar and are stated normatively:
 
 - `canonical-major` admits any two digits, but only `00` through `21` have a name in [Appendix C](#appendix-c-canonical-card-names-informative) or any meaning shared between decks ([§3.1.1](#311-a-canonical-id-is-a-slot)). A key MUST be written with both digits.
-- A `custom-name` MUST NOT be a reserved canonical key, with the one exception in [§4.4](#44-suits).
+- A `custom-name` MUST NOT be a name reserved by [§3.2](#32-custom-names), with the one exception in [§4.4](#44-suits).
+
+### 3.6 Identifiers in TOML
+
+A [canonical ID](#31-canonical-ids) is a compound, which, when used in TOML as a key, has a few considerations:
+
+- Where a document attaches a record to a single card, the identifier is written as a single TOML key. For example, in `[cards."minor_arcana.wands.ace"]` the table `cards` has one key whose text is `minor_arcana.wands.ace`.
+- Where a document generalizes over cards, so that a prefix names a group, the identifier is written as a key path. A name file's `[minor_arcana.wands]` names every card of that suit and the rank key beneath it completes the identifier.
+- A [card reference](#312-card-references-and-the-variant-suffix) with a variant suffix is always a single key.
+
+| Site | Form |
+| --- | --- |
+| [`[cards."<canonical-id>"]`](#43-cards), [`[card_variants."<canonical-id>"]`](#47-card_variants) | Single key |
+| [`[app."<realm>"]`](#8-extensibility) | Single key |
+| A name file's `[card_variants]` and `[alt_text.card_variants]` ([§6.2](#62-language-resolution)) | Single key, a variant reference |
+| A name file's `[major_arcana]`, `[minor_arcana.<suit>]` and `[alt_text]` | Key path |
+| [`[suits.<key>]`](#44-suits) | Key path |
 
 ## 4. deck.toml Reference
 
@@ -1328,7 +1346,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the author probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
 | **W** | A card back design supplied in no format every application must decode ([§5.7.4](#574-the-extension-chain)). Unlike a card, a back has no reference deck to fall back on ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode it substitutes its own and the design is never seen ([§5.5](#55-card-back-images)). |
-| **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a reserved canonical key, excepting a canonical suit used as a `[suits]` table key. |
+| **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a name reserved by [§3.2](#32-custom-names), excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment. It names the deck as a whole ([§3.4](#34-deck-identity)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
 | **W** | `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
@@ -1337,6 +1355,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Where a variant table declares `default`, the named variant exists. |
 | **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.7](#47-card_variants)). A card with no files at all is a [resolution failure](#576-when-no-asset-is-found), not a violation of this rule. |
 | **E** | Every `[cards]` table key is a well-formed [canonical ID](#31-canonical-ids), in particular a two-digit major arcana key written with both digits. A [variant reference](#312-card-references-and-the-variant-suffix) is not a valid key here. |
+| **E** | `[cards]` and `[card_variants]` hold single keys and not key paths ([§3.6](#36-identifiers-in-toml)). A document writing `[cards.major_arcana.00]` has declared a table named `major_arcana` rather than the card `major_arcana.00`. |
 | **E** | Every card declared in `[cards]` is a card the deck has files for, since `[cards]` does not define cards on its own. A canonical minor arcanum and a major arcanum keyed `00` through `21` are exempt, because those slots exist for every deck whether or not it ships the asset ([§4.3](#43-cards)). |
 | **E** | `number`, where present, is a non-empty string. A card is made unnumbered by the shape of its key, not by an empty `number` ([§4.3.1](#431-card-numbers)). |
 | **W** | A `position` declared on a minor arcanum, which an application ignores ([§4.3](#43-cards)). |
