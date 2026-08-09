@@ -529,39 +529,36 @@ Rules:
 
 #### 4.1.3 `follows`
 
-`[deck].follows` contains the [qualified identifier](#33-qualified-identifiers) of the deck whose structure and iconography this deck is patterned on. Most tarot decks published since the twentieth century are patterned on another deck, and a deck that says which one allows an application to tell whether borrowing from a [reference deck](#13-terminology) is safe ([§5.7.6](#576-when-no-asset-is-found)).
+`[deck].follows` contains the [qualified identifier](#33-qualified-identifiers) of the deck whose structure and iconography this deck is patterned on. Most tarot decks published in the last fifty years are patterned on another deck (usually Rider-Waite-Smith). This field allows an application to tell whether borrowing from a [reference deck](#13-terminology) is safe ([§5.7.6](#576-when-no-asset-is-found)).
 
 ```toml
 [deck]
-name = "The Example Tarot"
+name = "My Example Tarot"
 identifier = "com.example/deck/example-tarot"
 follows = "land.arcana/deck/rider-waite-smith"
-pips = "scenic"
 ```
+
+> Note: this example uses `land.arcana/deck/rider-waite-smith` as the globally-unique qualified identifier for the traditional Rider-Waite-Smith. This specification assigns no specific meaning to this string, but you are free to use this identifier to describe "the thing that we all commonly know as the normal RWS deck."
 
 Rules:
 
-- The value MUST be a well-formed qualified identifier and MUST NOT carry a fragment. Neither a [card reference](#312-card-references-and-the-variant-suffix) nor a [variant reference](#312-card-references-and-the-variant-suffix) is a value this field accepts.
-- It MUST NOT equal this deck's own `identifier`. A deck does not follow itself.
-- It MUST NOT equal this deck's [`signifies`](#412-signifies). A [surrogate deck](#59-surrogate-decks) describes the artwork of the deck it signifies; it does not follow it.
-- `follows` carries no merge semantics. A deck that follows another is a different deck with different artwork, and an application MUST NOT treat the two as one deck, in contrast to `signifies` ([§5.9](#59-surrogate-decks)).
-- `follows` is not a rights claim. It asserts a resemblance in structure and iconography, not that the artwork is derived from the followed deck's, and it grants and implies no permission. Rights are stated in `license`, `rights_status`, `redistribution` and `derivation` ([§7](#7-licensing-and-attribution)), and [§7.7](#77-deck-names-and-trademarks)'s prohibition on implying endorsement applies to how a deck's lineage is presented as it does to its name.
-- Following is not transitive for any purpose this specification defines. A deck that follows a deck that itself follows a third deck does not thereby follow the third.
-- Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator can check that the value is well formed and no more.
-
-Three `[deck]` fields hold the qualified identifier of another deck and they mean different things. `identifier` names this deck. `signifies` names the deck whose artwork this package describes but does not carry, and is a merge key. `follows` names a deck this one resembles, and is neither a merge key nor a claim about artwork.
+- The value MUST be a well-formed qualified identifier and MUST NOT carry a fragment.
+- It MUST NOT equal this deck's own `identifier` or `signifies`.
+- `follows` carries no merge semantics, in contrast to `signifies` ([§5.9](#59-surrogate-decks)).
+- `follows` is not a rights claim and asserts solely a resemblance in structure and iconography.
+- Following is not transitive for any purpose this specification defines.
 
 #### 4.1.4 `pips`
 
-`[deck].pips` states whether the deck's numbered minor arcana carry narrative illustrations:
+`[deck].pips` states whether the deck's numbered minor arcana have narrative illustrations:
 
 | Value | Meaning |
 | --- | --- |
-| `"scenic"` | The numbered minors carry narrative illustrations. |
-| `"abstract"` | The numbered minors are arrangements of suit symbols, as in the Marseille pattern and most historical decks. |
+| `"scenic"` | The numbered minors have narrative illustrations. |
+| `"abstract"` | The numbered minors are arrangements of suit symbols (e.g., as in the Marseille pattern). |
 | `"unstated"` | The default. The packager has not said. |
 
-The field describes the *numbered* minors, `ace` through `ten`, in every suit the deck has. Court cards are illustrated in substantially every tradition and are not described by it, and neither are the major arcana.
+The field describes only the numbered minors, `ace` through `ten`, in every suit the deck has. Court cards are illustrated in substantially every tradition and are not described by it, and neither are the major arcana.
 
 ```toml
 [deck]
@@ -1271,7 +1268,7 @@ A deck SHOULD declare `packager` where the packager is not the artwork's `author
 
 ### 7.7 Deck Names and Trademarks
 
-The name of a published tarot deck is frequently a trademark of its publisher and using a mark to identify the deck is permitted.
+The name of a published tarot deck is frequently a trademark of its publisher and using a mark to identify the deck is generally permitted in most jurisdictions.
 
 However, a package MUST NOT imply an endorsement, affiliation or origin it does not have. Concretely:
 
