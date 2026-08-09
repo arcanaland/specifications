@@ -16,7 +16,7 @@
 - [2. Deck Structure](#2-deck-structure)
   - [2.1 Directory Skeleton](#21-directory-skeleton)
   - [2.2 The Deck Library](#22-the-deck-library)
-    - [2.2.1 Locating Library Roots](#221-locating-library-roots)
+    - [2.2.1 The Library Model](#221-the-library-model)
     - [2.2.2 Scanning](#222-scanning)
     - [2.2.3 Shadowing](#223-shadowing)
   - [2.3 File Format and Encoding](#23-file-format-and-encoding)
@@ -72,7 +72,7 @@
   - [7.3 Name File Licensing](#73-name-file-licensing)
   - [7.4 Rights Status](#74-rights-status)
   - [7.5 Redistribution and Derivation](#75-redistribution-and-derivation)
-  - [7.6 Role of the Packager](#76-naming-the-packager)
+  - [7.6 Role of the Packager](#76-role-of-the-packager)
   - [7.7 Deck Names and Trademarks](#77-deck-names-and-trademarks)
 - [8. Extensibility](#8-extensibility)
 - [9. Conformance and Validation](#9-conformance-and-validation)
@@ -92,7 +92,8 @@
   - [A.6 A Surrogate Deck](#a6-a-surrogate-deck)
 - [Appendix B. Reserved and Deprecated Names](#appendix-b-reserved-and-deprecated-names)
 - [Appendix C. Canonical Card Names (Informative)](#appendix-c-canonical-card-names-informative)
-- [Appendix D. Changelog](#appendix-d-changelog)
+- [Appendix D. Platform Conventions (Informative)](#appendix-d-platform-conventions-informative)
+- [Appendix E. Changelog](#appendix-e-changelog)
 
 ## 1. Introduction
 
@@ -176,7 +177,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **RightsStatements.org** | [Standardized international rights statements](https://rightsstatements.org/) | [§7.4](#74-rights-status) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§5.8.1](#581-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§5.8.1](#581-the-surrogate-file) |
-| **XDG Base Directory Specification** | [specifications.freedesktop.org](https://specifications.freedesktop.org/basedir-spec/latest/) | [§2.2](#22-the-deck-library) |
+| **XDG Base Directory Specification** (informative) | [specifications.freedesktop.org](https://specifications.freedesktop.org/basedir-spec/latest/) | [Appendix D](#appendix-d-platform-conventions-informative) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#47-card_variants) |
 | **Spread Specification** (informative, proposed) | [SPREAD.md](https://github.com/arcanaland/specifications/blob/main/SPREAD.md) | [§1.1](#11-scope-and-design-goals) |
@@ -196,8 +197,6 @@ Its machine-facing parts are dedicated to the public domain under [CC0 1.0](http
 - every example in this document.
 
 No permission, notice, registration or fee is required to implement this specification, to catalog decks against its identifiers, to cross-reference or map them to another scheme, or to build a competing specification on top of them, for any purpose, commercial or otherwise. The author irrevocably undertakes never to assert any such right against anyone who does.
-
-Appendix C is called out above because it is the one table an implementation is most likely to embed verbatim: it is the last fallback of display name resolution ([§6.3](#63-display-name-resolution)), so an application that resolves a name at all carries a copy of it. Its contents are conventional names of long standing that this specification does not claim to have authored, and nothing about reproducing them is conditioned on anything.
 
 See [LICENSING.md](https://github.com/arcanaland/specifications/blob/main/LICENSING.md) for the operative terms, which govern where this section and they disagree.
 
@@ -241,13 +240,13 @@ See [LICENSING.md](https://github.com/arcanaland/specifications/blob/main/LICENS
 
 ### 2.2 The Deck Library
 
-A **deck library** is an ordered list of **library roots**. Each root is a directory whose immediate children are candidate deck roots.
+A **deck library** is an ordered list of **library roots**. Each root is a directory whose immediate children are candidate deck roots. The library is what gives a set of installed decks an order, a namespace of [directory names](#34-deck-identity) and a [reference deck](#13-terminology).
 
-#### 2.2.1 Locating Library Roots
+#### 2.2.1 The Library Model
 
-Applications SHOULD form the default library from the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/), taking `$XDG_DATA_HOME/tarot/decks` first and then `<dir>/tarot/decks` for each `<dir>` in `$XDG_DATA_DIRS`, in the order that variable gives them. Where `$XDG_DATA_HOME` is unset or empty it defaults to `$HOME/.local/share`, and where `$XDG_DATA_DIRS` is unset or empty it defaults to `/usr/local/share:/usr/share`.
+How an application determines its library roots is outside the scope of this specification. An application MAY derive them from platform conventions, from its own configuration or from the user. [Appendix D](#appendix-d-platform-conventions-informative) presents conventions in use on common platforms.
 
-An application MAY offer the user additional roots and MAY let the user reorder them. Nothing requires an application to use the XDG defaults at all.
+An application MAY offer the user additional roots and MAY let the user reorder them. Where a library has several roots, an application SHOULD present their order to the user as meaningful, since it decides [shadowing](#223-shadowing).
 
 #### 2.2.2 Scanning
 
@@ -424,7 +423,7 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
 | `card_size_mm` | Array of two Floats | No | none | The physical card's width and height in millimetres, in that order, where the deck has a physical printing ([§5.6](#56-aspect-ratio)). |
 | `author` | String | No | none | The artwork's author. |
-| `packager` | String | No | none | Whoever assembled this package, where that is not the author ([§7.6](#76-naming-the-packager)). |
+| `packager` | String | No | none | Whoever assembled this package, where that is not the author ([§7.6](#76-role-of-the-packager)). |
 | `description` | String | No | none | A prose description of the deck written once in `default_language` ([§6.4](#64-alt-text-guidelines)). |
 | `license` | String | No | none | SPDX license expression governing the card assets this package carries ([§7.1](#71-license-expressions)). |
 | `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
@@ -1200,7 +1199,7 @@ The name of a published tarot deck is frequently a trademark of its publisher an
 However, a package MUST NOT imply an endorsement, affiliation or origin it does not have. Concretely:
 
 - A deck's `name`, `description` and `attribution` MUST NOT state or imply that the rights holder produced, approved or endorsed the package, unless they did.
-- A package assembled by a third party SHOULD declare [`packager`](#76-naming-the-packager).
+- A package assembled by a third party SHOULD declare [`packager`](#76-role-of-the-packager).
 - A [`buy`](#411-links) or `publisher` link SHOULD point at the rights holder rather than at a reseller ([§4.1.1](#411-links)).
 - A packager SHOULD NOT reproduce the publisher's logo or wordmark as the deck's `icon`.
 
@@ -1244,7 +1243,7 @@ A validator reports two kinds of violations. An error makes a deck non-conformin
 
 A conforming application:
 
-- MUST implement deck discovery ([§2.2](#22-the-deck-library), [§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution)).
+- MUST implement the library model and scanning rules ([§2.2](#22-the-deck-library)) over whatever roots it uses, asset discovery ([§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution)).
 - MUST support decoding PNG and JPEG ([§5.7.4](#574-the-extension-chain)).
 - MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
@@ -1304,8 +1303,8 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A `redistribution` or `derivation` narrower than `full` on a deck whose `license` is a public license granting redistribution or derivation outright. The license governs and the field does not take it back ([§7.5](#75-redistribution-and-derivation)), so the field misleads a reader without binding anyone. A validator checks this only for licenses it recognizes, and reporting nothing is a conforming outcome. |
 | **W** | A [surrogate deck](#59-surrogate-decks) declaring `redistribution = "full"`. The field governs passing on the artwork and the package carries none ([§5.9](#59-surrogate-decks)). A `license` on such a deck is not reported, since it covers the surrogates and a surrogate deck SHOULD carry one. |
 | **W** | A [surrogate deck](#59-surrogate-decks) with no `license`. Its surrogates are the packager's own work and `derivation = "surrogate"` invites them to be passed on, so a reader who takes them up has no terms to go by ([§5.9](#59-surrogate-decks)). |
-| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying `signifies`, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§7.6](#76-naming-the-packager)). Every rights assertion in the package is then unattributable. |
-| **W** | A `packager` equal to `author`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-naming-the-packager)). |
+| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying `signifies`, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§7.6](#76-role-of-the-packager)). Every rights assertion in the package is then unattributable. |
+| **W** | A `packager` equal to `author`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-role-of-the-packager)). |
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | `[deck].signifies`, where present, is a well-formed qualified identifier, carries no fragment, and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)).Whether it names a deck that exists is not checkable and is not checked. |
@@ -1639,7 +1638,17 @@ Suit and rank names can be derived from their keys by the [title-cased key](#13-
 
 Recall that a [canonical ID is a slot](#311-a-canonical-id-is-a-slot), so a deck following the Marseille ordering of Justice and Strength can denote this by swapping the appropriate strings in its name file.
 
-## Appendix D. Changelog
+## Appendix D. Platform Conventions (Informative)
+
+This appendix records where applications conventionally look for decks on common platforms. [§2.2.1](#221-the-library-model) leaves the choice of [library roots](#13-terminology) to the application and this section provides recommendations.
+
+**Linux.** Follow the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) and search `$XDG_DATA_HOME/tarot/decks` first, then `<dir>/tarot/decks` for each `<dir>` in `$XDG_DATA_DIRS`. Where `$XDG_DATA_HOME` is unset or empty it defaults to `$HOME/.local/share`, and where `$XDG_DATA_DIRS` is unset or empty it defaults to `/usr/local/share:/usr/share`.
+
+**macOS.** `~/Library/Application Support/tarot/decks`, then `/Library/Application Support/tarot/decks`.
+
+**Windows.** `%LOCALAPPDATA%\tarot\decks`, then `%PROGRAMDATA%\tarot\decks`.
+
+## Appendix E. Changelog
 
 ### Version 2.0
 
@@ -1649,7 +1658,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 
 **Newly specified.**
 
-- [The deck library](#22-the-deck-library), covering XDG discovery.
+- [The deck library](#22-the-deck-library), covering scanning and shadowing across an ordered list of roots. Where an application finds those roots is left to the application, with the platform conventions gathered informatively in [Appendix D](#appendix-d-platform-conventions-informative).
 - [Card image resolution](#57-card-image-resolution), covering image roots and size selection.
 - [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
@@ -1659,6 +1668,6 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
-- [`[deck].packager`](#76-naming-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
+- [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Clarified an ANSI type detection. Defined what `[app]` is for and reserved top-level table names outside it.
