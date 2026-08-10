@@ -20,6 +20,7 @@
     - [2.2.2 Scanning](#222-scanning)
     - [2.2.3 Shadowing](#223-shadowing)
   - [2.3 File Format and Encoding](#23-file-format-and-encoding)
+  - [2.4 Deck Containers](#24-deck-containers)
 - [3. Identity and Identifiers](#3-identity-and-identifiers)
   - [3.1 Canonical IDs](#31-canonical-ids)
     - [3.1.1 A Canonical ID Is a Slot](#311-a-canonical-id-is-a-slot)
@@ -86,6 +87,7 @@
 - [10. Security Considerations](#10-security-considerations)
   - [10.1 Path Traversal](#101-path-traversal)
   - [10.2 Terminal Escape Injection](#102-terminal-escape-injection)
+  - [10.3 Unpacking a Container](#103-unpacking-a-container)
 - [Appendix A. Examples (Informative)](#appendix-a-examples-informative)
   - [A.1 Simple Custom Deck](#a1-simple-custom-deck)
   - [A.2 Rider-Waite-Smith](#a2-rider-waite-smith)
@@ -134,6 +136,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **card reference** | A canonical ID, optionally followed by a **variant suffix** (`:` and a variant key). `major_arcana.06` and `major_arcana.06:two_women` are both card references. The suffixed form is also called a **variant reference**. |
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. |
 | **card variant** | An alternative artwork for a card. Variants of a card are interchangeable and denote the same meaning. |
+| **container** | A single file carrying one deck directory, for sending a deck between machines ([§2.4](#24-deck-containers)). |
 | **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs, editions and card variant keys ([§3.2](#32-custom-names)). |
 | **deck** | A directory containing a `deck.toml`, together with the card assets and name files arranged around it. |
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
@@ -170,6 +173,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **Esoterica Specification** (informative) | [ESOTERICA.md](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) | [§1.1](#11-scope-and-design-goals), [§4.7](#47-card_variants) |
 | **BCP 14** | Key words for use in RFCs ([RFC 2119](https://www.rfc-editor.org/rfc/rfc2119), [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174)) | [§1.2](#12-document-conventions) |
 | **TOML 1.0.0** | [toml.io/en/v1.0.0](https://toml.io/en/v1.0.0) | [§2.3](#23-file-format-and-encoding) |
+| **.ZIP File Format Specification** | [PKWARE APPNOTE.TXT](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) | [§2.4](#24-deck-containers) |
 | **RFC 1035 §2.3.1** | Domain Names: preferred name syntax | [§3.3](#33-qualified-identifiers) |
 | **RFC 5234** | Augmented BNF for Syntax Specifications: ABNF | [§3.5](#35-grammar) |
 | **RFC 7405** | Case-Sensitive String Support in ABNF | [§3.5](#35-grammar) |
@@ -267,6 +271,47 @@ Roots are searched in order and a deck is identified within the library by its d
 Every path-valued field in `deck.toml` is interpreted relative to the deck root, MUST use `/` as its separator whatever the host filesystem uses, and MUST NOT begin with `/` or contain a `..` segment. Applications MUST reject a path that breaks these rules.
 
 To support case-insensitive filesystems, applications MUST compare card asset stems case-insensitively. A deck MUST NOT ship two files in one directory whose stems differ only in case, and a validator reports this as an error.
+
+### 2.4 Deck Containers
+
+A deck is a directory ([§1.1](#11-scope-and-design-goals)) and every other rule in this specification is written about one. A **container** is a single file carrying one deck directory, for sending a deck between machines and for the case, common among deck authors, where a deck is shared as one file rather than as a folder.
+
+A container is not a second kind of deck. An application that accepts one unpacks it and reads the result under the ordinary rules of this specification, and nothing downstream of this section is aware that a container was involved.
+
+A container:
+
+- MUST be a ZIP archive.
+- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive, so that the manifest is the entry named `deck.toml` and not `<something>/deck.toml`. An archive whose deck sits inside a wrapping directory is not a container.
+- MUST carry every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and the [name file](#13-terminology) `default_language` names. Packing a deck is not a way to shed the notices [§7](#7-licensing-and-attribution) requires it to carry.
+- SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
+- MUST use `/` as its entry-name separator, MUST write entry names in UTF-8, and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment, or repeats the name of another entry.
+- MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory, and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
+- MUST begin with an entry named `mimetype`, stored uncompressed and carrying no extra field, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break. This places a fixed string at a fixed offset so that a container can be recognized by its content rather than by its name.
+
+An application MUST accept a container that satisfies every rule above except the last. A container assembled with a general-purpose archiver will not carry the `mimetype` entry, and refusing it would strand a user for a defect they cannot see. A validator reports the omission as a warning ([§9.4](#94-validation-rules)).
+
+Unpacking a container produces a deck root whose directory name this specification does not fix, since the name is the deck's handle within a library ([§2.2.3](#223-shadowing)) and belongs to whoever installs it. Whatever installs a container SHOULD derive the name from the last segment of [`[deck].identifier`](#34-deck-identity) where the deck declares one, and otherwise from the container's file name without its extension; MUST ensure the name is a single path segment carrying no separator; and MUST NOT overwrite an unrelated deck that already holds the name.
+
+The `mimetype` entry becomes a file at the deck root once unpacked. Nothing in this specification reads it, discovery ignores it as it ignores any file that is not a card asset ([§5.7.1](#571-image-roots)), and leaving it in place lets the deck be packed again unchanged.
+
+[§10.3](#103-unpacking-a-container) governs unpacking a container an application did not build.
+
+> Note: the fixed offsets above are what let a desktop recognize a container by its leading bytes. A [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule matching them:
+>
+> ```xml
+> <mime-type type="application/vnd.arcana-land.tarotdeck+zip">
+>   <comment>Tarot deck</comment>
+>   <glob pattern="*.tarotdeck"/>
+>   <magic priority="60">
+>     <match type="string" value="PK\003\004" offset="0">
+>       <match type="string" value="mimetype" offset="30">
+>         <match type="string"
+>                value="application/vnd.arcana-land.tarotdeck+zip" offset="38"/>
+>       </match>
+>     </match>
+>   </magic>
+> </mime-type>
+> ```
 
 ## 3. Identity and Identifiers
 
@@ -1318,6 +1363,8 @@ A conforming application:
 
 An application need not implement editions, card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
 
+Neither an application nor a validator need accept a [container](#24-deck-containers). One that does not is unaffected by the container rules of [§9.4](#94-validation-rules) and remains conforming. One that does MUST apply [§10.3](#103-unpacking-a-container).
+
 ### 9.4 Validation Rules
 
 Each rule is labeled **E** for error or **W** for warning.
@@ -1385,6 +1432,9 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
 | **W** | A surrogate deck without `[deck].signifies`. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§5.9](#59-surrogate-decks)). |
 | **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§5.9](#59-surrogate-decks)). |
+| **E** | Where a validator is given a [container](#24-deck-containers), the archive holds `deck.toml` at its root rather than inside a wrapping directory, and no entry name is absolute, names a drive, or carries a `..`, `.` or empty segment ([§2.4](#24-deck-containers)). |
+| **E** | Where a validator is given a container, no entry is a symbolic link, a hard link, an encrypted entry, or anything other than a regular file or a directory, and every entry is stored or deflated ([§2.4](#24-deck-containers)). |
+| **W** | A container whose first entry is not an uncompressed `mimetype` carrying the media type of [§2.4](#24-deck-containers). Applications still read it, but it cannot be identified by its content, so a desktop that recognizes files by their leading bytes presents it as a plain archive. |
 
 ## 10. Security Considerations
 
@@ -1397,6 +1447,16 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 ### 10.2 Terminal Escape Injection
 
 ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
+
+### 10.3 Unpacking a Container
+
+A [container](#24-deck-containers) arrives from outside the system, and an archive is a wider attack surface than any field inside a deck. [§10.1](#101-path-traversal) governs the paths a deck declares; this section governs the archive that carries it.
+
+An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue. A name that has to be repaired was chosen to be repaired, and an implementation that silently strips a `..` segment installs a deck that is not the deck the packager assembled, without telling anyone it did so. Some archive libraries repair by default, so an application MUST check entry names itself rather than rely on one.
+
+An application MUST also bound what it unpacks, and MUST enforce a limit on the total uncompressed size, on the number of entries, and on the ratio of uncompressed to compressed size. A ratio limit of 100:1 is RECOMMENDED: card artwork is carried in already-compressed formats ([§5.7.4](#574-the-extension-chain)) and comes nowhere near it, while a hostile archive exceeds it by orders of magnitude. This specification fixes no absolute limit, since what a host can spare is not its business.
+
+An application SHOULD unpack into a location it controls, and SHOULD NOT unpack over a deck already installed. Assembling the deck elsewhere and moving it into place once it is complete keeps a partly written directory from being [scanned](#222-scanning) as a malformed deck.
 
 ## Appendix A. Examples (Informative)
 
@@ -1734,7 +1794,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Card image resolution](#57-card-image-resolution), covering image roots and size selection.
 - [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
-- [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
+- [Deck containers](#24-deck-containers), a single-file transfer form carrying one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
+- [Security considerations](#10-security-considerations), covering path traversal, ANSI escape codes and [unpacking a container](#103-unpacking-a-container).
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
