@@ -87,7 +87,6 @@
 - [10. Security Considerations](#10-security-considerations)
   - [10.1 Path Traversal](#101-path-traversal)
   - [10.2 Terminal Escape Injection](#102-terminal-escape-injection)
-  - [10.3 Unpacking a Container](#103-unpacking-a-container)
 - [Appendix A. Examples (Informative)](#appendix-a-examples-informative)
   - [A.1 Simple Custom Deck](#a1-simple-custom-deck)
   - [A.2 Rider-Waite-Smith](#a2-rider-waite-smith)
@@ -284,9 +283,11 @@ A container:
 - SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
 - MUST use `/` as its entry-name separator, MUST write entry names in UTF-8 and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment or repeats the name of another entry.
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
-- MUST begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
+- SHOULD begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
 
-An application MUST accept a container that satisfies every rule above except the last. [§10.3](#103-unpacking-a-container) governs unpacking a container an application did not build.
+An application MUST accept a container that satisfies every rule above except the last.
+
+An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue.
 
 > Note: example [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule:
 >
@@ -1355,7 +1356,7 @@ A conforming application:
 
 An application need not implement editions, card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
 
-Neither an application nor a validator need accept a [container](#24-deck-containers). One that does not is unaffected by the container rules of [§9.4](#94-validation-rules) and remains conforming. One that does MUST apply [§10.3](#103-unpacking-a-container).
+Neither an application nor a validator need accept a [container](#24-deck-containers). One that does not is unaffected by the container rules of [§9.4](#94-validation-rules) and remains conforming.
 
 ### 9.4 Validation Rules
 
@@ -1439,10 +1440,6 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 ### 10.2 Terminal Escape Injection
 
 ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through. Displaying ANSI safely is the application's responsibility.
-
-### 10.3 Unpacking a Container
-
-An application that unpacks a [container](#24-deck-containers) MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue.
 
 ## Appendix A. Examples (Informative)
 
@@ -1781,7 +1778,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
 - [Deck containers](#24-deck-containers), a single-file transfer form carrying one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
-- [Security considerations](#10-security-considerations), covering path traversal, ANSI escape codes and [unpacking a container](#103-unpacking-a-container).
+- [Security considerations](#10-security-considerations), covering path traversal, ANSI escape codes
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
