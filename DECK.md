@@ -136,7 +136,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **card reference** | A canonical ID, optionally followed by a **variant suffix** (`:` and a variant key). `major_arcana.06` and `major_arcana.06:two_women` are both card references. The suffixed form is also called a **variant reference**. |
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. |
 | **card variant** | An alternative artwork for a card. Variants of a card are interchangeable and denote the same meaning. |
-| **container** | A single file carrying one deck directory, for sending a deck between machines ([§2.4](#24-deck-containers)). |
+| **container** | A single zip file containing a deck directory ([§2.4](#24-deck-containers)). |
 | **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs, editions and card variant keys ([§3.2](#32-custom-names)). |
 | **deck** | A directory containing a `deck.toml`, together with the card assets and name files arranged around it. |
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
@@ -274,29 +274,21 @@ To support case-insensitive filesystems, applications MUST compare card asset st
 
 ### 2.4 Deck Containers
 
-A deck is a directory ([§1.1](#11-scope-and-design-goals)) and every other rule in this specification is written about one. A **container** is a single file carrying one deck directory, for sending a deck between machines and for the case, common among deck authors, where a deck is shared as one file rather than as a folder.
-
-A container is not a second kind of deck. An application that accepts one unpacks it and reads the result under the ordinary rules of this specification, and nothing downstream of this section is aware that a container was involved.
+A deck container is a single zip file containing a deck directory.
 
 A container:
 
 - MUST be a ZIP archive.
-- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive, so that the manifest is the entry named `deck.toml` and not `<something>/deck.toml`. An archive whose deck sits inside a wrapping directory is not a container.
-- MUST carry every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and the [name file](#13-terminology) `default_language` names. Packing a deck is not a way to shed the notices [§7](#7-licensing-and-attribution) requires it to carry.
+- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive.
+- MUST contain every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and the [name file](#13-terminology) `default_language` names.
 - SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
-- MUST use `/` as its entry-name separator, MUST write entry names in UTF-8, and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment, or repeats the name of another entry.
-- MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory, and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
-- MUST begin with an entry named `mimetype`, stored uncompressed and carrying no extra field, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break. This places a fixed string at a fixed offset so that a container can be recognized by its content rather than by its name.
+- MUST use `/` as its entry-name separator, MUST write entry names in UTF-8 and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment or repeats the name of another entry.
+- MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
+- MUST begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
 
-An application MUST accept a container that satisfies every rule above except the last. A container assembled with a general-purpose archiver will not carry the `mimetype` entry, and refusing it would strand a user for a defect they cannot see. A validator reports the omission as a warning ([§9.4](#94-validation-rules)).
+An application MUST accept a container that satisfies every rule above except the last. [§10.3](#103-unpacking-a-container) governs unpacking a container an application did not build.
 
-Unpacking a container produces a deck root whose directory name this specification does not fix, since the name is the deck's handle within a library ([§2.2.3](#223-shadowing)) and belongs to whoever installs it. Whatever installs a container SHOULD derive the name from the last segment of [`[deck].identifier`](#34-deck-identity) where the deck declares one, and otherwise from the container's file name without its extension; MUST ensure the name is a single path segment carrying no separator; and MUST NOT overwrite an unrelated deck that already holds the name.
-
-The `mimetype` entry becomes a file at the deck root once unpacked. Nothing in this specification reads it, discovery ignores it as it ignores any file that is not a card asset ([§5.7.1](#571-image-roots)), and leaving it in place lets the deck be packed again unchanged.
-
-[§10.3](#103-unpacking-a-container) governs unpacking a container an application did not build.
-
-> Note: the fixed offsets above are what let a desktop recognize a container by its leading bytes. A [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule matching them:
+> Note: example [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule:
 >
 > ```xml
 > <mime-type type="application/vnd.arcana-land.tarotdeck+zip">
@@ -1450,13 +1442,7 @@ ANSI art is a sequence of bytes an application writes to a terminal, and a hosti
 
 ### 10.3 Unpacking a Container
 
-A [container](#24-deck-containers) arrives from outside the system, and an archive is a wider attack surface than any field inside a deck. [§10.1](#101-path-traversal) governs the paths a deck declares; this section governs the archive that carries it.
-
-An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue. A name that has to be repaired was chosen to be repaired, and an implementation that silently strips a `..` segment installs a deck that is not the deck the packager assembled, without telling anyone it did so. Some archive libraries repair by default, so an application MUST check entry names itself rather than rely on one.
-
-An application MUST also bound what it unpacks, and MUST enforce a limit on the total uncompressed size, on the number of entries, and on the ratio of uncompressed to compressed size. A ratio limit of 100:1 is RECOMMENDED: card artwork is carried in already-compressed formats ([§5.7.4](#574-the-extension-chain)) and comes nowhere near it, while a hostile archive exceeds it by orders of magnitude. This specification fixes no absolute limit, since what a host can spare is not its business.
-
-An application SHOULD unpack into a location it controls, and SHOULD NOT unpack over a deck already installed. Assembling the deck elsewhere and moving it into place once it is complete keeps a partly written directory from being [scanned](#222-scanning) as a malformed deck.
+An application that unpacks a [container](#24-deck-containers) MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue.
 
 ## Appendix A. Examples (Informative)
 
