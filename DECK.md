@@ -37,6 +37,7 @@
     - [4.1.3 `follows`](#413-follows)
     - [4.1.4 `pips`](#414-pips)
     - [4.1.5 Product Identifiers](#415-product-identifiers)
+    - [4.1.6 Content Rating](#416-content-rating)
   - [4.2 `[card_backs]`](#42-card_backs)
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
@@ -180,6 +181,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **RFC 3339 §5.6** | Date and Time on the Internet, `full-date` | [§4.1](#41-deck) |
 | **ISO 2108** | International Standard Book Number, with the freely available [ISBN Users' Manual](https://www.isbn-international.org/content/isbn-users-manual/29) | [§4.1.5](#415-product-identifiers) |
 | **GS1 General Specifications** | [ref.gs1.org/standards/genspecs](https://ref.gs1.org/standards/genspecs/) | [§4.1.5](#415-product-identifiers) |
+| **OARS 1.1** | Open Age Ratings Service, [specification](https://github.com/hughsie/oars/blob/master/specification/oars-1.1.md) and [attribute list](https://hughsie.github.io/oars/generate.html) | [§4.1.6](#416-content-rating) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§5.8.1](#581-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§5.8.1](#581-the-surrogate-file) |
@@ -496,6 +498,7 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `updated_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`). |
 | `publisher` | String | No | none | The deck's publisher. |
 | `product_ids` | Table | No | none | External identifiers for the commercial product this deck reproduces such as an ISBN ([§4.1.5](#415-product-identifiers)). |
+| `content_rating` | Table | No | none | What the deck's artwork depicts, keyed by rating system ([§4.1.6](#416-content-rating)). |
 | `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
 
@@ -638,6 +641,78 @@ Rules:
 
 The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore a scheme it does not recognize and MUST NOT treat one as an error, and a packager who needs a scheme this specification does not define SHOULD prefix it with `x_`.
 
+#### 4.1.6 Content Rating
+
+`[deck.content_rating]` states what the deck's artwork depicts in a named rating system. It is a table of tables where each subtable key names a rating system. The subtable contains that system's descriptors as key-value pairs.
+
+```toml
+[deck.content_rating."oars-1.1"]
+sex_nudity = "mild"
+violence_fantasy = "mild"
+violence_bloodshed = "mild"
+```
+
+A deck MAY declare more than one system. Nothing requires the declarations to agree and this specification defines no mapping between systems.
+
+The registry:
+
+| System | Descriptors are |
+| --- | --- |
+| `oars-1.1` | The attribute ids of OARS 1.1, each `-` written as `_`, valued `none`, `mild`, `moderate` or `intense` |
+
+The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore a system it does not recognize and MUST NOT treat one as an error, and a packager who needs a system this specification does not define SHOULD prefix it with `x_`.
+
+`oars-1.1` names version 1.1 of the [Open Age Ratings Service](https://hughsie.github.io/oars/) vocabulary, whose descriptor keys are its twenty-two attribute ids: `sex_nudity`, `sex_themes`, `violence_cartoon`, `violence_fantasy`, `violence_realistic`, `violence_bloodshed`, `violence_desecration`, `violence_slavery`, `violence_sexual`, `drugs_alcohol`, `drugs_narcotics`, `drugs_tobacco`, `language_profanity`, `language_humor`, `language_discrimination`, `money_advertising`, `money_gambling`, `money_purchasing`, `social_chat`, `social_audio`, `social_contacts`, `social_info` and `social_location`. The underscore rewriting keeps every key a [custom name](#32-custom-names) and is reversed mechanically where an application emits OARS.
+
+An absent `[deck.content_rating]` means the packager has not declared a rating and an application MUST NOT read it as `none`.
+
+Within a declared system subtable, an omitted descriptor is `none` for that system. For example, `[deck.content_rating."oars-1.1"]` with no descriptors communicates that this deck was reviewed and contains nothing the system describes. A deck that annotates its cards states the same thing a second way, described under per-card descriptors below.
+
+**Per-card descriptors.** A card carries the same table under its [`[cards]`](#43-cards) entry:
+
+```toml
+[cards."major_arcana.06"]
+content_rating = { "oars-1.1" = { sex_nudity = "mild" } }
+
+[cards."minor_arcana.swords.ten".content_rating."oars-1.1"]
+violence_bloodshed = "mild"
+```
+
+Rules:
+
+- A card-level descriptor MUST be written under a system the deck also declares in `[deck.content_rating]`.
+- A card-level value MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `cards_complete = true`, since it is derived from the cards, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
+- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck. It is not a descriptor and is reserved in every system subtable; a descriptor is always a string, so the two never collide.
+  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system. The cards are then a complete account and the deck-level value of a descriptor the subtable omits is **the greatest value any card declares for it**, which is `none` where no card declares it at all. A packager who has annotated the cards therefore does not restate the summary, and this is the one case in which a deck-level descriptor may be omitted without asserting `none`.
+  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value for that card it SHOULD use the deck-level value, which is the same conservative answer it would reach with no card-level declarations at all.
+- There is no default. A deck that annotates no card says nothing about coverage and SHOULD omit the key, and a reader of a deck that does annotate never has to infer what an unannotated card meant.
+- A card-level descriptor covers every [variant](#47-card_variants) of that card. Where a deck's variants of one card differ in what they depict, the card declares the strongest of them.
+- A descriptor covers the deck's own assets. Where an application [borrows a card](#576-when-no-asset-is-found) from a reference deck, it SHOULD take the descriptor of whichever deck supplied the image.
+
+A deck reviewed card by card declares no deck-level descriptor at all:
+
+```toml
+[deck.content_rating."oars-1.1"]
+cards_complete = true
+
+[cards."major_arcana.06".content_rating."oars-1.1"]
+sex_nudity = "mild"
+
+[cards."major_arcana.16".content_rating."oars-1.1"]
+violence_fantasy = "mild"
+
+[cards."major_arcana.17".content_rating."oars-1.1"]
+sex_nudity = "mild"
+
+[cards."major_arcana.21".content_rating."oars-1.1"]
+sex_nudity = "mild"
+
+[cards."minor_arcana.swords.ten".content_rating."oars-1.1"]
+violence_bloodshed = "mild"
+```
+
+The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` without those values appearing anywhere in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its cards carry.
+
 ### 4.2 `[card_backs]`
 
 A card back design is one of the back images a deck ships, named by a design key. Designs are [discovered from the directory structure](#55-card-back-images) exactly as cards are, so a deck that contains an image `card_backs/classic.png` has a design keyed `classic` and need declare nothing at all. The whole of `[card_backs]` is OPTIONAL.
@@ -693,6 +768,7 @@ position = 22
 | `alt_text` | String | No | none | Fallback alt text, used where no name file supplies one. |
 | `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
 | `position` | Integer | No | see [§4.3.2](#432-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
+| `content_rating` | Table | No | none | What this card depicts, keyed by rating system, on the terms in [§4.1.6](#416-content-rating). |
 
 `name` and `alt_text` are fallbacks. A deck SHOULD carry both in `names/<tag>.toml`, where they can be localized ([§6.3](#63-display-name-resolution)).
 
@@ -1422,7 +1498,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Where a variant table declares `default`, the named variant exists. |
 | **E** | Where a card has variant files but no unsuffixed file, `[card_variants]."<canonical-id>".default` is declared ([§4.7](#47-card_variants)). A card with no files at all is a [resolution failure](#576-when-no-asset-is-found), not a violation of this rule. |
 | **E** | Every `[cards]` table key is a well-formed [canonical ID](#31-canonical-ids), in particular a two-digit major arcana key written with both digits. A [variant reference](#312-card-references-and-the-variant-suffix) is not a valid key here. |
-| **E** | `[cards]` and `[card_variants]` hold single keys and not key paths ([§3.6](#36-identifiers-in-toml)). A document writing `[cards.major_arcana.00]` has declared a table named `major_arcana` rather than the card `major_arcana.00`. |
+| **E** | `[cards]` and `[card_variants]` hold single keys and not key paths ([§3.6](#36-identifiers-in-toml)). A document writing `[cards.major_arcana.00]` has declared a table named `major_arcana` rather than the card `major_arcana.00`. The rule governs the [canonical ID](#31-canonical-ids) itself; a subtable written beneath one, as in `[cards."major_arcana.06".content_rating."oars-1.1"]`, is unaffected. |
 | **E** | Every card declared in `[cards]` is a card the deck has files for, since `[cards]` does not define cards on its own. A canonical minor arcanum and a major arcanum keyed `00` through `21` are exempt, because those slots exist for every deck whether or not it ships the asset ([§4.3](#43-cards)). |
 | **E** | `number`, where present, is a non-empty string. A card is made unnumbered by the shape of its key, not by an empty `number` ([§4.3.1](#431-card-numbers)). |
 | **W** | A `position` declared on a minor arcanum, which an application ignores ([§4.3](#43-cards)). |
@@ -1460,6 +1536,13 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | An `isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box copy is transcribed by hand and this catches the transcription error, which is the failure this field actually meets ([§4.1.5](#415-product-identifiers)). |
 | **W** | A `gtin` that is not eight, twelve, thirteen or fourteen digits, that contains a character other than a digit, or whose check digit does not verify ([§4.1.5](#415-product-identifiers)). |
 | **W** | A `product_ids` scheme outside the registry of [§4.1.5](#415-product-identifiers) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
+| **E** | Every `content_rating` subtable key is a well-formed [custom name](#32-custom-names), in `[deck]` and on every card alike, and every descriptor key within a system subtable is a well-formed custom name carrying a non-empty string value. `cards_complete`, where present, is a boolean and appears only at the deck level ([§4.1.6](#416-content-rating)). |
+| **E** | Within an `oars-1.1` subtable, every descriptor key is one of the twenty-two OARS 1.1 attribute ids written with underscores and every value is one of `none`, `mild`, `moderate` or `intense` ([§4.1.6](#416-content-rating)). A validator does not check that a value is one the attribute admits, since OARS restricts some attributes to a subset of the four and this specification does not track those restrictions across OARS revisions. |
+| **E** | Every rating system named on a card is a system `[deck.content_rating]` also declares, and no card-level descriptor exceeds the deck-level value declared for the same system and descriptor under the ordering `none` < `mild` < `moderate` < `intense` ([§4.1.6](#416-content-rating)). A descriptor the deck-level subtable omits is `none`, and so admits no card-level value above it, except under `cards_complete = true`, where it is derived from the cards and constrains nothing. |
+| **W** | A `content_rating` system outside the registry of [§4.1.6](#416-content-rating) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
+| **E** | Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` declares `cards_complete` ([§4.1.6](#416-content-rating)). Without it an application cannot tell an unannotated card from an unrated one, and the specification supplies no default. |
+| **W** | Under `cards_complete = true`, a declared deck-level descriptor whose value exceeds every value the cards carry for it. The deck says the artwork is somewhere in it and a complete card annotation says it is nowhere, so one of the two is unfinished ([§4.1.6](#416-content-rating)). A deck-level descriptor that merely restates what the cards already carry is not reported. |
+| **W** | A `cards_complete` on a system no card declares a descriptor for. The key describes a card annotation that does not exist ([§4.1.6](#416-content-rating)). |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
@@ -1541,6 +1624,11 @@ tags = ["traditional", "classic", "beginner-friendly"]
 links = [
   { rel = "homepage", url = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot" },
 ]
+
+[deck.content_rating."oars-1.1"]
+sex_nudity = "mild"
+violence_fantasy = "mild"
+violence_bloodshed = "mild"
 
 [card_backs]
 default = "classic"
@@ -1826,6 +1914,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
+- [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
 - [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Clarified an ANSI type detection. Defined what `[app]` is for and reserved top-level table names outside it.
