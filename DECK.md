@@ -36,6 +36,7 @@
     - [4.1.2 `signifies`](#412-signifies)
     - [4.1.3 `follows`](#413-follows)
     - [4.1.4 `pips`](#414-pips)
+    - [4.1.5 Product Identifiers](#415-product-identifiers)
   - [4.2 `[card_backs]`](#42-card_backs)
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
@@ -177,6 +178,8 @@ The documents below are referenced normatively unless marked informative. A date
 | **RFC 5234** | Augmented BNF for Syntax Specifications: ABNF | [§3.5](#35-grammar) |
 | **RFC 7405** | Case-Sensitive String Support in ABNF | [§3.5](#35-grammar) |
 | **RFC 3339 §5.6** | Date and Time on the Internet, `full-date` | [§4.1](#41-deck) |
+| **ISO 2108** | International Standard Book Number, with the freely available [ISBN Users' Manual](https://www.isbn-international.org/content/isbn-users-manual/29) | [§4.1.5](#415-product-identifiers) |
+| **GS1 General Specifications** | [ref.gs1.org/standards/genspecs](https://ref.gs1.org/standards/genspecs/) | [§4.1.5](#415-product-identifiers) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§5.8.1](#581-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§5.8.1](#581-the-surrogate-file) |
@@ -285,9 +288,7 @@ A container:
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
 - SHOULD begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
 
-An application MUST accept a container that satisfies every rule above except the last.
-
-An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule of [§2.4](#24-deck-containers). It MUST NOT repair an entry name and continue.
+An application MUST accept a container that satisfies every rule above except the last. An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule and MUST NOT repair an entry name and continue.
 
 > Note: example [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule:
 >
@@ -494,6 +495,7 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `created_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`). |
 | `updated_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`). |
 | `publisher` | String | No | none | The deck's publisher. |
+| `product_ids` | Table | No | none | External identifiers for the commercial product this deck reproduces such as an ISBN ([§4.1.5](#415-product-identifiers)). |
 | `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
 
@@ -601,6 +603,40 @@ Rules:
 - The field describes the numbered minors `two` through `ten` in every suit the deck has. Aces are conventionally a single emblem of the suit in every tradition, so they are not described by it, and neither are the courts or the major arcana.
 - The default is `"unstated"` and an application MUST NOT read it as either of the other two.
 - A deck whose suits differ among themselves SHOULD declare nothing. There is no value meaning "mixed", so such a deck is indistinguishable from one that has not said — which is the intent, since neither can be borrowed against.
+
+#### 4.1.5 Product Identifiers
+
+`[deck.product_ids]` records the identifiers of a published commercial deck carries. It is a table whose keys name identifier schemes and whose values are strings.
+
+```toml
+[deck]
+name = "The Example Tarot"
+publisher = "Example Press"
+
+[deck.product_ids]
+isbn = "9789999999991"
+gtin = "00201234567899"
+publisher_sku = "EXT-078"
+```
+
+The registry:
+
+| Scheme | The value is |
+| --- | --- |
+| `isbn` | An International Standard Book Number |
+| `gtin` | A GTIN, the family that subsumes the UPC and the EAN |
+| `publisher_sku` | The publisher's own item or catalog number |
+
+A product identifier does not replace the deck's own identity within Arcana Land [`[deck].identifier`](#34-deck-identity). An application MAY use an equal `isbn` or `gtin` as evidence that two packages describe the same product.
+
+Rules:
+
+- Every key MUST be a [custom name](#32-custom-names) and every value MUST be a non-empty string.
+- An `isbn` value is written as an ISBN-13 or an ISBN-10 with hyphens and spaces OPTIONAL.. Applications comparing two values MUST first remove hyphens and spaces and uppercase a trailing `x`.
+- A `gtin` value is written as digits alone and SHOULD be zero-padded to fourteen digits.
+- A `publisher_sku` value is opaque.
+
+The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore a scheme it does not recognize and MUST NOT treat one as an error, and a packager who needs a scheme this specification does not define SHOULD prefix it with `x_`.
 
 ### 4.2 `[card_backs]`
 
@@ -1222,10 +1258,10 @@ Most decks need only to license their alt text, which `[metadata.alt_text]` does
 ```toml
 # names/pt-BR.toml
 [metadata]
-source = "Translated by Paulo Freire."
+source = "Translated by Jane Doe."
 license = "CC-BY-4.0"
 license_files = ["names/LICENSE.pt-BR"]
-attribution = "Portuguese translation by Paulo Freire."
+attribution = "Portuguese translation by Jane Doe."
 ```
 
 Typically, the strings in a name file are the deck author's choice. A full set of one author's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them.
@@ -1420,6 +1456,10 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | `[deck].follows`, where present, is a well-formed qualified identifier and carries no fragment ([§4.1.3](#413-follows)). As with `signifies`, whether it names a deck that exists is not checkable and is not checked. |
 | **E** | `[deck].follows` is equal to neither `[deck].identifier` nor `[deck].signifies` ([§4.1.3](#413-follows)). |
 | **E** | `pips`, where present, is one of `scenic`, `emblematic` or `unstated` ([§4.1.4](#414-pips)). |
+| **E** | Every `product_ids` key is a well-formed [custom name](#32-custom-names) and every value is a non-empty string ([§4.1.5](#415-product-identifiers)). |
+| **W** | An `isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box copy is transcribed by hand and this catches the transcription error, which is the failure this field actually meets ([§4.1.5](#415-product-identifiers)). |
+| **W** | A `gtin` that is not eight, twelve, thirteen or fourteen digits, that contains a character other than a digit, or whose check digit does not verify ([§4.1.5](#415-product-identifiers)). |
+| **W** | A `product_ids` scheme outside the registry of [§4.1.5](#415-product-identifiers) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
@@ -1785,6 +1825,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
 - [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
+- [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
 - [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#47-card_variants), allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Clarified an ANSI type detection. Defined what `[app]` is for and reserved top-level table names outside it.
