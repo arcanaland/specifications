@@ -644,7 +644,7 @@ Applications that present a deck in order resolve it as follows. The major arcan
 
 Within the major arcana, cards are ordered by `position`. Every major arcanum with a two-digit key has an implicit `position` equal to that key's value. A card with a custom key and no declared `position` follows every card that has one.
 
-Within the minor arcana, cards are ordered by their suit's [`ranks`](#44-suits) sequence. Suits with no declared order follow the four canonical suits, sorted by key, and a rank not named in any `ranks` list follows those that are, likewise sorted by key.
+Within the minor arcana, the suits come in the canonical order `wands`, `cups`, `swords`, `pentacles`, and every other suit the deck has follows those four, sorted by key. Within a suit, cards are ordered by that suit's [`ranks`](#44-suits) sequence, and a rank the sequence does not name follows every rank it does, likewise sorted by key. A suit with no `ranks` sequence therefore orders its cards by key alone.
 
 A declared `position` MAY fall anywhere in the sequence and MAY be negative. Where two cards claim the same position, a declared `position` precedes an implicit one, and a tie between two of the same sort breaks by key.
 
@@ -908,7 +908,7 @@ An application MUST NOT present a borrowed image as though it were the deck's ow
 
 The borrow assumes the two decks agree card in the following manner:
 
-- **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage via the [`follows`] field. Two decks are lineage-compatible where the borrowing deck's [`follows`](#413-follows) is the reference deck's `identifier`, or the reference deck's `follows` is the borrowing deck's `identifier`, or both declare the same `follows` or either declares no `follows`.
+- **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage via the [`follows`](#413-follows) field. Two decks are lineage-compatible where the borrowing deck's `follows` is the reference deck's `identifier`, or the reference deck's `follows` is the borrowing deck's `identifier`, or both declare the same `follows` or either declares no `follows`.
 - **Pip style.** An application SHOULD NOT borrow an image for a minor arcanum keyed `two` through `ten` where both decks declare a [`pips`](#414-pips) value and the values differ. Aces, court cards and the major arcana are unaffected ([§4.1.4](#414-pips)).
 - **Name coherence.** An application SHOULD NOT borrow an image for a card where the borrowing deck supplies its own name for that card and the reference deck's name for the same [canonical ID](#31-canonical-ids) differs.
 
