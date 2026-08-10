@@ -288,7 +288,7 @@ A container:
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
 - SHOULD begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
 
-An application MUST accept a container that satisfies every rule above except the last. An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule and MUST NOT repair an entry name and continue.
+An application MUST accept a container that satisfies every rule above except the `mimetype` entry. An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule and MUST NOT repair an entry name and continue.
 
 > Note: example [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule:
 >
@@ -606,7 +606,7 @@ Rules:
 
 #### 4.1.5 Product Identifiers
 
-`[deck.product_ids]` records the identifiers of a published commercial deck carries. It is a table whose keys name identifier schemes and whose values are strings.
+`[deck.product_ids]` records the product identifiers a published commercial deck carries. It is a table whose keys name identifier schemes and whose values are strings.
 
 ```toml
 [deck]
@@ -632,7 +632,7 @@ A product identifier does not replace the deck's own identity within Arcana Land
 Rules:
 
 - Every key MUST be a [custom name](#32-custom-names) and every value MUST be a non-empty string.
-- An `isbn` value is written as an ISBN-13 or an ISBN-10 with hyphens and spaces OPTIONAL.. Applications comparing two values MUST first remove hyphens and spaces and uppercase a trailing `x`.
+- An `isbn` value is written as an ISBN-13 or an ISBN-10, in which hyphens and spaces are OPTIONAL. Applications comparing two values MUST first remove hyphens and spaces and uppercase a trailing `x`.
 - A `gtin` value is written as digits alone and SHOULD be zero-padded to fourteen digits.
 - A `publisher_sku` value is opaque.
 
@@ -980,7 +980,7 @@ Where resolution yields no file for a card in any image root of any kind and the
 
 An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets).
 
-The borrow assumes the two decks agree card in the following manner:
+The borrow assumes the two decks agree about what the card is:
 
 - **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage via the [`follows`](#413-follows) field. Two decks are lineage-compatible where the borrowing deck's `follows` is the reference deck's `identifier`, or the reference deck's `follows` is the borrowing deck's `identifier`, or both declare the same `follows` or either declares no `follows`.
 - **Pip style.** An application SHOULD NOT borrow an image for a minor arcanum keyed `two` through `ten` where both decks declare a [`pips`](#414-pips) value and the values differ. Aces, court cards and the major arcana are unaffected ([§4.1.4](#414-pips)).
@@ -1818,12 +1818,12 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
 - [Deck containers](#24-deck-containers), a single-file transfer form carrying one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
-- [Security considerations](#10-security-considerations), covering path traversal, ANSI escape codes
+- [Security considerations](#10-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
-- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes
+- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
 - [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
