@@ -998,6 +998,8 @@ Within an image root, assets are arranged by card type and suit as shown in [§2
 
 Every other top-level directory is ignored by discovery.
 
+The top-level names this specification defines are `deck.toml`, `card_backs/`, `names/` and the image roots above. A deck MAY therefore keep material of its own beside its card assets under any name that is not one of the above.
+
 #### 5.7.2 Extensions, Stems and Bases
 
 A card asset filename is read as four parts. Given `06.two_women.png`:
