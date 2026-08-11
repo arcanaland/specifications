@@ -366,11 +366,23 @@ Qualified identifiers name Arcana Land entities such as tarot decks or spreads u
 
 A qualified identifier is composed of a **realm** and an object **path**, separated by a slash, with an OPTIONAL **fragment** after a `#`. See [§3.5](#35-grammar) for the grammar.
 
-- The realm is a domain name the author controls, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash. A realm therefore has two labels or more, each beginning with a letter and neither beginning nor ending with a hyphen. A single bare label is not a realm. A realm is lowercase ASCII, so an internationalized domain is written in its A-label form, and `xn--bcher-kva.example` reversed is `example.xn--bcher-kva`.
-- The path is one or more slash-separated segments naming an entity within that realm. A deck's path SHOULD be `deck/<name>`.
-- The fragment names a target within that entity, and its meaning is the business of whichever specification owns the entity. In this specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix): `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`. A fragment is therefore admissible only where a card is what is being named, and a field of this specification that names a deck accepts no fragment.
+- The realm is a domain name controlled by whoever mints the identifier, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash.
+- The path is one or more slash-separated segments naming an entity within that realm. The first segment is the type segment and names an entity kind. The remaining segments name the entity within that kind and their structure is the realm holder's to choose. A deck's type segment MUST be `deck`.
+- The fragment names a target within that entity, and its meaning is the prerogative of whichever specification owns the entity. In this specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix). For example, `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
 
 Realms are compared bytewise. Qualified identifiers are not locations and nothing in this specification implies that one can be fetched.
+
+A realm asserts control of a name, not authorship of the work it names. A packager MAY delegate a subdomain to separate the entities they originate from the ones they package, as in `id.example.shelf/deck/some-published-deck`.
+
+The type segments this specification allows:
+
+| Type segment | Names | Owning specification |
+| --- | --- | --- |
+| `deck` | A tarot deck | This specification |
+| `spread` | A spread | Spread specification (not yet published) |
+| `esoterica` | An esoterica document | Tarot Esoterica Specification |
+
+The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore an identifier whose type segment it does not recognize and MUST NOT treat one as an error. A later version of this or another Arcana Land specification MAY add to the registry, so a realm holder naming a kind of entity no specification defines SHOULD prefix the segment, as in `x-collection-notes`. Note that the prefix is `x-` and not the `x_` used elsewhere: a path segment admits `-` and not `_` ([§3.5](#35-grammar)), while a [custom name](#32-custom-names) admits `_` and not `-`.
 
 A qualified identifier is essentially a URI without the scheme, and Arcana Land reserves the scheme `tarot:` for the form `tarot:land.arcana/deck/inclusive-tarot#major_arcana.06:two_women`. No version of this specification defines that scheme and nothing in this document depends on it. It is recorded here for downstream implementation awareness.
 
@@ -387,6 +399,8 @@ A deck has three distinct properties related to identity:
 The three are independent. A directory name is not required to match `[deck].name` nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree and a validator MUST NOT report a disagreement.
 
 An `identifier` names the deck as a whole and MUST NOT carry a fragment.
+
+An identifier names the deck across all of its versions. A packager who reissues a deck MUST NOT change its `identifier` on account of the new `[deck].version`, and MUST mint a new identifier where the package has become a different deck rather than a new version of the same one — a different printing with different front artwork or a different number of cards, which [§4.6](#46-editions) already declines to model as an edition.
 
 A deck SHOULD provide an `identifier`, since a deck without one cannot be referenced from another Arcana Land document. Applications and validators MUST NOT synthesize one for a deck that lacks it. Two decks in one library MAY declare the same `identifier` under different directory names, although a validator warns about it.
 
@@ -431,8 +445,8 @@ realm           = label 1*( "." label )
 label           = lcalpha [ *61( lcalpha / DIGIT / "-" ) ( lcalpha / DIGIT ) ]
 
 path            = segment *( "/" segment )
-segment         = 1*segment-char
-segment-char    = lcalpha / DIGIT / "-"
+segment         = segment-char [ *( segment-char / "-" ) segment-char ]
+segment-char    = lcalpha / DIGIT
 
 fragment        = 1*fragment-char
 fragment-char   = lcalpha / DIGIT / "." / "_" / "-" / ":"
@@ -1488,6 +1502,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a name reserved by [§3.2](#32-custom-names), excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment. It names the deck as a whole ([§3.4](#34-deck-identity)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
+| **W** | `[deck].identifier`'s first path segment is `deck` ([§3.3](#33-qualified-identifiers)). |
 | **W** | `[deck].identifier` is present. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | **W** | Where a validator can see a whole library, no two visible decks declare the same `[deck].identifier`. Two decks that do are a legitimate arrangement, such as a fork or two versions installed side by side, so this is only a warning. |
 | **E** | Every `[cards]` table key is a well-formed [card reference](#312-card-references-and-the-variant-suffix), in particular a two-digit major arcana key written with both digits and a variant key that is a well-formed [custom name](#32-custom-names). |

@@ -128,6 +128,25 @@ CASES = [
     ("qualified-id", "https://land.arcana/deck/rws", REJECT),
     ("qualified-id", "land.arcana/deck/rws#", REJECT),
     ("qualified-id", "land.arcana/deck/rws#not-a-card", LOOSE),
+    ("qualified-id", "id.fidel.shelf/deck/example-tarot", ACCEPT),
+    ("qualified-id", "id.example/esoterica/references/books/example-book", ACCEPT),
+
+    # requires a deck's type segment to be `deck`
+    ("qualified-id", "land.arcana/deck-archive/foo", LOOSE),
+
+    # ---- path segments -------------------------------------------------
+    ("segment", "deck", ACCEPT),
+    ("segment", "rider-waite-smith", ACCEPT),
+    ("segment", "x-collection-notes", ACCEPT),
+    ("segment", "a", ACCEPT),
+    ("segment", "2024", ACCEPT),          # unlike a label, a segment may lead with a digit
+    ("segment", "-deck", REJECT),
+    ("segment", "deck-", REJECT),
+    ("segment", "-", REJECT),
+    ("segment", "de--ck", ACCEPT),
+    ("segment", "deck_two", REJECT),
+    ("segment", "Deck", REJECT),
+    ("segment", "deck/x", REJECT),
 ]
 
 
