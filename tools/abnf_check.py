@@ -147,6 +147,30 @@ CASES = [
     ("segment", "deck_two", REJECT),
     ("segment", "Deck", REJECT),
     ("segment", "deck/x", REJECT),
+
+    # ---- published dates -----------------------------------------------
+    # the three permitted precisions
+    ("published-date", "1909", ACCEPT),
+    ("published-date", "1909-12", ACCEPT),
+    ("published-date", "1909-12-01", ACCEPT),
+    ("published-date", "2018-10-16", ACCEPT),
+
+    # precision is all-or-nothing at each step
+    ("published-date", "1909-", REJECT),
+    ("published-date", "1909-12-", REJECT),
+    ("published-date", "909", REJECT),
+    ("published-date", "19090", REJECT),
+    ("published-date", "1909-1", REJECT),
+    ("published-date", "1909-12-1", REJECT),
+    ("published-date", "1909-12-01T00:00:00Z", REJECT),
+    ("published-date", "1909/12/01", REJECT),
+    ("published-date", "", REJECT),
+
+    # the grammar counts digits; §3.5 requires a real calendar date
+    ("published-date", "1909-13", LOOSE),
+    ("published-date", "1909-00", LOOSE),
+    ("published-date", "1909-12-32", LOOSE),
+    ("published-date", "1909-02-29", LOOSE),   # 1909 was not a leap year
 ]
 
 

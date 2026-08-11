@@ -38,6 +38,7 @@
     - [4.1.4 `pips`](#414-pips)
     - [4.1.5 Product Identifiers](#415-product-identifiers)
     - [4.1.6 Content Rating](#416-content-rating)
+    - [4.1.7 Published Date](#417-published-date)
   - [4.2 `[card_backs]`](#42-card_backs)
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
@@ -177,7 +178,6 @@ The documents below are referenced normatively unless marked informative. A date
 | **RFC 1035 §2.3.1** | Domain Names: preferred name syntax | [§3.3](#33-qualified-identifiers) |
 | **RFC 5234** | Augmented BNF for Syntax Specifications: ABNF | [§3.5](#35-grammar) |
 | **RFC 7405** | Case-Sensitive String Support in ABNF | [§3.5](#35-grammar) |
-| **RFC 3339 §5.6** | Date and Time on the Internet, `full-date` | [§4.1](#41-deck) |
 | **ISO 2108** | International Standard Book Number, with the freely available [ISBN Users' Manual](https://www.isbn-international.org/content/isbn-users-manual/29) | [§4.1.5](#415-product-identifiers) |
 | **GS1 General Specifications** | [ref.gs1.org/standards/genspecs](https://ref.gs1.org/standards/genspecs/) | [§4.1.5](#415-product-identifiers) |
 | **OARS 1.1** | Open Age Ratings Service, [specification](https://github.com/hughsie/oars/blob/master/specification/oars-1.1.md) and [attribute list](https://hughsie.github.io/oars/generate.html) | [§4.1.6](#416-content-rating) |
@@ -458,16 +458,24 @@ segment-char    = lcalpha / DIGIT
 fragment        = 1*fragment-char
 fragment-char   = lcalpha / DIGIT / "." / "_" / "-" / ":"
 
+; ---- Dates ------------------------------------------------------------
+
+published-date  = year [ "-" month [ "-" day ] ]
+year            = 4DIGIT
+month           = 2DIGIT
+day             = 2DIGIT
+
 ; ---- Terminals --------------------------------------------------------
 
 lcalpha         = %x61-7A               ; a-z
 DIGIT           = %x30-39               ; 0-9, from RFC 5234 Appendix B.1
 ```
 
-Two constraints are not expressible in the grammar and are stated normatively:
+Three constraints are not expressible in the grammar and are stated normatively:
 
 - `canonical-major` admits any two digits, but only `00` through `21` have a name in [Appendix C](#appendix-c-canonical-card-names-informative) or any meaning shared between decks ([§3.1.1](#311-a-canonical-id-is-a-slot)). A key MUST be written with both digits.
 - A `custom-name` MUST NOT be a name reserved by [§3.2](#32-custom-names), with the one exception in [§4.4](#44-suits).
+- `published-date` admits any `month` and `day` digits, but a value MUST denote a real calendar date in the proleptic Gregorian calendar ([§4.1](#41-deck)).
 
 ### 3.6 Identifiers in TOML
 
@@ -516,15 +524,12 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `rights_status` | String (URI) | No | none | The artwork's copyright *status*, as distinct from any license granted over it ([§7.4](#74-rights-status)). |
 | `redistribution` | String | No | `"unstated"` | Whether the packager passes on the artwork for republication ([§7.5](#75-redistribution-and-derivation)). |
 | `derivation` | String | No | `"unstated"` | Whether the packager passes on the artwork for making derived works ([§7.5](#75-redistribution-and-derivation)). |
-| `created_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`). |
-| `updated_date` | String | No | none | RFC 3339 `full-date` (`YYYY-MM-DD`). |
+| `published_date` | String | No | none | When the deck this package reproduces was published, at the precision the packager has ([§4.1.7](#417-published-date)). |
 | `publisher` | String | No | none | The deck's publisher. |
 | `product_ids` | Table | No | none | External identifiers for the commercial product this deck reproduces such as an ISBN ([§4.1.5](#415-product-identifiers)). |
 | `content_rating` | Table | No | none | What the deck's artwork depicts, keyed by rating system ([§4.1.6](#416-content-rating)). |
 | `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
-
-`created_date` and `updated_date` are TOML strings. TOML's native date type MUST NOT be used for them.
 
 ```toml
 [deck]
@@ -536,7 +541,7 @@ author = "Pamela Colman Smith"
 icon = "deck-icon.png"
 license = "CC0-1.0"
 license_files = ["LICENSE"]
-created_date = "1909-12-01"
+published_date = "1909-12"
 tags = ["traditional", "classic"]
 ```
 
@@ -749,6 +754,18 @@ sex_nudity = "mild"
 
 `major_arcana.06:two_women`, declaring nothing, is `sex_nudity = "mild"` from its card.
 
+#### 4.1.7 Published Date
+
+`[deck].published_date` records when the deck was published: the date printed on a physical deck's box or in its accompanying material, or the date a digital deck was first released. It describes the work, not this package. The package's own revisions are what [`[deck].version`](#41-deck) tracks.
+
+The value is a `published-date` ([§3.5](#35-grammar)) — a year, a year and month, or a full date. `"1909"` where the year is all that is known, `"1909-12"` where the month is on record, `"2018-10-16"` where the day is.
+
+A packager MUST NOT state a precision they do not have. Where only the year is known, the year alone is the correct value; padding it to `1909-01-01` asserts a day nobody knows.
+
+`published_date` is a TOML string. TOML's native types MUST NOT be used for it: unquoted, `1909-12-01` reads as a local date and `1909` reads as an integer ([§9.4](#94-validation-rules)).
+
+Where a deck's editions were printed at different times, each edition states its own ([§4.6](#46-editions)).
+
 ### 4.2 `[card_backs]`
 
 A card back design is one of the back images a deck ships, named by a design key. Designs are [discovered from the directory structure](#55-card-back-images) exactly as cards are, so a deck that contains an image `card_backs/classic.png` has a design keyed `classic` and need declare nothing at all. The whole of `[card_backs]` is OPTIONAL.
@@ -906,7 +923,7 @@ publisher = "US Games Systems"
 name = "Rider-Waite-Smith (Rider Edition)"
 card_back = "rider"
 publisher = "Rider & Company"
-created_date = "1912-01-01"
+published_date = "1912"
 ```
 
 **`[editions]`**
@@ -924,7 +941,7 @@ Where exactly one edition is defined and `default` is omitted, that edition is t
 | `name` | String | **Yes** | n/a | The edition's display name. |
 | `card_back` | String | No | `[card_backs].default` | The [design key](#42-card_backs) this edition uses. MUST name a card back design the deck has ([§9.4](#94-validation-rules)). |
 | `publisher` | String | No | `[deck].publisher` | The edition's publisher, where it differs from the deck's. |
-| `created_date` | String | No | `[deck].created_date` | RFC 3339 `full-date`, on the terms in [§4.1](#41-deck). |
+| `published_date` | String | No | `[deck].published_date` | When this edition was published, on the terms in [§4.1.7](#417-published-date). |
 
 An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) defines for `[deck]`.
 
@@ -1496,8 +1513,9 @@ Each rule is labeled **E** for error or **W** for warning.
 | --- | --- |
 | **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exist. |
 | **E** | Every key whose Required column in [§4](#4-decktoml-reference) reads **Yes** is present: `[deck].schema_version`, `name` and `version` ([§4.1](#41-deck)), `rel` and `url` on each `[deck].links` entry ([§4.1.1](#411-links)), and `name` on each edition ([§4.6](#46-editions)). A key whose Required column states a condition rather than **Yes** is reported by the rule below that states the same condition, and a key marked RECOMMENDED is not Required and is not reported at all. |
-| **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#8-extensibility) rather than typed. The case an author meets in practice is a date: `created_date` and `updated_date` are strings, so a bare `1909-12-01`, which TOML reads as a local date, violates this rule ([§4.1](#41-deck)). |
+| **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#8-extensibility) rather than typed. The case an author meets in practice is a date: `published_date` is a string, so a bare `1909-12-01`, which TOML reads as a local date, violates this rule, and so does a bare `1909`, which TOML reads as an integer ([§4.1.7](#417-published-date)). |
 | **E** | `[deck].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
+| **E** | `[deck].published_date`, and any edition's, is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.7](#417-published-date)). |
 | **E** | Every key in a name file corresponds to a card, suit, rank, card variant or card back design the deck defines, or is `[minor_arcana].name_template`, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
 | **E** | `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`. |
 | **E** | Every name file's stem is a well-formed BCP 47 language tag, no two differ only in case, and `[deck].default_language` has a corresponding file. |
@@ -1638,8 +1656,7 @@ redistribution = "full"
 derivation = "full"
 
 default_language = "en"
-created_date = "1909-12-01"
-updated_date = "2026-08-01"
+published_date = "1909-12"
 tags = ["traditional", "classic", "beginner-friendly"]
 links = [
   { rel = "homepage", url = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot" },
@@ -1883,6 +1900,7 @@ Applications MUST ignore these names in a 2.0 deck.
 | `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
 | `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's canonical ID |
 | `[remap_major_arcana]` | A table remapping major arcana display positions in 1.0 | Removed in 2.0. No published deck used it and it was unnecessary |
+| `created_date`, `updated_date` | Two dates on `[deck]`, and `created_date` on an edition, in 1.0 | Replaced in 2.0 by [`published_date`](#417-published-date). |
 
 ## Appendix C. Canonical Card Names (Informative)
 
@@ -1937,7 +1955,7 @@ This appendix records where applications conventionally look for decks on common
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, replaces `created_date` and `updated_date` with [`published_date`](#417-published-date), renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
 
 **Newly specified.**
 
@@ -1954,6 +1972,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes, together with the conditions in [§5.7.6](#576-when-no-asset-is-found) that stop a reference deck from lending across a disagreement about what a card is.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
+- [`[deck].published_date`](#417-published-date), when the deck was published, at whatever precision the packager has.
 - [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
 - [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
