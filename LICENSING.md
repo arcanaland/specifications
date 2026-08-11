@@ -28,21 +28,24 @@ The following are dedicated to the public domain under CC0 1.0 Universal.
       major_arcana.<NN>
       minor_arcana.<suit>.<rank>
 
-  every canonical suit and rank name, and any identifier this specification or
-  a successor mints.
+  every canonical suit and rank name, the qualified identifier syntax, and any
+  identifier this specification or a successor mints.
 
-  **(b) The vocabulary.** The names of every file, directory, table, key and
+  **(b) The grammar.** The ABNF grammar and every production in it.
+
+  **(c) The vocabulary.** The names of every file, directory, table, key and
   enumerated value this specification defines together with their types,
-  cardinality and defaults, and every registry of values published anywhere in
-  these documents.
+  cardinality and defaults, as set out in the field reference tables, and every
+  registry of values published anywhere in these documents, including the link
+  relations and the redistribution and derivation vocabularies.
 
-  **(c) The tabulations.** Every table of names, keys or values appearing in
-  these documents, including the canonical card names. These are conventional
-  designations of long standing which the author does not claim to have
-  authored, and the selection, arrangement and ordering of them is waived along
-  with the entries themselves.
+  **(d) The tabulations.** Every table of names, keys or values appearing in an
+  appendix, including the canonical card names and the reserved and deprecated
+  names of the deck specification. These are conventional designations of long
+  standing which the author does not claim to have authored, and the selection,
+  arrangement and ordering of them is waived along with the entries themselves.
 
-  **(d) The examples.** Every example `deck.toml`, name file, directory listing
+  **(e) The examples.** Every example `deck.toml`, name file, directory listing
   and other code sample appearing in any document in this repository.
 
 To the extent that any of the foregoing is protected by copyright, database
@@ -65,8 +68,8 @@ propagate, or reproduce.
 > copyright, database right, patent, trademark, or other intellectual property
 > right against any person for using, implementing, publishing, tabulating,
 > cross-referencing, mapping, extending, or building a competing specification
-> upon the identifier scheme, vocabulary, or tabulations described in the
-> Arcana Land specifications, that is, upon anything enumerated in section 2
+> upon the identifier scheme, grammar, vocabulary, or tabulations described in
+> the Arcana Land specifications, that is, upon anything enumerated in section 2
 > above.
 >
 > No permission, notice, license, registration or fee is required to use them,
