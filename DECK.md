@@ -683,16 +683,16 @@ Rules:
 
 - A card-level descriptor MUST be written under a system the deck also declares in `[deck.content_rating]`.
 - A card-level value MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `cards_complete = true`, since it is derived from the cards, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
-- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck. It is not a descriptor and is reserved in every system subtable; a descriptor is always a string, so the two never collide.
-  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system. The cards are then a complete account and the deck-level value of a descriptor the subtable omits is **the greatest value any card declares for it**, which is `none` where no card declares it at all. A packager who has annotated the cards therefore does not restate the summary, and this is the one case in which a deck-level descriptor may be omitted without asserting `none`.
-  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value for that card it SHOULD use the deck-level value, which is the same conservative answer it would reach with no card-level declarations at all.
-- There is no default. A deck that annotates no card says nothing about coverage and SHOULD omit the key, and a reader of a deck that does annotate never has to infer what an unannotated card meant.
-- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms. A variant that declares no subtable for a system takes its card's value for that system, so a card-level descriptor covers every variant the deck does not rate separately, and where a deck's variants of one card differ in what they depict the card declares the strongest of them.
-- A variant-level value MUST NOT exceed the card-level value declared for the same system and descriptor, under the same ordering. A card's descriptor is an upper bound on its variants exactly as the deck's is on its cards. Within a variant's declared system subtable an omitted descriptor is `none`, as it is anywhere else, so a variant that depicts nothing the system describes declares that subtable empty rather than inheriting the card's value.
-- `cards_complete` counts cards and not variants. A variant that declares nothing resolves to its card, which a complete card annotation already accounts for.
+- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck.
+  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system.
+  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`.
+- There is no default. A deck that annotates no card says nothing about coverage and SHOULD omit the key.
+- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms.
+- A variant-level value MUST NOT exceed the card-level value declared for the same system and descriptor, under the same ordering.
+- `cards_complete` counts cards and not variants.
 - A descriptor covers the deck's own assets. Where an application [borrows a card](#576-when-no-asset-is-found) from a reference deck, it SHOULD take the descriptor of whichever deck supplied the image.
 
-A deck reviewed card by card declares no deck-level descriptor at all:
+A deck reviewed card by card:
 
 ```toml
 [deck.content_rating."oars-1.1"]
@@ -714,7 +714,7 @@ sex_nudity = "mild"
 violence_bloodshed = "mild"
 ```
 
-The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` without those values appearing anywhere in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its cards carry.
+The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild".
 
 Where the deck above ships two artworks of The Lovers and only one of them is nude, the card carries the stronger value and the other variant states its own:
 
@@ -723,10 +723,9 @@ Where the deck above ships two artworks of The Lovers and only one of them is nu
 sex_nudity = "mild"
 
 [cards."major_arcana.06:two_men".content_rating."oars-1.1"]
-# reviewed; depicts nothing this system describes
+# reviewed and depicts nothing this system describes
 ```
 
-`major_arcana.06:two_women`, declaring nothing, is `sex_nudity = "mild"` from its card.
 
 ### 4.2 `[card_backs]`
 
