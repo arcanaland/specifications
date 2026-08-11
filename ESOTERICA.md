@@ -1,4 +1,4 @@
-# Tarot Esoterica Specification
+
 
 > Maintained By: [Arcana Land](https://github.com/arcanaland)
 >
@@ -1030,20 +1030,20 @@ The case the licensing fields exist for: the document is the author's, the work 
 ```toml
 [meta]
 schema_version = "1.0"
-identifier = "id.example.shelf/esoterica/references/books/tarot-for-change"
-name = "Tarot for Change"
+identifier = "id.example.shelf/esoterica/references/books/example-tarot-book"
+name = "Example Tarot Book"
 type = "book"
-author = "J. Dore"
+author = "Jane Doe"
 published_date = "2021"
-isbn = "978-0-593-29593-9"
+isbn = "978-0-592-24593-9"
 license = "LicenseRef-AllRightsReserved"
 rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 redistribution = "none"
 derivation = "none"
-copyright = "© 2021 J. Dore"
+copyright = "© 2021 J. Doe"
 
 [card."major_arcana.00".passages]
-text = "One long essay per card, and no correspondences at all."
+text = "One long essay per card."
 ```
 
 ### A.5 A custom group and a spread position
