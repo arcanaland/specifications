@@ -277,19 +277,26 @@ To support case-insensitive filesystems, applications MUST compare card asset st
 
 ### 2.4 Deck Containers
 
-A deck container is a single zip file containing a deck directory.
+A deck container is a single zip file containing a deck directory. It is not a second kind of deck: an application unpacks one and reads the result under the ordinary rules of this specification.
 
 A container:
 
 - MUST be a ZIP archive.
-- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive.
+- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive. A deck sitting inside a wrapping directory is not a container.
 - MUST contain every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and the [name file](#13-terminology) `default_language` names.
 - SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
 - MUST use `/` as its entry-name separator, MUST write entry names in UTF-8 and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment or repeats the name of another entry.
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
-- SHOULD begin with an entry named `mimetype`, stored uncompressed, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
+- SHOULD begin with an entry named `mimetype`, stored uncompressed and carrying no extra field, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break. This puts a fixed string at a fixed offset, so a container can be recognized by its content rather than by its name.
 
-An application MUST accept a container that satisfies every rule above except the `mimetype` entry. An application that unpacks a container MUST reject the whole container where any entry breaks an entry rule and MUST NOT repair an entry name and continue.
+An application MUST accept a container that satisfies every rule above except the `mimetype` entry. An application that unpacks a container:
+
+- MUST reject the whole container where any entry breaks an entry rule above and MUST NOT repair an entry name and continue. Some archive libraries repair by default, so it MUST check entry names itself rather than rely on one.
+- MUST bound the total uncompressed size, the number of entries, and the ratio of uncompressed to compressed size. A ratio limit of 100:1 is RECOMMENDED: card artwork is already compressed ([§5.7.4](#574-the-extension-chain)) and comes nowhere near it, while a hostile archive exceeds it by orders of magnitude. This specification fixes no absolute limit.
+- SHOULD unpack into a location it controls and SHOULD NOT unpack over an installed deck, so that a partly written directory is never [scanned](#222-scanning).
+- SHOULD name the unpacked deck root from the last segment of [`[deck].identifier`](#34-deck-identity), or failing that from the container's file name without its extension; MUST make that name a single path segment carrying no separator; and MUST NOT overwrite an unrelated deck that already holds it.
+
+The unpacked `mimetype` file is ignored by discovery ([§5.7.1](#571-image-roots)) as any other non-asset file is, and leaving it in place lets the deck be packed again unchanged.
 
 > Note: example [shared-mime-info](https://specifications.freedesktop.org/shared-mime-info-spec/latest/) rule:
 >
@@ -400,7 +407,7 @@ The three are independent. A directory name is not required to match `[deck].nam
 
 An `identifier` names the deck as a whole and MUST NOT carry a fragment.
 
-An identifier names the deck across all of its versions. A packager who reissues a deck MUST NOT change its `identifier` on account of the new `[deck].version`, and MUST mint a new identifier where the package has become a different deck rather than a new version of the same one — a different printing with different front artwork or a different number of cards, which [§4.6](#46-editions) already declines to model as an edition.
+An identifier names the deck across all of its versions. A packager who reissues a deck MUST NOT change its `identifier` on account of the new `[deck].version`, and MUST mint a new identifier where the package has become a different deck rather than a new version of the same one.
 
 A deck SHOULD provide an `identifier`, since a deck without one cannot be referenced from another Arcana Land document. Applications and validators MUST NOT synthesize one for a deck that lacks it. Two decks in one library MAY declare the same `identifier` under different directory names, although a validator warns about it.
 
@@ -600,10 +607,10 @@ follows = "land.arcana/deck/rider-waite-smith"
 
 Rules:
 
-- The value MUST be a well-formed qualified identifier and MUST NOT carry a fragment.
+- The value MUST be a well-formed qualified identifier naming a deck: it MUST NOT carry a fragment and is neither a [card reference nor a variant reference](#312-card-references-and-the-variant-suffix).
 - It MUST NOT equal this deck's own `identifier` or `signifies`.
-- `follows` carries no merge semantics, in contrast to `signifies` ([§5.9](#59-surrogate-decks)).
-- `follows` is not a rights claim and asserts solely a resemblance in structure and iconography.
+- `follows` carries no merge semantics, in contrast to `signifies` ([§5.9](#59-surrogate-decks)); an application MUST NOT treat the two decks as one.
+- `follows` is not a rights claim. It asserts solely a resemblance in structure and iconography, grants and implies no permission, and does not exempt a deck from [§7.7](#77-deck-names-and-trademarks)'s prohibition on implying endorsement. Rights are stated in [§7](#7-licensing-and-attribution).
 - Following is not transitive for any purpose this specification defines.
 
 #### 4.1.4 `pips`
@@ -697,13 +704,13 @@ Rules:
 
 - A card-level descriptor MUST be written under a system the deck also declares in `[deck.content_rating]`.
 - A card-level value MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `cards_complete = true`, since it is derived from the cards, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
-- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck.
-  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system.
-  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`.
+- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck. It is reserved in every system subtable and is never a descriptor; a descriptor is always a string, so the two never collide.
+  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system. The deck-level value of a descriptor the subtable omits is then **the greatest value any card declares for it**, and this is the one case in which an omitted deck-level descriptor does not assert `none`.
+  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value it SHOULD use the deck-level one.
 - There is no default. A deck that annotates no card says nothing about coverage and SHOULD omit the key.
-- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms.
-- A variant-level value MUST NOT exceed the card-level value declared for the same system and descriptor, under the same ordering.
-- `cards_complete` counts cards and not variants.
+- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms. A variant declaring no subtable for a system takes its card's value for that system, so a card-level descriptor covers every variant the deck does not rate separately.
+- A variant-level value MUST NOT exceed the card-level value declared for the same system and descriptor, under the same ordering. Within a variant's *declared* subtable an omitted descriptor is `none`, as anywhere else, so a variant that depicts nothing the system describes declares that subtable empty rather than inheriting its card's value.
+- `cards_complete` counts cards and not variants. A variant that declares nothing resolves to its card, which a complete card annotation already accounts for.
 - A descriptor covers the deck's own assets. Where an application [borrows a card](#576-when-no-asset-is-found) from a reference deck, it SHOULD take the descriptor of whichever deck supplied the image.
 
 A deck reviewed card by card:
@@ -728,7 +735,7 @@ sex_nudity = "mild"
 violence_bloodshed = "mild"
 ```
 
-The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild".
+The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` without those values appearing anywhere in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its cards carry.
 
 Where the deck above ships two artworks of The Lovers and only one of them is nude, the card carries the stronger value and the other variant states its own:
 
@@ -740,6 +747,7 @@ sex_nudity = "mild"
 # reviewed and depicts nothing this system describes
 ```
 
+`major_arcana.06:two_women`, declaring nothing, is `sex_nudity = "mild"` from its card.
 
 ### 4.2 `[card_backs]`
 
@@ -1064,13 +1072,13 @@ Where the requested card has no variant under that key, the application MUST res
 
 Where resolution yields no file for a card in any image root of any kind and the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#45-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a canonical minor arcanum or a major arcanum keyed `00` through `21`.
 
-An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets).
+An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets). Where it displays attribution or rights metadata for a borrowed card, it MUST take that metadata from the reference deck, whose terms may be narrower than those of the deck it stands in for.
 
-The borrow assumes the two decks agree about what the card is:
+The borrow assumes the two decks agree about what the card is. Each condition below is checked against the decks' own declarations, so a deck that declares nothing fails none of them:
 
 - **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage via the [`follows`](#413-follows) field. Two decks are lineage-compatible where the borrowing deck's `follows` is the reference deck's `identifier`, or the reference deck's `follows` is the borrowing deck's `identifier`, or both declare the same `follows` or either declares no `follows`.
 - **Pip style.** An application SHOULD NOT borrow an image for a minor arcanum keyed `two` through `ten` where both decks declare a [`pips`](#414-pips) value and the values differ. Aces, court cards and the major arcana are unaffected ([§4.1.4](#414-pips)).
-- **Name coherence.** An application SHOULD NOT borrow an image for a card where the borrowing deck supplies its own name for that card and the reference deck's name for the same [canonical ID](#31-canonical-ids) differs.
+- **Name coherence.** An application SHOULD NOT borrow an image for a card where the borrowing deck supplies its own name for that card and the reference deck's name for the same [canonical ID](#31-canonical-ids) differs, since a canonical ID is a [slot](#311-a-canonical-id-is-a-slot) and two decks may put different cards in it — a Marseille-patterned deck names `major_arcana.08` Justice where a Rider-Waite-Smith reference deck names it Strength. Both names are resolved by [§6.3](#63-display-name-resolution) in the language being displayed, and where either does not resolve to a deck-supplied string the condition does not apply.
 
 These conditions gate the borrow only. Where one blocks it, the outcome is the one below for a card no reference deck supplies.
 
@@ -1943,7 +1951,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
-- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes.
+- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes, together with the conditions in [§5.7.6](#576-when-no-asset-is-found) that stop a reference deck from lending across a disagreement about what a card is.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
 - [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
