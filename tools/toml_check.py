@@ -24,8 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# ESOTERICA.md is currently busted
-DOCS = [ROOT / "DECK.md"]
+DOCS = [ROOT / "DECK.md", ROOT / "ESOTERICA.md"]
 
 FENCE = re.compile(r"^```(\w*)[^\n]*\n(.*?)^```", re.S | re.M)
 INVALID_MARKER = re.compile(r"<!--\s*toml-check:\s*invalid\s*-->\s*\Z")
