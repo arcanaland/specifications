@@ -7,15 +7,18 @@ Open standards for digital tarot decks and esoterica.
 | Specification | Version | Status | Implementations |
 | --- | --- | --- | --- |
 | [Tarot Deck](./DECK.md) | 1.0 | Stable | [libarcana](https://github.com/arcanaland/libarcana) (full), [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial) |
-| [Esoterica](./ESOTERICA.md) | 0.1 | Draft | None |
+| [Tarot Deck](https://github.com/arcanaland/specifications/blob/deck-v2/DECK.md) | 2.0 | Draft | [libarcana](https://github.com/arcanaland/libarcana) (in progress) |
+| [Esoterica](https://github.com/arcanaland/specifications/blob/deck-v2/ESOTERICA.md) | 1.0 | Draft | None |
 
 ### Tarot Decks
 
-The [Tarot Deck Specification](./DECK.md) describes how a deck is laid out on disk: its directory structure, its `deck.toml` manifest, canonical card identifiers, image formats and internationalization.
+The [Tarot Deck Specification](./DECK.md) describes canonical card identifiers, how a deck is structured as a directory, its TOML manifest,  image formats and internationalization.
 
 ### Esoterica
 
-The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere.
+The [Esoterica Specification](https://github.com/arcanaland/specifications/blob/deck-v2/ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere currently.
+
+Esoterica packs are now being built at [arcanaland/esoterica](https://github.com/arcanaland/esoterica), but no implementation currently exists to consume them.
 
 ## Canonical Identifiers
 
