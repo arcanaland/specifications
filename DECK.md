@@ -45,7 +45,6 @@
     - [4.3.2 Ordering](#432-ordering)
   - [4.4 `[suits]`](#44-suits)
   - [4.5 `[excluded_cards]`](#45-excluded_cards)
-  - [4.6 `[editions]`](#46-editions)
 - [5. Card Assets](#5-card-assets)
   - [5.1 Asset Discovery](#51-asset-discovery)
   - [5.2 Vector Graphics](#52-vector-graphics)
@@ -69,6 +68,7 @@
   - [6.1 Language Tags](#61-language-tags)
   - [6.2 Language Resolution](#62-language-resolution)
     - [6.2.1 Name File Metadata](#621-name-file-metadata)
+    - [6.2.2 Group Names](#622-group-names)
   - [6.3 Display Name Resolution](#63-display-name-resolution)
     - [6.3.1 Minor Arcana Name Composition](#631-minor-arcana-name-composition)
   - [6.4 Alt Text Guidelines](#64-alt-text-guidelines)
@@ -92,7 +92,7 @@
 - [Appendix A. Examples (Informative)](#appendix-a-examples-informative)
   - [A.1 Simple Custom Deck](#a1-simple-custom-deck)
   - [A.2 Rider-Waite-Smith](#a2-rider-waite-smith)
-  - [A.3 Renamed Suits, a Custom Card and Multiple Editions](#a3-renamed-suits-a-custom-card-and-multiple-editions)
+  - [A.3 Renamed Suits, a Custom Card and Two Card Backs](#a3-renamed-suits-a-custom-card-and-two-card-backs)
   - [A.4 A Lowercase Typographic Convention](#a4-a-lowercase-typographic-convention)
   - [A.5 Deck with Card Variants](#a5-deck-with-card-variants)
   - [A.6 A Surrogate Deck](#a6-a-surrogate-deck)
@@ -130,6 +130,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 
 | Term | Meaning |
 | --- | --- |
+| **artwork** | Any image within a deck such as a card's default artwork, a [card variant](#312-card-references-and-the-variant-suffix), or a [card back design](#42-card_backs). |
 | **base** | The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06` ([§5.7.2](#572-extensions-stems-and-bases)). |
 | **canonical ID** | The identifier by which a card is uniquely addressed: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
 | **card back design** | One of the card back images inside a deck, named by a design key ([§4.2](#42-card_backs)). |
@@ -138,11 +139,10 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. |
 | **card variant** | An alternative artwork for a card. Variants of a card are interchangeable and denote the same meaning. |
 | **container** | A single zip file containing a deck directory ([§2.4](#24-deck-containers)). |
-| **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs, editions and card variant keys ([§3.2](#32-custom-names)). |
+| **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs and card variant keys ([§3.2](#32-custom-names)). |
 | **deck** | A directory containing a `deck.toml`, together with the card assets and name files arranged around it. |
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
 | **deck root** | The directory that directly contains a deck's `deck.toml`. |
-| **edition** | A printing of a deck that shares the card fronts but different card backs. ([§4.6](#46-editions)). |
 | **extended major arcanum** | A major arcanum keyed beyond the canonical numbers into `22`–`99`. |
 | **major arcana** | The cards keyed under `major_arcana`. The twenty-two keyed `00`–`21` are the canonical major arcana. |
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
@@ -334,7 +334,7 @@ Custom cards extend this scheme using the author's own keys. For example: `major
 
 #### 3.1.1 A Canonical ID Is a Slot
 
-A canonical ID denotes the card a deck defines at a given position, not a particular card of tradition. A. E. Waite infamously swapped the positions of Strength and Justice from the Marseille ordering. In this specification `major_arcana.08` means the major arcanum numbered eight, so a deck following the Marseille ordering simply writes Justice under `[major_arcana].08` in its name file. [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
+A canonical ID denotes the card a deck defines at a given position, not a particular card of tradition. A. E. Waite infamously swapped the positions of Strength and Justice from the Marseille ordering. In this specification `major_arcana.08` means the major arcanum numbered eight, so a deck following the Marseille ordering simply writes Justice under `[name.card.major_arcana].08` in its name file. [Appendix C](#appendix-c-canonical-card-names-informative) publishes conventional English names for the twenty-two major arcana as a display fallback of last resort.
 
 A deck whose extra card is not a numbered member of its sequence gives it a [custom name](#32-custom-names) instead, which denotes membership without asserting a number ([§4.3.1](#431-card-numbers)).
 
@@ -349,13 +349,13 @@ major_arcana.06:two_women   # a card reference with a variant suffix
 
 A card reference with no variant suffix denotes the card's default variant. The suffix selects between different artwork of the card and does not change which card is named. `major_arcana.06:two_women` and `major_arcana.06:two_men` are the same card in the same slot with different artwork.
 
-The suffixed form on its own is a **variant reference**. A variant is created by a file ([§5.1](#51-asset-discovery)) or by an explicit `image` path, and a variant reference is a valid key wherever a card reference is: an entry in [`[cards]`](#43-cards) supplies a variant's strings, image and content rating, and a name file's `[card_variants]` table is keyed by it.
+The suffixed form on its own is a **variant reference**. A variant is created by a file ([§5.1](#51-asset-discovery)) or by an explicit `image` path, and a variant reference is a valid key wherever a card reference is: an entry in [`[cards]`](#43-cards) supplies a variant's strings, image and content rating, and a name file's `variant` tables are keyed by it ([§6.2](#62-language-resolution)).
 
 Variants of a card are interchangeable and carry the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
 
 ### 3.2 Custom Names
 
-Custom names are the keys a deck author creates such as custom major arcana keys, custom suit keys, custom rank keys, card back design keys, edition keys and card variant keys. Every custom name MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, but does not allow a leading digit.
+Custom names are the keys a deck author creates such as custom major arcana keys, custom suit keys, custom rank keys, card back design keys and card variant keys. Every custom name MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, but does not allow a leading digit.
 
 Further:
 
@@ -489,8 +489,8 @@ A [canonical ID](#31-canonical-ids) is a compound, which, when used in TOML as a
 | --- | --- |
 | [`[cards."<card-ref>"]`](#43-cards) | Single key |
 | [`[app."<realm>"]`](#8-extensibility) | Single key |
-| A name file's `[card_variants]` and `[alt_text.card_variants]` ([§6.2](#62-language-resolution)) | Single key, a variant reference |
-| A name file's `[major_arcana]`, `[minor_arcana.<suit>]` and `[alt_text]` | Key path |
+| A name file's `[name.variant]` and `[alt_text.variant]` ([§6.2](#62-language-resolution)) | Single key, a variant reference |
+| A name file's `[<facet>.card.major_arcana]` and `[<facet>.card.minor_arcana.<suit>]` | Key path |
 | [`[suits.<key>]`](#44-suits) | Key path |
 
 ## 4. deck.toml Reference
@@ -693,9 +693,9 @@ The registry is open on the same terms as the [link relations](#411-links) of §
 
 An absent `[deck.content_rating]` means the packager has not declared a rating and an application MUST NOT read it as `none`.
 
-Within a declared system subtable, an omitted descriptor is `none` for that system. For example, `[deck.content_rating."oars-1.1"]` with no descriptors communicates that this deck was reviewed and contains nothing the system describes. A deck that annotates its cards states the same thing a second way, described under per-card descriptors below.
+Within a declared system subtable, an omitted descriptor is `none` for that system. For example, `[deck.content_rating."oars-1.1"]` with no descriptors communicates that this deck was reviewed and contains nothing the system describes. A deck that annotates its artwork states the same thing a second way, described under per-artwork descriptors below.
 
-**Per-card descriptors.** A card carries the same table under its [`[cards]`](#43-cards) entry:
+**Per-artwork descriptors.** A card carries the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
 
 ```toml
 [cards."major_arcana.06"]
@@ -707,30 +707,37 @@ violence_bloodshed = "mild"
 
 Rules:
 
-- A card-level descriptor MUST be written under a system the deck also declares in `[deck.content_rating]`.
-- A card-level value MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `cards_complete = true`, since it is derived from the cards, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
-- Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `cards_complete`, which says whether the annotation covers the whole deck. It is reserved in every system subtable and is never a descriptor; a descriptor is always a string, so the two never collide.
-  - `cards_complete = true` states that every card depicting anything the system describes carries an entry, so a card with no entry is `none` for that system. The deck-level value of a descriptor the subtable omits is then **the greatest value any card declares for it**, and this is the one case in which an omitted deck-level descriptor does not assert `none`.
-  - `cards_complete = false` states that cards were annotated where the packager saw a reason to. A card with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value it SHOULD use the deck-level one.
-- There is no default. A deck that annotates no card says nothing about coverage and SHOULD omit the key.
-- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms. A variant declaring no subtable for a system takes its card's value for that system, so a card-level descriptor covers every variant the deck does not rate separately.
-- A variant-level value MUST NOT exceed the card-level value declared for the same system and descriptor, under the same ordering. Within a variant's *declared* subtable an omitted descriptor is `none`, as anywhere else, so a variant that depicts nothing the system describes declares that subtable empty rather than inheriting its card's value.
-- `cards_complete` counts cards and not variants. A variant that declares nothing resolves to its card, which a complete card annotation already accounts for.
+- A descriptor declared on an [artwork](#13-terminology) MUST be written under a system the deck also declares in `[deck.content_rating]`.
+- A value declared on an artwork MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `artwork_complete = true`, since it is derived from the artwork, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
+- Where any artwork declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `artwork_complete`, which says whether the annotation covers the whole deck. It is reserved in every system subtable and is never a descriptor; a descriptor is always a string, so the two never collide.
+  - `artwork_complete = true` states that every artwork the deck ships depicting anything the system describes carries an entry, so an artwork with no entry is `none` for that system. The deck-level value of a descriptor the subtable omits is then **the greatest value any artwork declares for it**, and this is the one case in which an omitted deck-level descriptor does not assert `none`.
+  - `artwork_complete = false` states that artwork was annotated where the packager saw a reason to. An artwork with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value it SHOULD use the deck-level one.
+- There is no default. A deck that annotates no artwork says nothing about coverage and SHOULD omit the key.
+- A card's value describes that card's **default artwork**, which is what a [bare card reference](#312-card-references-and-the-variant-suffix) denotes. It is not a ceiling over the card's other artwork: a card whose default artwork depicts nothing the system describes MAY carry a variant that depicts something, and each states its own value.
+- A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms. A variant declaring no subtable for a system takes its card's value for that system, so a card-level descriptor covers every variant the deck does not rate separately. Within a variant's *declared* subtable an omitted descriptor is `none`, as anywhere else, so a variant that depicts nothing the system describes declares that subtable empty rather than inheriting its card's value.
+- A [card back design](#42-card_backs) is rated under its own `[card_backs.designs.<key>]` entry, on the same terms. A back belongs to no card and so inherits nothing: one that declares no subtable for a system is `none` under `artwork_complete = true` and unstated otherwise, like any other artwork.
+- `artwork_complete` needs no entry for artwork that resolves to another. A variant that declares nothing resolves to its card, which a complete card annotation already accounts for.
 - A descriptor covers the deck's own assets. Where an application [borrows a card](#576-when-no-asset-is-found) from a reference deck, it SHOULD take the descriptor of whichever deck supplied the image.
 
 A deck reviewed card by card:
 
 ```toml
 [deck.content_rating."oars-1.1"]
-cards_complete = true
+artwork_complete = true
 
 [cards."major_arcana.06".content_rating."oars-1.1"]
+sex_nudity = "mild"
+
+[cards."major_arcana.15".content_rating."oars-1.1"]
 sex_nudity = "mild"
 
 [cards."major_arcana.16".content_rating."oars-1.1"]
 violence_fantasy = "mild"
 
 [cards."major_arcana.17".content_rating."oars-1.1"]
+sex_nudity = "mild"
+
+[cards."major_arcana.20".content_rating."oars-1.1"]
 sex_nudity = "mild"
 
 [cards."major_arcana.21".content_rating."oars-1.1"]
@@ -740,19 +747,29 @@ sex_nudity = "mild"
 violence_bloodshed = "mild"
 ```
 
-The seventy-three cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` without those values appearing anywhere in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its cards carry.
+The seventy-one cards with no entry are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` without those values appearing anywhere in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its artwork carries.
 
-Where the deck above ships two artworks of The Lovers and only one of them is nude, the card carries the stronger value and the other variant states its own:
+In a different deck, one whose default Lovers artwork is clothed and which ships a nude alternate beside it, each artwork states its own value and the card's describes what a bare `major_arcana.06` shows:
 
 ```toml
 [cards."major_arcana.06".content_rating."oars-1.1"]
-sex_nudity = "mild"
+# the default artwork, reviewed and depicting nothing this system describes
 
-[cards."major_arcana.06:two_men".content_rating."oars-1.1"]
-# reviewed and depicts nothing this system describes
+[cards."major_arcana.06:two_women".content_rating."oars-1.1"]
+sex_nudity = "mild"
 ```
 
-`major_arcana.06:two_women`, declaring nothing, is `sex_nudity = "mild"` from its card.
+`major_arcana.06:two_men`, declaring nothing, takes `none` from its card. An application filtering at card granularity shows The Lovers, because the artwork it would show depicts nothing the system describes; one that offers the `two_women` variant reads that variant's own value before showing it.
+
+A deck whose only rated artwork is a card back says so where the back is declared, and needs no card entries at all:
+
+```toml
+[deck.content_rating."oars-1.1"]
+artwork_complete = true
+
+[card_backs.designs.classic.content_rating."oars-1.1"]
+sex_nudity = "mild"
+```
 
 #### 4.1.7 Published Date
 
@@ -763,8 +780,6 @@ The value is a `published-date` ([§3.5](#35-grammar)) — a year, a year and mo
 A packager MUST NOT state a precision they do not have. Where only the year is known, the year alone is the correct value; padding it to `1909-01-01` asserts a day nobody knows.
 
 `published_date` is a TOML string. TOML's native types MUST NOT be used for it: unquoted, `1909-12-01` reads as a local date and `1909` reads as an integer ([§9.4](#94-validation-rules)).
-
-Where a deck's editions were printed at different times, each edition states its own ([§4.6](#46-editions)).
 
 ### 4.2 `[card_backs]`
 
@@ -784,7 +799,7 @@ alt_text = "A lattice of blue and white roses and lilies, edge to edge, with no 
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `default` | String | No | see below | The design key an application uses where the user or an [edition](#46-editions) has not chosen another. Where present it MUST name a design the deck has ([§9.4](#94-validation-rules)). |
+| `default` | String | No | see below | The design key an application uses where the user has not chosen another. Where present it MUST name a design the deck has ([§9.4](#94-validation-rules)). |
 
 Where a deck has no card back at all, an application supplies its own. Otherwise the default design is the first of these that applies: the design named by `[card_backs].default`, then the design keyed `default` where the deck has one, then the lexicographically first design key.
 
@@ -793,8 +808,9 @@ Where a deck has no card back at all, an application supplies its own. Otherwise
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for this design, used where no name file supplies one. |
-| `description` | String | No | none | Prose *about* the design, such as its provenance or history, for display alongside the back in a picker or an info panel. Not localized, so it is written once in the deck's `default_language`. See [§6.4](#64-alt-text-guidelines). |
-| `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_backs]` takes precedence and is where a deck SHOULD put it ([§6.3](#63-display-name-resolution)). |
+| `description` | String | No | none | Prose *about* the design, such as its provenance or history, for display alongside the back in a picker or an info panel. Not localized: it is the packager's own statement about where the design came from rather than a display string belonging to the artwork, and a translation would restate someone's factual claim in words they did not write. It is written once in the deck's `default_language`. See [§6.4](#64-alt-text-guidelines). |
+| `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_back]` takes precedence and is where a deck SHOULD put it ([§6.3](#63-display-name-resolution)). |
+| `content_rating` | Table | No | none | What this back design depicts, keyed by rating system, on the terms in [§4.1.6](#416-content-rating). |
 | `image` | String (path) | No | found by discovery | An explicit path to this design's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.4](#574-the-extension-chain)). |
 
 Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#576-when-no-asset-is-found) rather than a validation error.
@@ -853,7 +869,7 @@ Where `number` is absent, a card's number follows from the shape of its key:
 - A major arcanum with a custom key is considered unnumbered.
 - A minor arcanum is unnumbered.
 
-`number` is not localized.
+`number` is not localized: it reproduces what is printed on the card face, which is a property of the artwork rather than of the language an application is showing.
 
 #### 4.3.2 Ordering
 
@@ -905,47 +921,6 @@ reason = "This deck excludes these specific court cards."
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
 An exclusion records that the absence of an expected card is deliberate.
-
-### 4.6 `[editions]`
-
-For decks that have multiple editions or printings sharing the same card fronts:
-
-```toml
-[editions]
-default = "standard"
-
-[editions.standard]
-name = "Rider-Waite-Smith (Standard)"
-card_back = "classic"
-publisher = "US Games Systems"
-
-[editions.rider_edition]
-name = "Rider-Waite-Smith (Rider Edition)"
-card_back = "rider"
-publisher = "Rider & Company"
-published_date = "1912"
-```
-
-**`[editions]`**
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `default` | String | Required where more than one edition is defined | see below | The edition key an application selects where the user has not chosen another. |
-
-Where exactly one edition is defined and `default` is omitted, that edition is the default. Where more than one is defined, `default` is REQUIRED and MUST name a defined edition ([§9.4](#94-validation-rules)).
-
-**`[editions.<key>]`** takes a [custom name](#32-custom-names) as the edition's handle within the deck.
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `name` | String | **Yes** | n/a | The edition's display name. |
-| `card_back` | String | No | `[card_backs].default` | The [design key](#42-card_backs) this edition uses. MUST name a card back design the deck has ([§9.4](#94-validation-rules)). |
-| `publisher` | String | No | `[deck].publisher` | The edition's publisher, where it differs from the deck's. |
-| `published_date` | String | No | `[deck].published_date` | When this edition was published, on the terms in [§4.1.7](#417-published-date). |
-
-An edition MAY also carry any of the optional metadata keys [§4.1](#41-deck) defines for `[deck]`.
-
-An edition exists to name a specific card back design and to carry metadata that differs from the main printing. A printing with a different number of cards or different front artwork is a separate deck and SHOULD NOT be represented as an edition. By design, an edition has no qualified identifier.
 
 ## 5. Card Assets
 
@@ -1193,47 +1168,78 @@ Display strings such as card names, suit names, rank names and alt text are decl
 
 Given a requested tag, applications resolve it using the Lookup scheme of RFC 4647, trying the requested tag, then progressively shorter forms of it, then the deck's `default_language`. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`, then the default language file. A key that no name file supplies falls through to the further fallbacks in [§6.3](#63-display-name-resolution).
 
+A name file is organized by **facet**: the outermost table names the kind of string, the tables below it name the kind of entity, and the keys name entities.
+
+```
+[<facet>.<entity-kind>…]
+<entity-key> = "<string>"
+```
+
 ```toml
-[metadata]                          # Optional, see §7.3
+[metadata]                            # Optional, see §7.3
 source = "Names and alt text written by Jane Doe."
 license = "CC-BY-4.0"
 
-[major_arcana]
+[name.card.major_arcana]
 00 = "The Fool"
 01 = "The Magician"
 
-[minor_arcana]
-name_template = "{rank} of {suit}"  # Optional, see §6.3.1
+[name.card.minor_arcana]
+name_template = "{rank} of {suit}"    # Optional, see §6.3.1
 
-[minor_arcana.wands]
-ace = "Ace of Wands"                # Optional, overrides the template
+[name.card.minor_arcana.wands]
+ace = "Ace of Wands"                  # Optional, overrides the template
 
-[suits]
+[name.suit]
 wands = "Wands"
-stars = "Stars"                     # Custom suit
+stars = "Stars"                       # Custom suit
 
-[ranks]
+[name.rank]
 page = "Page"
-knight = "Warrior"                  # Renamed rank
+knight = "Warrior"                    # Renamed rank
 
-[alt_text.major_arcana]
-00 = "A young person in colorful clothes steps off a cliff, carrying a white rose. A small dog jumps at their heels."
-
-[alt_text.minor_arcana.wands]
-ace = "A hand emerging from a cloud holds a flowering wooden staff."
-
-[card_backs]                        # Card back design names
+[name.card_back]
 classic = "Classic Back"
 
-[alt_text.card_backs]
-classic = "A blue and white geometric pattern featuring roses and lilies."
-
-[card_variants]                     # Keyed by variant reference
+[name.variant]                        # Keyed by variant reference
 "major_arcana.06:two_women" = "The Lovers"
 
-[alt_text.card_variants]
+[name.group.arcana]                   # Optional, see §6.2.2
+major = "Major Arcana"
+
+[alt_text.card.major_arcana]
+00 = "A young person in colorful clothes steps off a cliff, carrying a white rose. A small dog jumps at their heels."
+
+[alt_text.card.minor_arcana.wands]
+ace = "A hand emerging from a cloud holds a flowering wooden staff."
+
+[alt_text.card_back]
+classic = "A blue and white geometric pattern featuring roses and lilies."
+
+[alt_text.variant]
 "major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure."
 ```
+
+This is the transpose of `deck.toml`, which is organized by entity and names its facets in keys, and the difference between the two files is deliberate. They have different units of change and different units of authorship. A packager edits one card at a time, so `deck.toml` gives each card a table. A translator or an alt-text contributor works one facet of the whole deck at a time, so a name file gives each facet a contiguous block that can be handed to one person, licensed on its own terms and reviewed in one pass — which is why [`[metadata.alt_text]`](#621-name-file-metadata) covers a facet rather than a set of cards ([§7.3](#73-name-file-licensing)).
+
+Two facets are defined, `name` and `alt_text`. Together with the reserved [`[metadata]`](#621-name-file-metadata) they are the only top-level tables a name file carries, and a validator reports any other ([§9.4](#94-validation-rules)) rather than ignoring it, because an unrecognized facet supplies no strings at all and would present a fully translated deck as an untranslated one.
+
+Below the facet, the entity kinds are closed:
+
+| Kind | Names | Its keys are |
+| --- | --- | --- |
+| `card` | a card | written as a key path below the kind: `[<facet>.card.major_arcana]` keyed by a major arcana key, and `[<facet>.card.minor_arcana.<suit>]` keyed by a rank key |
+| `suit` | a suit | a suit key |
+| `rank` | a rank | a rank key |
+| `card_back` | a [card back design](#42-card_backs) | a design key |
+| `variant` | one [artwork](#13-terminology) of a card | a whole [variant reference](#312-card-references-and-the-variant-suffix), quoted, since [§3.6](#36-identifiers-in-toml) makes it a single key rather than a key path |
+| `group` | a set of cards ([§6.2.2](#622-group-names)) | a family member key |
+
+Each kind is written in the singular, which distinguishes it from the identically spelled plural card-set families of the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md): `[name.suit]` names a suit and that specification's `group.suits.wands` names every card of one.
+
+A localizable facet this specification adds later takes a top-level table of its own, mirroring the kinds above, and a field of the same name on the corresponding `deck.toml` entity table as the unlocalized fallback. Where a field an entity carries is deliberately not localizable, its field table in [§4](#4-decktoml-reference) says so and says why: [`description`](#42-card_backs) and [`number`](#431-card-numbers) are the two.
+
+**Name files changed shape in 2.0.** A 1.0 name file is facet-outer in the same sense but writes the `name` facet without naming it, so that `[major_arcana]`, `[minor_arcana.<suit>]`, `[suits]`, `[ranks]`, `[card_backs]` and `[card_variants]` are its name tables while `[alt_text.*]` are its alt-text tables ([Appendix B](#appendix-b-reserved-and-deprecated-names)). An application reads `[deck].schema_version` from the manifest before it reads any name file, so which shape a file is written in is known before it is parsed. The two never mix: a deck declares one version and all of its name files are of that version's shape.
 
 Name files are sparse and MAY contain a subset of keys. Applications MUST merge name files key by key rather than requiring a complete set, and MUST NOT treat a missing key as an error.
 
@@ -1252,22 +1258,50 @@ The `[metadata]` table is OPTIONAL and describes the name file itself rather tha
 
 The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Name File Licensing](#73-name-file-licensing).
 
+#### 6.2.2 Group Names
+
+The `group` kind names sets of cards rather than cards. The [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md) attaches interpretive content to such sets and defines the families; this specification supplies their display strings, because what a deck calls its two arcana is the deck's own business and is localizable like every other string in this file.
+
+| Table | Keys | Names |
+| --- | --- | --- |
+| `[name.group.arcana]` | `major`, `minor` | One of the two arcana |
+| `[name.group.classes]` | `pip`, `court` | The numbered minor arcana, or the courts |
+
+```toml
+[name.group.arcana]
+major = "Major Arcana"
+minor = "Minor Arcana"
+
+[name.group.classes]
+pip = "Pips"
+court = "Court Cards"
+```
+
+Two further families are named elsewhere in the same file and take no table of their own: a group of one suit is named by `[name.suit]` and a group of one rank by `[name.rank]`. The remaining families are not a deck's to name — a source's author-defined group is local to that source, and no group naming every card is defined here.
+
+Where no name file supplies a group name, an application supplies its own localized string. There is no title-cased fallback, because a key such as `major` does not title-case into a name anyone would print.
+
 ### 6.3 Display Name Resolution
 
 Each chain below is applied to name files in the order given by [Language Resolution](#62-language-resolution).
 
 A resolved display string is used verbatim. Applications MUST NOT apply case conversion or any other transformation to a string a deck supplies. Case transformation appears in this specification only as a fallback for keys the deck does not define a string for.
 
-| Value | Resolution chain |
-| --- | --- |
-| Suit name | `[suits].<key>` in the name file, then `[suits.<key>].name` in `deck.toml`, then the title-cased key |
-| Rank name | `[ranks].<key>`, then the title-cased key |
-| Major arcana name | `[major_arcana].<key>`, then `[cards."major_arcana.<key>"].name`, then, **for a key `00` through `21` only**, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
-| Minor arcana name | `[minor_arcana.<suit>].<rank>`, then `[cards."minor_arcana.<suit>.<rank>"].name`, then [composition](#631-minor-arcana-name-composition) from the card's suit and rank names |
-| Card back design name | `[card_backs].<key>`, then `[card_backs.designs.<key>].name`, then the [title-cased key](#13-terminology) |
-| Card variant name | `[card_variants]."<variant-ref>"` in the name file, then `[cards."<variant-ref>"].name` in `deck.toml`, then the name of the card itself |
-| Alt text | `[alt_text.*]`, then the `alt_text` field of the corresponding `[cards]` or `[card_backs.designs]` entry |
-| Card variant alt text | `[alt_text.card_variants]."<variant-ref>"`, then `[cards."<variant-ref>"].alt_text`, then the card's own alt text |
+Every chain has the same three steps: **the name file, then the corresponding field in the manifest, then a fallback that depends on what is being named.** Two rows depart from that pattern and are the only two that do: a minor arcanum's name is composed rather than fetched, and the major arcana chain carries two further steps that apply to the canonical keys `00` through `21` alone.
+
+| Value | In the name file | In the manifest | Then |
+| --- | --- | --- | --- |
+| Suit name | `[name.suit].<key>` | `[suits.<key>].name` | the [title-cased key](#13-terminology) |
+| Rank name | `[name.rank].<key>` | — | the title-cased key |
+| Major arcana name | `[name.card.major_arcana].<key>` | `[cards."major_arcana.<key>"].name` | for a key `00` through `21` only, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
+| Minor arcana name | `[name.card.minor_arcana.<suit>].<rank>` | `[cards."minor_arcana.<suit>.<rank>"].name` | [composition](#631-minor-arcana-name-composition) from the card's suit and rank names |
+| Card back design name | `[name.card_back].<key>` | `[card_backs.designs.<key>].name` | the title-cased key |
+| Card variant name | `[name.variant]."<variant-ref>"` | `[cards."<variant-ref>"].name` | the name of the card itself |
+| Group name | `[name.group.<family>].<member>` | — | a string the application supplies ([§6.2.2](#622-group-names)) |
+| Alt text | `[alt_text.<kind>…].<key>` | the `alt_text` field of the corresponding `[cards]` or `[card_backs.designs]` entry | none |
+| Card variant alt text | `[alt_text.variant]."<variant-ref>"` | `[cards."<variant-ref>"].alt_text` | the card's own alt text |
+
+A dash means the manifest has no field for that value, a rank and a group being the two things `deck.toml` does not describe as entities of their own.
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
@@ -1280,7 +1314,7 @@ The reference deck and [Appendix C](#appendix-c-canonical-card-names-informative
 Because a deck MAY rename its suits and ranks, most decks need not write out all 56 minor arcana names. Where a name file gives no explicit name for a minor arcana card, its name is composed from a template:
 
 ```toml
-[minor_arcana]
+[name.card.minor_arcana]
 name_template = "{rank} of {suit}"
 ```
 
@@ -1501,7 +1535,7 @@ A conforming application:
 - MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
-An application need not implement editions, card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
+An application need not implement card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
 
 Neither an application nor a validator need accept a [container](#24-deck-containers). One that does not is unaffected by the container rules of [§9.4](#94-validation-rules) and remains conforming.
 
@@ -1512,14 +1546,16 @@ Each rule is labeled **E** for error or **W** for warning.
 | | Rule |
 | --- | --- |
 | **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exist. |
-| **E** | Every key whose Required column in [§4](#4-decktoml-reference) reads **Yes** is present: `[deck].schema_version`, `name` and `version` ([§4.1](#41-deck)), `rel` and `url` on each `[deck].links` entry ([§4.1.1](#411-links)), and `name` on each edition ([§4.6](#46-editions)). A key whose Required column states a condition rather than **Yes** is reported by the rule below that states the same condition, and a key marked RECOMMENDED is not Required and is not reported at all. |
+| **E** | Every key whose Required column in [§4](#4-decktoml-reference) reads **Yes** is present: `[deck].schema_version`, `name` and `version` ([§4.1](#41-deck)), `rel` and `url` on each `[deck].links` entry ([§4.1.1](#411-links)). A key whose Required column states a condition rather than **Yes** is reported by the rule below that states the same condition, and a key marked RECOMMENDED is not Required and is not reported at all. |
 | **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#8-extensibility) rather than typed. The case an author meets in practice is a date: `published_date` is a string, so a bare `1909-12-01`, which TOML reads as a local date, violates this rule, and so does a bare `1909`, which TOML reads as an integer ([§4.1.7](#417-published-date)). |
 | **E** | `[deck].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
-| **E** | `[deck].published_date`, and any edition's, is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.7](#417-published-date)). |
-| **E** | Every key in a name file corresponds to a card, suit, rank, card variant or card back design the deck defines, or is `[minor_arcana].name_template`, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
-| **E** | `[minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`. |
+| **E** | `[deck].published_date` is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.7](#417-published-date)). |
+| **E** | Every top-level table in a name file is a facet this specification defines, meaning `name` or `alt_text`, or is the reserved `[metadata]` table ([§6.2](#62-language-resolution)). This is an error and not the silent ignoring of [§8](#8-extensibility), because an unrecognized facet supplies no strings at all and a fully translated deck would present as an untranslated one. |
+| **E** | Below the facet, every table names an [entity kind](#62-language-resolution) this specification defines, and every key corresponds to a card, suit, rank, card variant or card back design the deck defines or to a [group family member](#622-group-names), or is `name_template` under `[name.card.minor_arcana]`, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
+| **E** | `[name.card.minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`. |
 | **E** | Every name file's stem is a well-formed BCP 47 language tag, no two differ only in case, and `[deck].default_language` has a corresponding file. |
 | **W** | Alt text is provided for all cards in at least one name file. |
+| **W** | A name file that names an entity and gives it no alt text, where that file gives alt text to any other entity of the same [kind](#62-language-resolution). The two facets are written as separate blocks ([§6.2](#62-language-resolution)), so an entity missed out of one of them is invisible to a reader checking the other. |
 | **E** | `[card_backs].default`, where present, names a card back design the deck has, whether discovered from a [card back directory](#55-card-back-images) or declared with an `image` path. |
 | **E** | Every `[card_backs.designs]` table key is a well-formed [custom name](#32-custom-names), and every `image` path declared under it exists. A discovered stem is not covered by this rule: an ill-formed stem defines no design and is a file discovery ignores ([§5.5](#55-card-back-images)), which the warning below reports. |
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the author probably did not choose it. |
@@ -1545,7 +1581,6 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | No card is both excluded by `[excluded_cards]` and declared in `[cards]`. |
 | **W** | No card listed in `[excluded_cards]` has an image file. An exclusion is a statement of intent ([§4.5](#45-excluded_cards)); a deck that ships the asset anyway has probably changed its mind and not updated the list. |
 | **W** | A `position` **declared** by two cards. Ordering remains well defined ([§4.3.2](#432-ordering)). A declared `position` that coincides with an implicit one is not reported, since seating a card against a numbered neighbor is the field's purpose. |
-| **E** | Where more than one edition is defined, `[editions].default` is present and names a defined edition, and every `[editions].<key>.card_back` names a card back design the deck has. |
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§10.1](#101-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
 | **E** | Every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike, and `[metadata.alt_text]` contains no key that is not defined for `[metadata]`. |
@@ -1573,14 +1608,13 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | An `isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box copy is transcribed by hand and this catches the transcription error, which is the failure this field actually meets ([§4.1.5](#415-product-identifiers)). |
 | **W** | A `gtin` that is not eight, twelve, thirteen or fourteen digits, that contains a character other than a digit, or whose check digit does not verify ([§4.1.5](#415-product-identifiers)). |
 | **W** | A `product_ids` scheme outside the registry of [§4.1.5](#415-product-identifiers) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
-| **E** | Every `content_rating` subtable key is a well-formed [custom name](#32-custom-names), in `[deck]` and on every card alike, and every descriptor key within a system subtable is a well-formed custom name carrying a non-empty string value. `cards_complete`, where present, is a boolean and appears only at the deck level ([§4.1.6](#416-content-rating)). |
+| **E** | Every `content_rating` subtable key is a well-formed [custom name](#32-custom-names), in `[deck]` and on every card and card back design alike, and every descriptor key within a system subtable is a well-formed custom name carrying a non-empty string value. `artwork_complete`, where present, is a boolean and appears only at the deck level ([§4.1.6](#416-content-rating)). |
 | **E** | Within an `oars-1.1` subtable, every descriptor key is one of the twenty-two OARS 1.1 attribute ids written with underscores and every value is one of `none`, `mild`, `moderate` or `intense` ([§4.1.6](#416-content-rating)). A validator does not check that a value is one the attribute admits, since OARS restricts some attributes to a subset of the four and this specification does not track those restrictions across OARS revisions. |
-| **E** | Every rating system named on a card is a system `[deck.content_rating]` also declares, and no card-level descriptor exceeds the deck-level value declared for the same system and descriptor under the ordering `none` < `mild` < `moderate` < `intense` ([§4.1.6](#416-content-rating)). A descriptor the deck-level subtable omits is `none`, and so admits no card-level value above it, except under `cards_complete = true`, where it is derived from the cards and constrains nothing. |
-| **E** | No variant-level descriptor exceeds the value its card carries for the same system and descriptor, under the same ordering ([§4.1.6](#416-content-rating)). A card that declares no value for the descriptor carries the value it inherits from the deck, and under `cards_complete = true` a card that declares nothing is `none`. |
+| **E** | Every rating system named on an [artwork](#13-terminology) is a system `[deck.content_rating]` also declares, and no descriptor declared on an artwork exceeds the deck-level value declared for the same system and descriptor under the ordering `none` < `mild` < `moderate` < `intense` ([§4.1.6](#416-content-rating)). A descriptor the deck-level subtable omits is `none`, and so admits no value above it on any artwork, except under `artwork_complete = true`, where it is derived from the artwork and constrains nothing. |
 | **W** | A `content_rating` system outside the registry of [§4.1.6](#416-content-rating) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
-| **E** | Where any card declares a descriptor for a system, that system's subtable in `[deck.content_rating]` declares `cards_complete` ([§4.1.6](#416-content-rating)). Without it an application cannot tell an unannotated card from an unrated one, and the specification supplies no default. |
-| **W** | Under `cards_complete = true`, a declared deck-level descriptor whose value exceeds every value the cards carry for it. The deck says the artwork is somewhere in it and a complete card annotation says it is nowhere, so one of the two is unfinished ([§4.1.6](#416-content-rating)). A deck-level descriptor that merely restates what the cards already carry is not reported. |
-| **W** | A `cards_complete` on a system no card declares a descriptor for. The key describes a card annotation that does not exist ([§4.1.6](#416-content-rating)). |
+| **E** | Where any [artwork](#13-terminology) declares a descriptor for a system, that system's subtable in `[deck.content_rating]` declares `artwork_complete` ([§4.1.6](#416-content-rating)). Without it an application cannot tell an unannotated artwork from an unrated one, and the specification supplies no default. |
+| **W** | Under `artwork_complete = true`, a declared deck-level descriptor whose value exceeds every value the deck's artwork carries for it. The deck says the content is somewhere in it and a complete annotation says it is nowhere, so one of the two is unfinished ([§4.1.6](#416-content-rating)). A deck-level descriptor that merely restates what the artwork already carries is not reported. |
+| **W** | An `artwork_complete` on a system no artwork declares a descriptor for. The key describes an annotation that does not exist ([§4.1.6](#416-content-rating)). |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
@@ -1683,14 +1717,14 @@ source = "Written by Jane Doe."
 license = "CC-BY-4.0"
 attribution = "Card descriptions by Jane Doe, licensed under CC BY 4.0."
 
-[alt_text.major_arcana]
+[alt_text.card.major_arcana]
 00 = "A young person in colorful clothes steps off a cliff."
 
-[alt_text.card_backs]
+[alt_text.card_back]
 classic = "A lattice of blue and white roses and lilies."
 ```
 
-### A.3 Renamed Suits, a Custom Card and Multiple Editions
+### A.3 Renamed Suits, a Custom Card and Two Card Backs
 
 ```toml
 # deck.toml
@@ -1710,40 +1744,31 @@ default = "flames"
 [card_backs.designs.embers]
 name = "Glowing Embers"
 description = "Drawn for the deluxe printing, on darker stock."
-
-[editions]
-default = "standard"
-
-[editions.standard]
-name = "Elemental Torches (Standard Edition)"
-card_back = "flames"
-
-[editions.deluxe]
-name = "Elemental Torches (Deluxe Edition)"
-card_back = "embers"
 ```
+
+The deluxe printing is a [card back design](#42-card_backs) and the `description` on it is where the printing is stated. Two printings that differ in their cards are two decks, optionally related by [`follows`](#413-follows).
 
 And `names/en.toml`:
 
 ```toml
-[major_arcana]
+[name.card.major_arcana]
 00 = "The Wanderer"   # This deck's name for The Fool
 
-[suits]
+[name.suit]
 wands = "Torches"
 cups = "Waters"
 swords = "Winds"
 pentacles = "Stones"
 
-[ranks]
+[name.rank]
 page = "Student"
 knight = "Warrior"
 
-[alt_text.major_arcana]
+[alt_text.card.major_arcana]
 00 = "A traveler with a backpack walks toward a fiery mountain."
 elemental_force = "A vortex of the elements swirling together in harmony."
 
-[alt_text.card_backs]
+[alt_text.card_back]
 flames = "A dynamic pattern of red and orange flames swirling around a central spark."
 ```
 
@@ -1753,23 +1778,23 @@ A deck that prints every minor arcana in lower case writes its suit and rank nam
 
 ```toml
 # names/en.toml
-[minor_arcana]
+[name.card.minor_arcana]
 name_template = "{rank} of {suit}"
 
-[suits]
+[name.suit]
 wands = "torches"
 cups = "cups"
 
-[ranks]
+[name.rank]
 ace = "ace"
 page = "princess"
 knight = "prince"
 
-[minor_arcana.pentacles]
+[name.card.minor_arcana.pentacles]
 ace = "one of pentacles"
 # other suits are still "ace"
 
-[major_arcana]
+[name.card.major_arcana]
 00 = "the Fool"
 21 = "The world"
 ```
@@ -1796,17 +1821,17 @@ inclusive-tarot/
 And `names/en.toml`, which both names the variants and describes them. `deck.toml` declares nothing about them at all:
 
 ```toml
-[major_arcana]
+[name.card.major_arcana]
 06 = "The Lovers"
 
-[card_variants]
+[name.variant]
 "major_arcana.06:two_women" = "The Lovers"
 "major_arcana.06:two_men" = "The Lovers"
 
-[alt_text.major_arcana]
+[alt_text.card.major_arcana]
 06 = "A man and a woman stand hand in hand beneath a winged figure."
 
-[alt_text.card_variants]
+[alt_text.variant]
 "major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure."
 "major_arcana.06:two_men" = "Two men stand hand in hand beneath a winged figure."
 ```
@@ -1892,7 +1917,8 @@ Applications MUST ignore these names in a 2.0 deck.
 | --- | --- | --- |
 | `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
-| `[variants]` | Deck editions in 1.0 | Renamed to [`[editions]`](#46-editions) in 2.0. The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
+| `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs); one that differs in its cards is a separate deck, optionally related by [`follows`](#413-follows). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
+| A name file's `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]`, `[suits]`, `[ranks]`, `[card_backs]` and `[card_variants]` | The `name` facet of a 1.0 name file, written without naming the facet | Renamed in 2.0. Every facet is now written out, so these are `[name.card.major_arcana]`, `[name.card.minor_arcana]`, `[name.card.minor_arcana.<suit>]`, `[name.suit]`, `[name.rank]`, `[name.card_back]` and `[name.variant]` ([§6.2](#62-language-resolution)). |
 | `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning. |
 | `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#45-excluded_cards) in 2.0 |
 | `[deck.companions]` | Never specified. Present in early implementations as a list of related documents, each with `id`, `name` and `uri` | Not defined by any version. Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
@@ -1900,7 +1926,7 @@ Applications MUST ignore these names in a 2.0 deck.
 | `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
 | `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's canonical ID |
 | `[remap_major_arcana]` | A table remapping major arcana display positions in 1.0 | Removed in 2.0. No published deck used it and it was unnecessary |
-| `created_date`, `updated_date` | Two dates on `[deck]`, and `created_date` on an edition, in 1.0 | Replaced in 2.0 by [`published_date`](#417-published-date). |
+| `created_date`, `updated_date` | Two dates on `[deck]` in 1.0 | Replaced in 2.0 by [`published_date`](#417-published-date). |
 
 ## Appendix C. Canonical Card Names (Informative)
 
@@ -1955,7 +1981,7 @@ This appendix records where applications conventionally look for decks on common
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, replaces `created_date` and `updated_date` with [`published_date`](#417-published-date), renames `[variants]` to `[editions]` and `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, and keys `[app]` subtables by a realm rather than a bare custom name.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[variants]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, replaces `created_date` and `updated_date` with [`published_date`](#417-published-date), renames `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, keys `[app]` subtables by a realm rather than a bare custom name, and renames every table in a [name file](#62-language-resolution) so that the facet is written out.
 
 **Newly specified.**
 
@@ -1968,12 +1994,14 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
-- [`[deck].signifies`](#412-signifies), by which one package names the deck whose artwork it describes but does not carry.
-- [`[deck].follows`](#413-follows) and [`[deck].pips`](#414-pips), by which a deck can name the deck it is patterned on and whether its numbered minors depict scenes, together with the conditions in [§5.7.6](#576-when-no-asset-is-found) that stop a reference deck from lending across a disagreement about what a card is.
+- [Group names](#622-group-names), by which a name file supplies the deck's own localized strings for its arcana and its card classes.
+- [`[deck].packager`](#76-role-of-the-packager), naming who assembled the package.
+- [`[deck].follows`](#413-follows), by which a deck can name a deck or tradition it is patterned on
+- [`[deck].signifies`](#412-signifies), by which a package can specify the deck whose artwork it describes but does not contain (e.g., due to copyright).
+- [`[deck].pips`](#414-pips), by which a deck can specify whether its numbered minor cards depict scenes.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
 - [`[deck].published_date`](#417-published-date), when the deck was published, at whatever precision the packager has.
 - [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
-- [`[deck].packager`](#76-role-of-the-packager), naming who assembled a package and therefore who made the rights assertions in it, together with [§7.7](#77-deck-names-and-trademarks) on deck names that are trademarks.
 
-**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own, allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Named the [packager](#12-document-conventions) as an actor in [§1.2](#12-document-conventions), since the licensing fields exist largely for the case where the packager is not the rights holder. Clarified an ANSI type detection. Defined what `[app]` is for and reserved top-level table names outside it.
+**Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own, allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Defined what `[app]` is for and reserved top-level table names outside it.
