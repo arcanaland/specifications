@@ -943,7 +943,7 @@ SVG card assets are discovered only under the `scalable/` root; an SVG anywhere 
 
 ### 5.3 Raster Graphics
 
-Raster card assets are discovered only under an `h<height>/` root, where `<height>` is the height of the image in pixels; a raster image anywhere else is not a card asset and is ignored ([§5.7.1](#571-image-roots)). Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.4](#574-the-extension-chain). PNG with an alpha channel is RECOMMENDED for images requiring transparency.
+Raster card assets are discovered only under an `h<height>/` root, where `<height>` is the height of the image in pixels. A raster image anywhere else is ignored ([§5.7.1](#571-image-roots)). Which file formats discovery considers, and in what order, is fixed by the extension chain in [§5.7.4](#574-the-extension-chain).
 
 Conventionally, `h750` serves mobile applications and thumbnails, `h1200` standard desktop and web viewing, and `h2400` high-resolution displays.
 
@@ -974,7 +974,7 @@ The designs a deck has are the union of the stems found across every card back d
 
 - The whole stem is the design key and card backs have no notion of variants.
 - A stem that is not a well-formed [custom name](#32-custom-names) defines no design. Discovery ignores the file, which is reported as a warning rather than an error ([§9.4](#94-validation-rules)), exactly as a raster image outside an image root is ignored.
-- The [extension chain](#574-the-extension-chain) applies. A deck SHOULD supply each design in a format [§5.7.4](#574-the-extension-chain) requires every application to decode. A card has a reference deck to fall back on and a back does not ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode a design substitutes its own generic back and the deck's design is simply never seen.
+- The [extension chain](#574-the-extension-chain) applies. A deck SHOULD supply each design in a [baseline format](#574-the-extension-chain). A card has a reference deck to fall back on and a back does not ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode a design substitutes its own generic back and the deck's design is never seen.
 - An explicit `image` path on `[card_backs.designs.<key>]` overrides discovery for that design in every kind and size.
 - Card backs MAY have different dimensions and aspect ratios from the card fronts.
 
@@ -1047,7 +1047,7 @@ Within a raster directory, an application considers extensions in this fixed ord
 
 In `scalable/`, the chain is `svg` alone. In `surrogate/`, it is `toml` alone.
 
-- Applications MUST support decoding PNG and JPEG. Support for WebP, AVIF and SVG is OPTIONAL.
+- Applications MUST support decoding PNG, JPEG and WebP. Support for AVIF and SVG is OPTIONAL. These three are the **baseline formats**, and this document uses that term for them wherever the distinction matters.
 - Extensions outside the chain are ignored by discovery entirely.
 - A deck SHOULD NOT ship two files with the same stem and different chain extensions in one directory. Where it does, applications MUST resolve by this order and MUST NOT resolve by filesystem order. A validator reports the duplication as a warning.
 - Where every candidate in a directory is either outside the chain or in a format the application lacks, that directory does not supply the card and the application MUST continue with the remaining candidates under [§5.7.3](#573-size-selection-within-a-kind).
@@ -1531,7 +1531,7 @@ A validator reports two kinds of violations. An error makes a deck non-conformin
 A conforming application:
 
 - MUST implement the library model and scanning rules ([§2.2](#22-the-deck-library)) over whatever roots it uses, asset discovery ([§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution)).
-- MUST support decoding PNG and JPEG ([§5.7.4](#574-the-extension-chain)).
+- MUST support decoding the baseline formats PNG, JPEG and WebP ([§5.7.4](#574-the-extension-chain)).
 - MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
@@ -1560,7 +1560,8 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every `[card_backs.designs]` table key is a well-formed [custom name](#32-custom-names), and every `image` path declared under it exists. A discovered stem is not covered by this rule: an ill-formed stem defines no design and is a file discovery ignores ([§5.5](#55-card-back-images)), which the warning below reports. |
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the author probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
-| **W** | A card back design supplied in no format every application must decode ([§5.7.4](#574-the-extension-chain)). Unlike a card, a back has no reference deck to fall back on ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode it substitutes its own and the design is never seen ([§5.5](#55-card-back-images)). |
+| **W** | A card back design supplied in no [baseline format](#574-the-extension-chain). Unlike a card, a back has no reference deck to fall back on ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode it substitutes its own and the design is never seen ([§5.5](#55-card-back-images)). |
+| **W** | A card whose every raster asset, across all image roots, is in no [baseline format](#574-the-extension-chain). |
 | **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a name reserved by [§3.2](#32-custom-names), excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment. It names the deck as a whole ([§3.4](#34-deck-identity)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
@@ -1986,7 +1987,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 **Newly specified.**
 
 - [The deck library](#22-the-deck-library), covering scanning and shadowing across an ordered list of roots. Where an application finds those roots is left to the application, with the platform conventions gathered informatively in [Appendix D](#appendix-d-platform-conventions-informative).
-- [Card image resolution](#57-card-image-resolution), covering image roots and size selection.
+- [Card image resolution](#57-card-image-resolution), covering image roots and size selection. Also promoted WebP to first-class format.
 - [Card back discovery](#55-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
 - [Deck containers](#24-deck-containers), a single-file transfer form carrying one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
