@@ -78,7 +78,7 @@
   - [7.3 Name File Licensing](#73-name-file-licensing)
   - [7.4 Rights Status](#74-rights-status)
   - [7.5 Redistribution and Derivation](#75-redistribution-and-derivation)
-  - [7.6 Role of the Packager](#76-role-of-the-packager)
+  - [7.6 Roles and Credits](#76-roles-and-credits)
   - [7.7 Deck Names and Trademarks](#77-deck-names-and-trademarks)
 - [8. Extensibility](#8-extensibility)
 - [9. Conformance and Validation](#9-conformance-and-validation)
@@ -139,7 +139,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **card type** | Which of the two arcana a card belongs to: `major_arcana` or `minor_arcana`. |
 | **card variant** | An alternative artwork for a card. Variants of a card are interchangeable and denote the same meaning. |
 | **container** | A single zip file containing a deck directory ([§2.4](#24-deck-containers)). |
-| **custom name** | An identifier created by the deck author. For example, custom cards, suits, ranks, card back designs and card variant keys ([§3.2](#32-custom-names)). |
+| **custom name** | An identifier created by the packager. For example, custom cards, suits, ranks, card back designs and card variant keys ([§3.2](#32-custom-names)). |
 | **deck** | A directory containing a `deck.toml`, together with the card assets and name files arranged around it. |
 | **deck library** | An ordered list of **library roots**, each a directory whose immediate children are candidate deck roots ([§2.2](#22-the-deck-library)). |
 | **deck root** | The directory that directly contains a deck's `deck.toml`. |
@@ -149,7 +149,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **name file** | A `names/<tag>.toml` file enumerating display strings for one language tag. |
 | **packager** | Whoever assembled a deck package. Not necessarily the artist and not necessarily the rights holder ([§1.2](#12-document-conventions)). |
 | **position** | An integer sort key placing a major arcanum in the deck's sequence ([§4.3.2](#432-ordering)). |
-| **realm** | A domain name (preferably, one the author controls) written in reverse ([§3.3](#33-qualified-identifiers)). |
+| **realm** | A domain name (preferably, one the packager controls) written in reverse ([§3.3](#33-qualified-identifiers)). |
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** and a path ([§3.3](#33-qualified-identifiers)). |
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
 | **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/) ([§5.8](#58-surrogate-assets)). |
@@ -163,7 +163,7 @@ Every deck declares the version of this specification it is written against in `
 - A minor version update MUST be backward and forward compatible. It MAY add new tables, keys and values, and it MAY deprecate existing ones, but it MUST NOT change or remove the behavior of anything an earlier version of the same major version defined.
 - A major version update MAY be incompatible in any respect.
 
-`[deck].version` is the deck's own version and is unrelated to `schema_version`. It is a free-form string. This specification defines no syntax for it and no ordering over it, so applications MAY compare two values for equality to detect that a deck has changed, but MUST NOT infer from two values which is the later. A deck author who wants ordered versions is expected to adopt an ordered scheme such as [semantic versioning](https://semver.org/) and to state so outside this field.
+`[deck].version` is the deck's own version and is unrelated to `schema_version`. It is a free-form string. This specification defines no syntax for it and no ordering over it, so applications MAY compare two values for equality to detect that a deck has changed, but MUST NOT infer from two values which is the later. A packager who wants ordered versions is expected to adopt an ordered scheme such as [semantic versioning](https://semver.org/) and to state so outside this field.
 
 ### 1.5 References
 
@@ -317,7 +317,7 @@ The unpacked `mimetype` file is ignored by discovery ([§5.7.1](#571-image-roots
 
 ## 3. Identity and Identifiers
 
-Cards are named by canonical IDs. Keys that a deck author creates that differ from canonical names are called custom names. Arcana Land entities, such as decks, esoterica and spreads, are named by qualified identifiers.
+Cards are named by canonical IDs. Keys that a packager creates that differ from canonical names are called custom names. Arcana Land entities, such as decks, esoterica and spreads, are named by qualified identifiers.
 
 ### 3.1 Canonical IDs
 
@@ -330,7 +330,7 @@ Cards are referenced internally using canonical IDs, which are the only way this
 
 All references to cards in this specification, including configuration files, custom cards and name files, MUST use these canonical IDs.
 
-Custom cards extend this scheme using the author's own keys. For example: `major_arcana.happy_squirrel`, `minor_arcana.stars.ace`.
+Custom cards extend this scheme using the packager's own keys. For example: `major_arcana.happy_squirrel`, `minor_arcana.stars.ace`.
 
 #### 3.1.1 A Canonical ID Is a Slot
 
@@ -355,7 +355,7 @@ Variants of a card are interchangeable and carry the same meaning, so consumers 
 
 ### 3.2 Custom Names
 
-Custom names are the keys a deck author creates such as custom major arcana keys, custom suit keys, custom rank keys, card back design keys and card variant keys. Every custom name MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, but does not allow a leading digit.
+Custom names are the keys a packager creates such as custom major arcana keys, custom suit keys, custom rank keys, card back design keys and card variant keys. Every custom name MUST match the `custom-name` production in [§3.5](#35-grammar), which allows lowercase letters, digits and underscores, but does not allow a leading digit.
 
 Further:
 
@@ -514,8 +514,9 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
 | `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
 | `card_size_mm` | Array of two Floats | No | none | The physical card's width and height in millimetres, in that order, where the deck has a physical printing ([§5.6](#56-aspect-ratio)). |
-| `author` | String | No | none | The artwork's author. |
-| `packager` | String | No | none | Whoever assembled this package, where that is not the author ([§7.6](#76-role-of-the-packager)). |
+| `creator` | String | No | none | Who devised the deck, where that is not who drew it ([§7.6](#76-roles-and-credits)). |
+| `artist` | String | No | none | Who made the deck's artwork ([§7.6](#76-roles-and-credits)). |
+| `packager` | String | No | none | Whoever assembled this package, where that is not the artist ([§7.6](#76-roles-and-credits)). |
 | `description` | String | No | none | A prose description of the deck written once in `default_language` ([§6.4](#64-alt-text-guidelines)). |
 | `license` | String | No | none | SPDX license expression governing the card assets this package carries ([§7.1](#71-license-expressions)). |
 | `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§7.2](#72-attribution-and-notices)). |
@@ -537,7 +538,8 @@ schema_version = "2.0"
 name = "Rider-Waite-Smith Tarot"
 version = "1.0"
 identifier = "land.arcana/deck/rider-waite-smith"
-author = "Pamela Colman Smith"
+creator = "A. E. Waite"
+artist = "Pamela Colman Smith"
 icon = "deck-icon.png"
 license = "CC0-1.0"
 license_files = ["LICENSE"]
@@ -575,7 +577,7 @@ links = [
 publisher = "Example Press"
 ```
 
-The registry is open. An application MUST ignore a link whose `rel` it does not recognize, and MUST NOT treat an unrecognized `rel` as an error. A future version of this specification MAY add to the registry, so a deck author who needs a relation it does not define SHOULD prefix it, as in `x_kickstarter`, to avoid colliding with a later addition.
+The registry is open. An application MUST ignore a link whose `rel` it does not recognize, and MUST NOT treat an unrecognized `rel` as an error. A future version of this specification MAY add to the registry, so a packager who needs a relation it does not define SHOULD prefix it, as in `x_kickstarter`, to avoid colliding with a later addition.
 
 #### 4.1.2 `signifies`
 
@@ -1303,7 +1305,7 @@ Every chain has the same three steps: **the name file, then the corresponding fi
 
 A dash means the manifest has no field for that value, a rank and a group being the two things `deck.toml` does not describe as entities of their own.
 
-A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key an author chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
+A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key the packager chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
 The reference deck steps of these chains are subject to the lineage condition of [§5.7.6](#576-when-no-asset-is-found): an application SHOULD NOT borrow a name where the two decks declare incompatible lineage, and resolution continues to the next step of the chain instead. The pip-style and name-coherence conditions govern images alone and do not apply here.
 
@@ -1409,7 +1411,7 @@ license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Jane Doe."
 ```
 
-Typically, the strings in a name file are the deck author's choice. A full set of one author's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them.
+Typically, the strings in a name file are the packager's choice, or a translator's. A full set of one contributor's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#74-rights-status) for them.
 
 ### 7.4 Rights Status
 
@@ -1465,19 +1467,31 @@ derivation = "surrogate"
 
 The default value is `"unstated"` which does not grant permission. An application MUST NOT read it as `"full"` and one that redistributes decks on a user's behalf SHOULD treat `"unstated"` as it treats `"none"`.
 
-### 7.6 Role of the Packager
+### 7.6 Roles and Credits
 
-The `packager` field is a free-form display string and this specification defines no syntax for it. A name, a handle, an email address or a project are reasonable values.
+This specification defines four fields that are used to credit people. A name or email address are reasonable values for these fields.
+
+| Field | Who |
+| --- | --- |
+| `artist` | Who made the artwork |
+| `creator` | Who devised the deck (if different from `artist`) |
+| `publisher` | Who published the deck |
+| `packager` | Who assembled this package ([§1.2](#12-document-conventions)) |
 
 ```toml
 [deck]
 name = "The Example Tarot"
-author = "Some Artist"          # who drew it
+creator = "A. E. Deviser"        # who devised it
+artist = "Some Artist"          # who drew it
 publisher = "Example Press"     # who published it
 packager = "Jane Doe <jane@example.org>"   # who built this directory
 ```
 
-A deck SHOULD declare `packager` where the packager is not the artwork's `author`, and a package describing artwork it does not own SHOULD always declare it.
+Most decks need fewer than four. Where one person occupies two roles, the deck SHOULD name them once in the more specific field. For example, a deck drawn by the person who devised it only needs to declare `artist` instead of both `artist` and `creator`.
+
+`creator` exists because the two roles are sometimes separate. For example, A. E. Waite devised the Rider-Waite-Smith deck and Pamela Colman Smith drew all 78 cards.
+
+A deck SHOULD declare `packager` where the packager is not the deck's `artist`, and a package describing artwork it does not own SHOULD always declare it.
 
 ### 7.7 Deck Names and Trademarks
 
@@ -1486,8 +1500,8 @@ The name of a published tarot deck is frequently a trademark of its publisher an
 However, a package MUST NOT imply an endorsement, affiliation or origin it does not have. Concretely:
 
 - A deck's `name`, `description` and `attribution` MUST NOT state or imply that the rights holder produced, approved or endorsed the package, unless they did.
-- A package assembled by a third party SHOULD declare [`packager`](#76-role-of-the-packager).
-- A [`buy`](#411-links) or `publisher` link SHOULD point at the rights holder rather than at a reseller ([§4.1.1](#411-links)).
+- A package assembled by a third party SHOULD declare [`packager`](#76-roles-and-credits).
+- A [`buy`](#411-links) or `publisher` link SHOULD point to the rights holder rather than a reseller ([§4.1.1](#411-links)).
 - A packager SHOULD NOT reproduce the publisher's logo or wordmark as the deck's `icon`.
 
 Nothing here is a legal determination and this specification does not make one.
@@ -1524,7 +1538,7 @@ A conforming deck:
 
 ### 9.2 Errors and Warnings
 
-A validator reports two kinds of violations. An error makes a deck non-conforming and an application MAY refuse it. A warning marks something an author probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings.
+A validator reports two kinds of violations. An error makes a deck non-conforming and an application MAY refuse it. A warning marks something the packager probably did not intend, or a condition this specification allows but has an opinion about. An application MUST load a deck that produces only warnings.
 
 ### 9.3 Conforming Applications and Validators
 
@@ -1547,7 +1561,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | --- | --- |
 | **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exist. |
 | **E** | Every key whose Required column in [§4](#4-decktoml-reference) reads **Yes** is present: `[deck].schema_version`, `name` and `version` ([§4.1](#41-deck)), `rel` and `url` on each `[deck].links` entry ([§4.1.1](#411-links)). A key whose Required column states a condition rather than **Yes** is reported by the rule below that states the same condition, and a key marked RECOMMENDED is not Required and is not reported at all. |
-| **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#8-extensibility) rather than typed. The case an author meets in practice is a date: `published_date` is a string, so a bare `1909-12-01`, which TOML reads as a local date, violates this rule, and so does a bare `1909`, which TOML reads as an integer ([§4.1.7](#417-published-date)). |
+| **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#8-extensibility) rather than typed. |
 | **E** | `[deck].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
 | **E** | `[deck].published_date` is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.7](#417-published-date)). |
 | **E** | Every top-level table in a name file is a facet this specification defines, meaning `name` or `alt_text`, or is the reserved `[metadata]` table ([§6.2](#62-language-resolution)). This is an error and not the silent ignoring of [§8](#8-extensibility), because an unrecognized facet supplies no strings at all and a fully translated deck would present as an untranslated one. |
@@ -1558,7 +1572,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A name file that names an entity and gives it no alt text, where that file gives alt text to any other entity of the same [kind](#62-language-resolution). The two facets are written as separate blocks ([§6.2](#62-language-resolution)), so an entity missed out of one of them is invisible to a reader checking the other. |
 | **E** | `[card_backs].default`, where present, names a card back design the deck has, whether discovered from a [card back directory](#55-card-back-images) or declared with an `image` path. |
 | **E** | Every `[card_backs.designs]` table key is a well-formed [custom name](#32-custom-names), and every `image` path declared under it exists. A discovered stem is not covered by this rule: an ill-formed stem defines no design and is a file discovery ignores ([§5.5](#55-card-back-images)), which the warning below reports. |
-| **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the author probably did not choose it. |
+| **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the packager probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
 | **W** | A card back design supplied in no [baseline format](#574-the-extension-chain). Unlike a card, a back has no reference deck to fall back on ([§5.7.7](#577-resolving-a-card-back)), so an application that cannot decode it substitutes its own and the design is never seen ([§5.5](#55-card-back-images)). |
 | **W** | A card whose every raster asset, across all image roots, is in no [baseline format](#574-the-extension-chain). |
@@ -1597,8 +1611,8 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A `redistribution` or `derivation` narrower than `full` on a deck whose `license` is a public license granting redistribution or derivation outright. The license governs and the field does not take it back ([§7.5](#75-redistribution-and-derivation)), so the field misleads a reader without binding anyone. A validator checks this only for licenses it recognizes, and reporting nothing is a conforming outcome. |
 | **W** | A [surrogate deck](#59-surrogate-decks) declaring `redistribution = "full"`. The field governs passing on the artwork and the package carries none ([§5.9](#59-surrogate-decks)). A `license` on such a deck is not reported, since it covers the surrogates and a surrogate deck SHOULD carry one. |
 | **W** | A [surrogate deck](#59-surrogate-decks) with no `license`. Its surrogates are the packager's own work and `derivation = "surrogate"` invites them to be passed on, so a reader who takes them up has no terms to go by ([§5.9](#59-surrogate-decks)). |
-| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying `signifies`, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§7.6](#76-role-of-the-packager)). Every rights assertion in the package is then unattributable. |
-| **W** | A `packager` equal to `author`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-role-of-the-packager)). |
+| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying `signifies`, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§7.6](#76-roles-and-credits)). Every rights assertion in the package is then unattributable. |
+| **W** | A `packager` equal to `artist`, or a `creator` equal to `artist`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§7.6](#76-roles-and-credits)). |
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | `[deck].signifies`, where present, is a well-formed qualified identifier, carries no fragment, and is not equal to this deck's own `identifier` ([§4.1.2](#412-signifies)).Whether it names a deck that exists is not checkable and is not checked. |
@@ -1627,7 +1641,7 @@ Each rule is labeled **E** for error or **W** for warning.
 
 ## 10. Security Considerations
 
-A deck arrives from outside the system and carries data an author can abuse. This section describes the security concerns that can arise.
+A deck arrives from outside the system and carries data a packager can abuse. This section describes the security concerns that can arise.
 
 ### 10.1 Path Traversal
 
@@ -1680,7 +1694,8 @@ schema_version = "2.0"
 name = "Rider-Waite-Smith"
 identifier = "land.arcana/deck/rider-waite-smith"
 version = "1.0"
-author = "Pamela Colman Smith"
+creator = "A. E. Waite"
+artist = "Pamela Colman Smith"
 
 license = "LicenseRef-PublicDomain AND CC0-1.0"
 license_files = ["LICENSE"]
@@ -1878,7 +1893,7 @@ name = "The Example Tarot"
 identifier = "my.personal.domain/deck/example-tarot-surrogate"
 signifies = "com.example/deck/example-tarot"
 version = "1.0"
-author = "Some Artist"
+artist = "Some Artist"
 publisher = "Example Press"
 packager = "Jane Doe <jane@example.org>"
 aspect_ratio = 0.5833
@@ -1916,6 +1931,7 @@ Applications MUST ignore these names in a 2.0 deck.
 
 | Name | Was | Status |
 | --- | --- | --- |
+| `[deck].author` | The artwork's author in 1.0 | Renamed in 2.0 to [`[deck].artist`](#41-deck), which is what every known deck used the field for. The word *author* is not reused: this specification spends it on the [packager](#12-document-conventions) sense its prose uses, and a deck devised by someone other than its artist names them in [`[deck].creator`](#76-roles-and-credits) |
 | `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
 | `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs); one that differs in its cards is a separate deck, optionally related by [`follows`](#413-follows). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
@@ -1982,7 +1998,7 @@ This appendix records where applications conventionally look for decks on common
 
 An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads them under 1.0's rules.
 
-**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[variants]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, replaces `created_date` and `updated_date` with [`published_date`](#417-published-date), renames `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, keys `[app]` subtables by a realm rather than a bare custom name, and renames every table in a [name file](#62-language-resolution) so that the facet is written out.
+**Breaking changes.** Every name removed or renamed is listed in [Appendix B](#appendix-b-reserved-and-deprecated-names). Version 2.0 removes `[aliases]`, `[remap_major_arcana]`, `[variants]`, `[deck].id` and the `image` and `id` fields of a custom major arcanum, replaces `created_date` and `updated_date` with [`published_date`](#417-published-date), renames `[deck].author` to [`[deck].artist`](#76-roles-and-credits), renames `[card_backs.variants]` to `[card_backs.designs]`, splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits), moves `[deck.excluded_cards]` to a top-level `[excluded_cards]`, keys `[app]` subtables by a realm rather than a bare custom name, and renames every table in a [name file](#62-language-resolution) so that the facet is written out.
 
 **Newly specified.**
 
@@ -1996,7 +2012,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Rights status](#74-rights-status), [redistribution and derivation](#75-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#58-surrogate-assets) and [surrogate decks](#59-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [Group names](#622-group-names), by which a name file supplies the deck's own localized strings for its arcana and its card classes.
-- [`[deck].packager`](#76-role-of-the-packager), naming who assembled the package.
+- [`[deck].packager`](#76-roles-and-credits), naming who assembled the package.
+- [`[deck].creator`](#76-roles-and-credits), naming who devised a deck they did not draw.
 - [`[deck].follows`](#413-follows), by which a deck can name a deck or tradition it is patterned on
 - [`[deck].signifies`](#412-signifies), by which a package can specify the deck whose artwork it describes but does not contain (e.g., due to copyright).
 - [`[deck].pips`](#414-pips), by which a deck can specify whether its numbered minor cards depict scenes.
