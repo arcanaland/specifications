@@ -375,11 +375,11 @@ A qualified identifier is composed of a **realm** and an object **path**, separa
 
 - The realm is a domain name controlled by whoever mints the identifier, written in reverse order according to [RFC 1035 §2.3.1](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1). It ends at the first slash.
 - The path is one or more slash-separated segments naming an entity within that realm. The first segment is the type segment and names an entity kind. The remaining segments name the entity within that kind and their structure is the realm holder's to choose. A deck's type segment MUST be `deck`.
-- The fragment names a target within that entity, and its meaning is the prerogative of whichever specification owns the entity. In this specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix). For example, `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to the card that deck files at `major_arcana.00`.
+- The fragment names a target within that entity, and its meaning is the prerogative of whichever specification owns the entity. In this specification, the fragment of a deck's qualified identifier is a [card reference](#312-card-references-and-the-variant-suffix). For example, `land.arcana/deck/rider-waite-smith#major_arcana.00` refers to globally unique entity of "The Fool."
 
 Realms are compared bytewise. Qualified identifiers are not locations and nothing in this specification implies that one can be fetched.
 
-A realm asserts control of a name, not authorship of the work it names. A packager MAY delegate a subdomain to separate the entities they originate from the ones they package, as in `id.example.shelf/deck/some-published-deck`.
+A realm asserts control of a name, not authorship of the work it names. A packager MAY delegate a subdomain to separate the entities they originate from the ones they package, so a packager at `example.org` might mint `org.example/deck/their-own-deck` for their own work and `org.example.shelf/deck/some-published-deck` for a deck they package.
 
 The type segments this specification allows:
 
@@ -586,7 +586,7 @@ The registry is open. An application MUST ignore a link whose `rel` it does not 
 ```toml
 [deck]
 name = "The Example Tarot"
-identifier = "my.personal.domain/deck/example-tarot-surrogate"
+identifier = "net.example.jdoe/deck/example-tarot-surrogate"
 signifies = "com.example/deck/example-tarot"
 ```
 
@@ -1890,7 +1890,7 @@ In the main `deck.toml`:
 [deck]
 schema_version = "2.0"
 name = "The Example Tarot"
-identifier = "my.personal.domain/deck/example-tarot-surrogate"
+identifier = "net.example.jdoe/deck/example-tarot-surrogate"
 signifies = "com.example/deck/example-tarot"
 version = "1.0"
 artist = "Some Artist"
@@ -1931,16 +1931,16 @@ Applications MUST ignore these names in a 2.0 deck.
 
 | Name | Was | Status |
 | --- | --- | --- |
-| `[deck].author` | The artwork's author in 1.0 | Renamed in 2.0 to [`[deck].artist`](#41-deck), which is what every known deck used the field for. The word *author* is not reused: this specification spends it on the [packager](#12-document-conventions) sense its prose uses, and a deck devised by someone other than its artist names them in [`[deck].creator`](#76-roles-and-credits) |
-| `[deck].id` | The deck's identifier in 1.0. It was both the library handle and the global identity and was inadequate as either | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
+| `[deck].author` | The artwork's author in 1.0 | Renamed in 2.0 to [`[deck].artist`](#41-deck) and split the role with [`[deck].creator`](#76-roles-and-credits) |
+| `[deck].id` | The deck's identifier in 1.0. | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
-| `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs); one that differs in its cards is a separate deck, optionally related by [`follows`](#413-follows). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
-| A name file's `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]`, `[suits]`, `[ranks]`, `[card_backs]` and `[card_variants]` | The `name` facet of a 1.0 name file, written without naming the facet | Renamed in 2.0. Every facet is now written out, so these are `[name.card.major_arcana]`, `[name.card.minor_arcana]`, `[name.card.minor_arcana.<suit>]`, `[name.suit]`, `[name.rank]`, `[name.card_back]` and `[name.variant]` ([§6.2](#62-language-resolution)). |
-| `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0, so that "variant" has one meaning. |
+| `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
+| A name file's `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]`, `[suits]`, `[ranks]`, `[card_backs]` and `[card_variants]` | The `name` facet of a 1.0 name file, written without naming the facet | Renamed in 2.0. Every facet is now written out fully. |
+| `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0. |
 | `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#45-excluded_cards) in 2.0 |
-| `[deck.companions]` | Never specified. Present in early implementations as a list of related documents, each with `id`, `name` and `uri` | Not defined by any version. Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
-| `[custom_cards]` | Custom major arcana, suits and ranks in 1.0 | Split in 2.0. Per-card metadata for every card, canonical or custom, moved to [`[cards]`](#43-cards), keyed by canonical ID; suit structure moved to [`[suits]`](#44-suits). A card is no longer "custom" for the purpose of describing it |
-| `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery), like every other card's, which is what lets one card exist in several sizes and formats |
+| `[deck.companions]` | Never specified. | Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
+| `[custom_cards]` | Custom major arcana, suits and ranks in 1.0 | Split in 2.0. Per-card metadata for every card, canonical or custom, moved to [`[cards]`](#43-cards) and suit structure moved to [`[suits]`](#44-suits). |
+| `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery)|
 | `id` on `[custom_cards.major_arcana.<key>]` | A custom card's identifier in 1.0 | Removed in 2.0. The table key is the card's canonical ID |
 | `[remap_major_arcana]` | A table remapping major arcana display positions in 1.0 | Removed in 2.0. No published deck used it and it was unnecessary |
 | `created_date`, `updated_date` | Two dates on `[deck]` in 1.0 | Replaced in 2.0 by [`published_date`](#417-published-date). |
