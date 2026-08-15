@@ -39,6 +39,7 @@
     - [4.1.5 Product Identifiers](#415-product-identifiers)
     - [4.1.6 Content Rating](#416-content-rating)
     - [4.1.7 Published Date](#417-published-date)
+    - [4.1.8 Artwork Origin](#418-artwork-origin)
   - [4.2 `[card_backs]`](#42-card_backs)
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
@@ -181,6 +182,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **ISO 2108** | International Standard Book Number, with the freely available [ISBN Users' Manual](https://www.isbn-international.org/content/isbn-users-manual/29) | [§4.1.5](#415-product-identifiers) |
 | **GS1 General Specifications** | [ref.gs1.org/standards/genspecs](https://ref.gs1.org/standards/genspecs/) | [§4.1.5](#415-product-identifiers) |
 | **OARS 1.1** | Open Age Ratings Service, [specification](https://github.com/hughsie/oars/blob/master/specification/oars-1.1.md) and [attribute list](https://hughsie.github.io/oars/generate.html) | [§4.1.6](#416-content-rating) |
+| **IPTC Digital Source Type** | IPTC NewsCodes [controlled vocabulary](https://cv.iptc.org/newscodes/digitalsourcetype/), also carried by [C2PA](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html) | [§4.1.8](#418-artwork-origin) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§5.4](#54-ansi-art) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§5.8.1](#581-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§5.8.1](#581-the-surrogate-file) |
@@ -529,6 +531,7 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `publisher` | String | No | none | The deck's publisher. |
 | `product_ids` | Table | No | none | External identifiers for the commercial product this deck reproduces such as an ISBN ([§4.1.5](#415-product-identifiers)). |
 | `content_rating` | Table | No | none | What the deck's artwork depicts, keyed by rating system ([§4.1.6](#416-content-rating)). |
+| `origin` | Table | No | none | How the deck's artwork came to exist (e.g., AI generated), keyed by vocabulary system ([§4.1.8](#418-artwork-origin)). |
 | `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
 
@@ -693,6 +696,8 @@ The registry is open on the same terms as the [link relations](#411-links) of §
 
 `oars-1.1` names version 1.1 of the [Open Age Ratings Service](https://hughsie.github.io/oars/) vocabulary, whose descriptor keys are its twenty-two attribute ids: `sex_nudity`, `sex_themes`, `violence_cartoon`, `violence_fantasy`, `violence_realistic`, `violence_bloodshed`, `violence_desecration`, `violence_slavery`, `violence_sexual`, `drugs_alcohol`, `drugs_narcotics`, `drugs_tobacco`, `language_profanity`, `language_humor`, `language_discrimination`, `money_advertising`, `money_gambling`, `money_purchasing`, `social_chat`, `social_audio`, `social_contacts`, `social_info` and `social_location`. The underscore rewriting keeps every key a [custom name](#32-custom-names) and is reversed mechanically where an application emits OARS.
 
+Most of those attributes are reachable for a deck. Seven are out of scope because they describe application capabilities: `social_chat`, `social_audio`, `social_contacts`, `social_info`, `social_location`, `money_purchasing` and `money_advertising`. They remain legal to maintain compatibility.
+
 An absent `[deck.content_rating]` means the packager has not declared a rating and an application MUST NOT read it as `none`.
 
 Within a declared system subtable, an omitted descriptor is `none` for that system. For example, `[deck.content_rating."oars-1.1"]` with no descriptors communicates that this deck was reviewed and contains nothing the system describes. A deck that annotates its artwork states the same thing a second way, described under per-artwork descriptors below.
@@ -783,6 +788,63 @@ A packager MUST NOT state a precision they do not have. Where only the year is k
 
 `published_date` is a TOML string. TOML's native types MUST NOT be used for it: unquoted, `1909-12-01` reads as a local date and `1909` reads as an integer ([§9.4](#94-validation-rules)).
 
+#### 4.1.8 Artwork Origin
+
+`[deck.origin]` states how the deck's [artwork](#13-terminology) came to exist, in a named vocabulary. It is a table whose keys name vocabulary systems and whose values are terms of that system.
+
+```toml
+[deck.origin]
+"iptc-dst" = "print"
+```
+
+The registry:
+
+| System | Values are |
+| --- | --- |
+| `iptc-dst` | Term names of the IPTC Digital Source Type NewsCodes vocabulary |
+
+The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore a system it does not recognize and MUST NOT treat one as an error, and a packager who needs a system this specification does not define SHOULD prefix it with `x_`.
+
+`iptc-dst` names the [IPTC Digital Source Type](https://cv.iptc.org/newscodes/digitalsourcetype/) vocabulary adopted whole. Terms are written verbatim to maintain interoperability.
+
+The terms a packager may reach for, informatively:
+
+| If the artwork... | Term |
+| --- | --- |
+| ...was scanned from physical cards | `print` |
+| ...was photographed | `digitalCapture` |
+| ...was drawn or painted with non-generative tools | `digitalCreation` |
+| ...was produced by an algorithm not trained on sampled content | `algorithmicMedia` |
+| ...was made one way and then altered by a generative model | `compositeWithTrainedAlgorithmicMedia` |
+| ...was generated by a trained model | `trainedAlgorithmicMedia` |
+
+Declare the term describing how the artwork principally came to exist. Where a later operation changed what the image depicts, declare the term for that operation instead. Routine preparation tasks such as deskewing, cropping, dust removal and color correction do not change the term.
+
+An absent `origin` means the packager gave no value and an application MUST NOT read it as an assertion that the artwork is human-made.
+
+**Per-artwork origin.** A card carries the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
+
+```toml
+[deck.origin]
+"iptc-dst" = "print"                 # scanned from the physical cards
+
+[cards."major_arcana.13"]
+origin = { "iptc-dst" = "compositeWithTrainedAlgorithmicMedia" }   # water damage repaired
+
+[card_backs.designs.classic.origin]
+"iptc-dst" = "digitalCreation"
+```
+
+Rules:
+
+- Every key MUST be a [custom name](#32-custom-names) and every value MUST be a non-empty string.
+- An origin declared on an [artwork](#13-terminology) MUST be written under a system the deck also declares in `[deck.origin]`.
+- A card that declares no value takes the deck's value. A [variant](#312-card-references-and-the-variant-suffix) that declares no value for a system takes its card's value. A [card back design](#42-card_backs) that declares no value takes the deck's value.
+- The deck-level value is the default for any artwork that does not state its own.
+- A deck whose artwork did not all come to exist the same way SHOULD annotate the exceptions.
+
+Unlike a [content rating](#416-content-rating), there is no coverage flag and no ordering.
+
 ### 4.2 `[card_backs]`
 
 A card back design is one of the back images a deck ships, named by a design key. Designs are [discovered from the directory structure](#55-card-back-images) exactly as cards are, so a deck that contains an image `card_backs/classic.png` has a design keyed `classic` and need declare nothing at all. The whole of `[card_backs]` is OPTIONAL.
@@ -813,6 +875,7 @@ Where a deck has no card back at all, an application supplies its own. Otherwise
 | `description` | String | No | none | Prose *about* the design, such as its provenance or history, for display alongside the back in a picker or an info panel. Not localized: it is the packager's own statement about where the design came from rather than a display string belonging to the artwork, and a translation would restate someone's factual claim in words they did not write. It is written once in the deck's `default_language`. See [§6.4](#64-alt-text-guidelines). |
 | `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_back]` takes precedence and is where a deck SHOULD put it ([§6.3](#63-display-name-resolution)). |
 | `content_rating` | Table | No | none | What this back design depicts, keyed by rating system, on the terms in [§4.1.6](#416-content-rating). |
+| `origin` | Table | No | the deck's | How this back design came to exist, keyed by vocabulary system, on the terms in [§4.1.8](#418-artwork-origin). |
 | `image` | String (path) | No | found by discovery | An explicit path to this design's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.4](#574-the-extension-chain)). |
 
 Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#576-when-no-asset-is-found) rather than a validation error.
@@ -848,6 +911,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
 | `position` | Integer | No | see [§4.3.2](#432-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 | `content_rating` | Table | No | none | What this card depicts, keyed by rating system, on the terms in [§4.1.6](#416-content-rating). |
+| `origin` | Table | No | the deck's | How this card's artwork came to exist, keyed by vocabulary system, on the terms in [§4.1.8](#418-artwork-origin). |
 | `image` | String (path) | No | found by discovery | An explicit path to this card's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.4](#574-the-extension-chain)). |
 | `default_variant` | String | Required where the card has variant files but no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§5.7.5](#575-variants)). MUST name a variant of this card ([§9.4](#94-validation-rules)). |
 
@@ -1222,9 +1286,9 @@ classic = "A blue and white geometric pattern featuring roses and lilies."
 "major_arcana.06:two_women" = "Two women stand hand in hand beneath a winged figure."
 ```
 
-This is the transpose of `deck.toml`, which is organized by entity and names its facets in keys, and the difference between the two files is deliberate. They have different units of change and different units of authorship. A packager edits one card at a time, so `deck.toml` gives each card a table. A translator or an alt-text contributor works one facet of the whole deck at a time, so a name file gives each facet a contiguous block that can be handed to one person, licensed on its own terms and reviewed in one pass — which is why [`[metadata.alt_text]`](#621-name-file-metadata) covers a facet rather than a set of cards ([§7.3](#73-name-file-licensing)).
+This is deliberately the transpose of `deck.toml` due to the nature of the intended authors.
 
-Two facets are defined, `name` and `alt_text`. Together with the reserved [`[metadata]`](#621-name-file-metadata) they are the only top-level tables a name file carries, and a validator reports any other ([§9.4](#94-validation-rules)) rather than ignoring it, because an unrecognized facet supplies no strings at all and would present a fully translated deck as an untranslated one.
+Two facets are defined, `name` and `alt_text`. Together with the reserved [`[metadata]`](#621-name-file-metadata) they are the only top-level tables a name file carries and a validator SHOULD report any other ([§9.4](#94-validation-rules)) rather than ignore it.
 
 Below the facet, the entity kinds are closed:
 
@@ -1252,6 +1316,7 @@ The `[metadata]` table is OPTIONAL and describes the name file itself rather tha
 | Key | Purpose |
 | --- | --- |
 | `source` | Who or what produced the strings in this file |
+| `origin` | How the strings in this file came to exist, keyed by vocabulary system, on the terms of [§4.1.8](#418-artwork-origin) |
 | `license` | SPDX license expression governing the strings in this file |
 | `license_files` | Paths, relative to the deck root, to the full license text and any notices |
 | `copyright` | The copyright notice, verbatim as the rights holder wrote it |
@@ -1259,6 +1324,19 @@ The `[metadata]` table is OPTIONAL and describes the name file itself rather tha
 | `attribution` | The credit line the license requires downstream users to display |
 
 The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Name File Licensing](#73-name-file-licensing).
+
+The `origin` field uses the same systems (IPTC) and terms as [§4.1.8](#418-artwork-origin). When chosing a term, consider `digitalCreation` for strings a human wrote, `trainedAlgorithmicMedia` for strings a model produced, and `compositeWithTrainedAlgorithmicMedia` for strings a human drafted and a model expanded. The `source` field is intended to provide the prose account beside the origin term.
+
+```toml
+[metadata]
+origin = { "iptc-dst" = "digitalCreation" }
+
+[metadata.alt_text]
+origin = { "iptc-dst" = "trainedAlgorithmicMedia" }
+source = "Alt text created by ACME's ExampleLLM 1.0 and edited by the packager."
+```
+
+A name file whose strings a human wrote need not declare an origin at all and omission is the common case. Declare it where something in the file was machine-produced, or where the packager wants the human authorship of the rest on the record.
 
 #### 6.2.2 Group Names
 
@@ -1630,6 +1708,10 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Where any [artwork](#13-terminology) declares a descriptor for a system, that system's subtable in `[deck.content_rating]` declares `artwork_complete` ([§4.1.6](#416-content-rating)). Without it an application cannot tell an unannotated artwork from an unrated one, and the specification supplies no default. |
 | **W** | Under `artwork_complete = true`, a declared deck-level descriptor whose value exceeds every value the deck's artwork carries for it. The deck says the content is somewhere in it and a complete annotation says it is nowhere, so one of the two is unfinished ([§4.1.6](#416-content-rating)). A deck-level descriptor that merely restates what the artwork already carries is not reported. |
 | **W** | An `artwork_complete` on a system no artwork declares a descriptor for. The key describes an annotation that does not exist ([§4.1.6](#416-content-rating)). |
+| **E** | Every `origin` system key is a well-formed [custom name](#32-custom-names), in `[deck]`, on every card and card back design, and in every name file's `[metadata]` and `[metadata.alt_text]` alike, and every value is a non-empty string ([§4.1.8](#418-artwork-origin)). |
+| **E** | Every origin system named on an [artwork](#13-terminology) is a system `[deck.origin]` also declares ([§4.1.8](#418-artwork-origin)). |
+| **W** | A value under an `iptc-dst` key that is not a term name of the IPTC Digital Source Type vocabulary ([§4.1.8](#418-artwork-origin)). The vocabulary is not this specification's to close and IPTC adds terms without renaming existing ones, so an unrecognized term is ignored rather than rejected. The cost is that a misspelled term passes quietly. |
+| **W** | An `origin` system outside the registry of [§4.1.8](#418-artwork-origin) that is not prefixed. As with a `links` `rel`, applications ignore it and a later version of this specification may claim the name. |
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
@@ -2021,5 +2103,6 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck.product_ids]`](#415-product-identifiers), recording the identifiers of a commercial published deck.
 - [`[deck].published_date`](#417-published-date), when the deck was published, at whatever precision the packager has.
 - [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
+- [`origin`](#418-artwork-origin), stating how a deck's artwork came to exist (e.g., AI generated), in the vocabulary of a named system.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own, allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Defined what `[app]` is for and reserved top-level table names outside it.
