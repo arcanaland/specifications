@@ -154,7 +154,7 @@ A packager is whoever assembles the package. They may be the artist who made the
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** and a path ([§3.3](#33-qualified-identifiers)). |
 | **reference deck** | A deck a library designates as the source of last resort for a display string or an asset another deck does not supply. A library MAY designate one. Where none is configured, [Appendix C](#appendix-c-canonical-card-names-informative) supplies the canonical major arcana names. |
 | **surrogate** | A derived, deliberately lossy stand-in for a card's artwork, such as a color palette or a [thumbhash](https://evanw.github.io/thumbhash/) ([§5.8](#58-surrogate-assets)). |
-| **surrogate deck** | A deck that carries surrogates and no other card assets. It [signifies](#41-deck) the deck whose artwork for which it is a surrogate ([§5.9](#59-surrogate-decks)). |
+| **surrogate deck** | A deck that carries surrogates and no other card assets. It records a correspondence to the artwork it stands in for, by [`signifies`](#412-signifies) or by [`[deck.product_ids]`](#415-product-identifiers) ([§5.9](#59-surrogate-decks)). |
 | **title-cased key** | The display string derived from a key where nothing else supplies one: each `_` becomes a space and the first character of each word is uppercased. |
 
 ### 1.4 Versioning and Compatibility
@@ -600,6 +600,7 @@ Rules:
 - The value MUST be the `[deck].identifier` of the package it signifies, so that it can serve as a merge key ([§5.9](#59-surrogate-decks)).
 - It MUST NOT equal this deck's own `identifier`. A package does not signify itself.
 - It MUST NOT carry a fragment. Neither a [card reference](#312-card-references-and-the-variant-suffix) nor a [variant reference](#312-card-references-and-the-variant-suffix) is a value this field accepts.
+- The field names a package. Where the artwork belongs to a commercial product that no one has packaged, there is no value for this field and [`[deck.product_ids]`](#415-product-identifiers) records the correspondence instead.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator can check that the value is well formed and no more.
 
 #### 4.1.3 `follows`
@@ -662,14 +663,18 @@ The registry:
 | `gtin` | A GTIN, the family that subsumes the UPC and the EAN |
 | `publisher_sku` | The publisher's own item or catalog number |
 
-A product identifier does not replace the deck's own identity within Arcana Land [`[deck].identifier`](#34-deck-identity). An application MAY use an equal `isbn` or `gtin` as evidence that two packages describe the same product.
+A product identifier does not replace the deck's own identity within Arcana Land [`[deck].identifier`](#34-deck-identity).
+
+An application MAY treat two packages that declare an equal value for the same scheme as describing the same product, and where it does, it SHOULD prefer the package carrying the artwork. Two values are equal when they are equal after the normalization their scheme's rule below defines; an application comparing values MUST apply that normalization first, and MUST NOT compare values across schemes.
+
+Inequality is not evidence of difference. A product identifier names a printing rather than a work, so two printings of the same artwork — a publisher's edition for another territory, a reissue, a boxed set — carry different identifiers, and a deck sold without one carries none at all. An application MUST NOT read an absent or differing identifier as a claim that two packages are unrelated.
 
 Rules:
 
 - Every key MUST be a [custom name](#32-custom-names) and every value MUST be a non-empty string.
 - An `isbn` value is written as an ISBN-13 or an ISBN-10, in which hyphens and spaces are OPTIONAL. Applications comparing two values MUST first remove hyphens and spaces and uppercase a trailing `x`.
-- A `gtin` value is written as digits alone and SHOULD be zero-padded to fourteen digits.
-- A `publisher_sku` value is opaque.
+- A `gtin` value is written as digits alone and SHOULD be zero-padded to fourteen digits. Applications comparing two values MUST first zero-pad each to fourteen digits, so that a UPC written as twelve digits matches the same UPC written as fourteen.
+- A `publisher_sku` value is opaque and is unique only within one publisher, so two publishers' numbers can collide. An application MUST NOT use it as evidence that two packages describe the same product.
 
 The registry is open on the same terms as the [link relations](#411-links) of §4.1.1: an application MUST ignore a scheme it does not recognize and MUST NOT treat one as an error, and a packager who needs a scheme this specification does not define SHOULD prefix it with `x_`.
 
@@ -857,6 +862,7 @@ default = "classic"
 name = "Classic RWS Back"
 description = "The 1909 Rider back, reproduced from the Pamela Colman Smith printing."
 alt_text = "A lattice of blue and white roses and lilies, edge to edge, with no border."
+reversible = true
 ```
 
 **`[card_backs]`**
@@ -876,7 +882,10 @@ Where a deck has no card back at all, an application supplies its own. Otherwise
 | `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_back]` takes precedence and is where a deck SHOULD put it ([§6.3](#63-display-name-resolution)). |
 | `content_rating` | Table | No | none | What this back design depicts, keyed by rating system, on the terms in [§4.1.6](#416-content-rating). |
 | `origin` | Table | No | the deck's | How this back design came to exist, keyed by vocabulary system, on the terms in [§4.1.8](#418-artwork-origin). |
+| `reversible` | Boolean | No | unstated | Whether the design looks the same turned 180°, so that a card lying face down does not reveal which way round it is. See below. |
 | `image` | String (path) | No | found by discovery | An explicit path to this design's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§5.7.4](#574-the-extension-chain)). |
+
+**`reversible`** is a statement about the artwork and not about card meanings, which this specification does not model. A back with a border that differs top from bottom, or with an image that stands the right way up, is not reversible, and an application that draws such a back at a card's own orientation makes a face-down card legible as one turned around. Absence is a third state distinct from either value: the packager has not said, and an application MUST NOT assume an answer. No validator can check the claim, because a scan of a reversible design differs from its own rotation by misregistration and press variation alone, by more than a directional design on pale stock differs from its; [§9.4](#94-validation-rules) therefore checks the type and nothing further.
 
 Declaring a design under `[card_backs.designs]` does not create it. A design the deck has no file for and no `image` path to is a [resolution failure](#576-when-no-asset-is-found) rather than a validation error.
 
@@ -1210,7 +1219,11 @@ Every key is optional and independent. A deck MAY carry any combination and MAY 
 
 A surrogate deck is a deck whose only card assets are surrogates. Because the artwork of most tarot decks is neither the packager's to give away nor, in many cases, licensed for redistribution at all, surrogates allow a deck to be packaged without shipping anyone else's art.
 
-A surrogate deck SHOULD declare [`[deck].signifies`](#412-signifies) naming the deck whose artwork it describes. This field is used as a merge key and allows applications to recognize them as the same underlying deck and prefer the artwork over the surrogate.
+A surrogate deck SHOULD declare a correspondence to the artwork it describes: [`[deck].signifies`](#412-signifies) where a package of that artwork exists within Arcana Land, [`[deck.product_ids]`](#415-product-identifiers) where the artwork belongs to a commercial product that carries a published identifier, or both. Either allows applications to recognize a surrogate and a package as the same underlying deck and prefer the artwork over the surrogate.
+
+The two differ in who assigns them. `signifies` names a package and its value is chosen by that package's packager, so it can only be used where such a package exists and is known. A product identifier is assigned by the publisher and printed on the product, so two packagers who have never met will record the same value for the same deck. A surrogate deck for a commercial deck that no one has packaged SHOULD therefore carry `[deck.product_ids]`, and one for a deck already packaged within Arcana Land SHOULD carry `signifies`.
+
+A surrogate deck SHOULD NOT invent an `identifier` for a package that does not exist in order to have something for `signifies` to name.
 
 A surrogate deck SHOULD also declare [`[deck].rights_status`](#74-rights-status), and MAY contain a `buy` [link](#411-links) where available.
 
@@ -1649,6 +1662,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | Alt text is provided for all cards in at least one name file. |
 | **W** | A name file that names an entity and gives it no alt text, where that file gives alt text to any other entity of the same [kind](#62-language-resolution). The two facets are written as separate blocks ([§6.2](#62-language-resolution)), so an entity missed out of one of them is invisible to a reader checking the other. |
 | **E** | `[card_backs].default`, where present, names a card back design the deck has, whether discovered from a [card back directory](#55-card-back-images) or declared with an `image` path. |
+| **E** | `reversible`, where present on a `[card_backs.designs]` entry, is a boolean. Its truth is the packager's claim and is not checked ([§4.2](#42-card_backs)). |
 | **E** | Every `[card_backs.designs]` table key is a well-formed [custom name](#32-custom-names), and every `image` path declared under it exists. A discovered stem is not covered by this rule: an ill-formed stem defines no design and is a file discovery ignores ([§5.5](#55-card-back-images)), which the warning below reports. |
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the packager probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
@@ -1715,7 +1729,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#581-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§5.8.1](#581-the-surrogate-file)). |
-| **W** | A surrogate deck without `[deck].signifies`. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§5.9](#59-surrogate-decks)). |
+| **W** | A surrogate deck that declares neither `[deck].signifies` nor any [`[deck.product_ids]`](#415-product-identifiers) entry. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§5.9](#59-surrogate-decks)). |
 | **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§5.9](#59-surrogate-decks)). |
 | **E** | Where a validator is given a [container](#24-deck-containers), the archive holds `deck.toml` at its root rather than inside a wrapping directory, and no entry name is absolute, names a drive, or carries a `..`, `.` or empty segment ([§2.4](#24-deck-containers)). |
 | **E** | Where a validator is given a container, no entry is a symbolic link, a hard link, an encrypted entry, or anything other than a regular file or a directory, and every entry is stored or deflated ([§2.4](#24-deck-containers)). |
@@ -1973,7 +1987,6 @@ In the main `deck.toml`:
 schema_version = "2.0"
 name = "The Example Tarot"
 identifier = "net.example.jdoe/deck/example-tarot-surrogate"
-signifies = "com.example/deck/example-tarot"
 version = "1.0"
 artist = "Some Artist"
 publisher = "Example Press"
@@ -1993,6 +2006,11 @@ links = [
   { rel = "buy", url = "https://example.com/shop/the-example-tarot", title = "Buy from Example Press" },
   { rel = "artist", url = "https://example.com/artist" },
 ]
+
+# Example Press has not packaged this deck, so there is no identifier to signify
+# and the correspondence is recorded against the product itself instead (§5.9).
+[deck.product_ids]
+isbn = "9789999999991"
 ```
 
 With a surrogate for The Fool:
@@ -2104,5 +2122,6 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].published_date`](#417-published-date), when the deck was published, at whatever precision the packager has.
 - [`[deck].content_rating`](#416-content-rating) stating what the artwork depicts in the vocabulary of a named rating system.
 - [`origin`](#418-artwork-origin), stating how a deck's artwork came to exist (e.g., AI generated), in the vocabulary of a named system.
+- [`reversible`](#42-card_backs) on a card back design, stating whether the back looks the same turned 180°.
 
 **Other changes.** Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference). Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution. Made every card discoverable from the directory structure, added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own, allowed custom `ranks` for canonical suits and added `name_template` composition. Specified name file language tags as BCP 47, added `default_language`. Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)). Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files. Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe. Defined what `[app]` is for and reserved top-level table names outside it.
