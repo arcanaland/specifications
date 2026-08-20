@@ -75,24 +75,18 @@
 
 ### 1.1 Scope and Design Goals
 
-This specification defines a standard format for **tarot esoterica**: what a book, an article, a web page or a body of practice says about the cards. Where the [Tarot Deck Specification](#15-references) covers a deck's presentation — its images and the names printed on them — this one covers meaning and correspondence.
+This specification defines a standard format for tarot esoterica, which we define to mean the symbolism, meanings, correspondences and other such passages related to the practice of tarot. It is distinct from the [Tarot Deck Specification](#15-references), which covers soley a deck's visual presentation elements, namely its images, marks and names printed on the cards.
 
 The format is designed to:
 
-- Make **the source** the unit of the file, so that one work is one document carrying one attribution and one license.
-- Address cards and groups of cards through the canonical identifiers of the deck specification, so that esoterica and decks describe the same objects.
-- Keep everything a source says about one card contiguous, because these documents are written by hand.
-- Distinguish text written to be read from values drawn from a system outside this specification.
-- Stay finishable, by fixing a small registry of keys with a stated process for adding to it rather than admitting anything.
-
-A document under this specification is a static file. It transports what a source says and computes nothing from it.
+- Incorporate the canonical identifier system for tarot defined in the [Tarot Deck Specification](#15-references). This framework forms the basis for ascribing meaning to particular tarot objects distinct from their physical cards.
+- Allow for referencing external entities in systems outside of tarot, such as astrology, alchemy, numerology and other esoteric areas of study to be attached to tarot objects.
+- Provide a portable interchange format that can be used between various tarot applications that implement this specification.
 
 **Non-goals.** This specification does not define:
 
-- **The draw.** Shuffling, randomness, seeds, reversal probability and significator selection are outside this specification and every Arcana Land specification. An application may do these things; nothing here describes them, and no field in a document under this specification is an input to them.
-- **Merging.** Two sources that disagree about a card are two sources that disagree ([§9.1](#91-sources-do-not-merge)). This specification defines no precedence between them and no rule for combining them into one answer.
-- **Reversals.** No key of this version distinguishes an upright meaning from a reversed one. A source that draws the distinction states it in its own keys ([§5.1](#51-passage-keys-and-values)).
-- **Spread geometry.** A spread's positions and layout belong to the Spread Specification. This specification attaches meaning to a position that specification defines ([§3.3](#33-group-identifiers)).
+- **Readings.** Shuffling, randomness, reversal probability, significator selection and other such processes common for tarot readings are outside this specification. An application may perform these things, but nothing in this format describes them.
+- **Spread geometry.** A spread's layout and positions are scoped to its own future [Tarot Spread Specification](#15-references).
 - **Discovery and installation.** How a source arrives on a system is outside this specification, which describes only where an application looks for one ([§2.2](#22-the-esoterica-library)).
 
 ### 1.2 Document Conventions
@@ -101,7 +95,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 A section whose title carries the suffix (Informative) contains no requirements, and everything else in this document is normative. Whatever section they appear in, all **Notes** and all **Examples** are informative. Where an example appears to conflict with a normative rule, the rule governs and the example is in error.
 
-This specification addresses three kinds of actors: **authors** who write a document and arrange its content, **applications** that read a document in order to present it to a user, and **validation tools** that check a document against this specification.
+This specification addresses three kinds of actors: authors who write a document and arrange its content, applications that read a document in order to present it to a user and validation tools that check a document against this specification.
 
 An author is whoever assembled the document. They may be the writer of the text it carries, a translator, or a third party transcribing a published work they did not write. Where this document says a source "declares" or "says" something, the author is who said it.
 

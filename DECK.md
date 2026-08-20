@@ -1346,7 +1346,7 @@ origin = { "iptc-dst" = "digitalCreation" }
 
 [metadata.alt_text]
 origin = { "iptc-dst" = "trainedAlgorithmicMedia" }
-source = "Alt text created by ACME's ExampleLLM 1.0 and edited by the packager."
+source = "Alt text created by ACME's ExampleLLM 2.0."
 ```
 
 A name file whose strings a human wrote need not declare an origin at all and omission is the common case. Declare it where something in the file was machine-produced, or where the packager wants the human authorship of the rest on the record.
