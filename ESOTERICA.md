@@ -75,7 +75,7 @@
 
 ### 1.1 Scope and Design Goals
 
-This specification defines a standard format for tarot esoterica, which we define to mean the symbolism, meanings, correspondences and other such passages related to the practice of tarot. It is distinct from the [Tarot Deck Specification](#15-references), which covers soley a deck's visual presentation elements, namely its images, marks and names printed on the cards.
+This specification defines a standard format for tarot esoterica, which we define to mean the symbolism, meanings, correspondences and other such passages related to the practice of tarot. It is distinct from the [Tarot Deck Specification](#15-references), which covers soley a deck's visual presentation elements, namely its images, marks and inscriptions printed on the cards.
 
 The format is designed to:
 
