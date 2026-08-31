@@ -1,5 +1,6 @@
 WIP
 build/
+vendor/
 
 # Keep your agents out of here
 *.local.md
