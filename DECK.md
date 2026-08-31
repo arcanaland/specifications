@@ -48,7 +48,8 @@
     - [4.3.3 Inscriptions](#433-inscriptions)
   - [4.4 `[suits]`](#44-suits)
   - [4.5 `[ranks]`](#45-ranks)
-  - [4.6 `[excluded_cards]`](#46-excluded_cards)
+  - [4.6 `[minor_arcana]`](#46-minor_arcana)
+  - [4.7 `[excluded_cards]`](#47-excluded_cards)
 - [5. Card Assets](#5-card-assets)
   - [5.1 Asset Discovery](#51-asset-discovery)
   - [5.2 Vector Graphics](#52-vector-graphics)
@@ -291,7 +292,7 @@ A container:
 
 - MUST be a ZIP archive.
 - MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive. A deck sitting inside a wrapping directory is not a container.
-- MUST contain every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and the [name file](#13-terminology) `default_language` names.
+- MUST contain every file the deck needs to conform, in particular every file named by [`license_files`](#72-attribution-and-notices) and every [name file](#13-terminology) in `names/`.
 - SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
 - MUST use `/` as its entry-name separator, MUST write entry names in UTF-8 and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment or repeats the name of another entry.
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
@@ -369,7 +370,7 @@ Further:
 
 - A custom name MUST NOT be one of the reserved canonical keys: `major_arcana`, `minor_arcana`, the suits `wands`, `cups`, `swords` and `pentacles`, or the ranks `ace`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`, `page`, `knight`, `queen` and `king`.
 - A custom major arcana key additionally MUST NOT be a two-digit string.
-- A custom suit key additionally MUST NOT be `name_template`.
+- A custom suit key additionally MUST NOT be `name_template`, and neither may a custom rank key. Both share a table with a `name_template` key in a [name file](#62-language-resolution).
 
 ### 3.3 Qualified Identifiers
 
@@ -524,8 +525,8 @@ A key not listed here and not under `[app]` is not defined by this specification
 | `identifier` | String | RECOMMENDED | none | The deck's qualified identifier ([§3.3](#33-qualified-identifiers)). A deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | `related` | Array of Table | No | `[]` | Other decks this deck stands in a stated relation to, each saying what that relation is ([§4.1.9](#419-related-decks)). |
 | `pips` | String | No | `"unstated"` | Whether the deck's numbered minor arcana depict scenes ([§4.1.4](#414-pips)). |
-| `default_language` | String | No | `"en"` | BCP 47 tag of the deck's default name file ([§6.2](#62-language-resolution)). |
-| `metadata_language` | String | No | the value of `default_language` | BCP 47 tag of the language the package is in ([§6.1](#61-language-tags)). |
+| `default_language` | String | No | none | BCP 47 tag of the name file an application prefers where the reader has stated no preference ([§6.2](#62-language-resolution)). |
+| `metadata_language` | String | No | the value of `default_language`, or `"en"` where that is absent | BCP 47 tag of the language the package is in ([§6.1](#61-language-tags)). |
 | `artwork_language` | Array of String | No | none | BCP 47 tags of the languages of text printed on the deck's artwork, in no significant order ([§6.1](#61-language-tags)). Informative only. |
 | `icon` | String (path) | No | none | A preview image for the deck, assumed to share the cards' aspect ratio. |
 | `aspect_ratio` | Float | No | `0.5789` | Width ÷ height of the deck's cards. |
@@ -1069,8 +1070,11 @@ Providing `ranks` for a canonical suit, such as in the above example, replaces t
 | --- | --- | --- | --- | --- |
 | `name` | String | No | resolved per [§6.3](#63-display-name-resolution) | Fallback display name for the suit |
 | `ranks` | Array of String | No | the canonical rank sequence for a canonical suit, otherwise none | The suit's rank keys in the order the deck reads them. |
+| `name_template` | String | No | [`[minor_arcana].name_template`](#46-minor_arcana) | This suit's own grammar, where it differs from the deck's ([§6.3.1](#631-minor-arcana-name-composition)). |
 
 Like [`[cards]`](#43-cards), `[suits]` describes rather than creates and a suit is created by placing files under `minor_arcana/<suit>/`. The whole table is OPTIONAL.
+
+`name_template` exists in this table in addition to [`[minor_arcana]`](#46-minor_arcana) to support per-suit composition.
 
 As with a card's `name` ([§4.3](#43-cards)), `[suits].name` is the deck's own string: a deck whose suit names are printed on its cards SHOULD declare them here and a deck whose suit names are the packager's own words SHOULD carry them in a name file, where they can be localized ([§6.2](#62-language-resolution), [§6.3](#63-display-name-resolution)). Where a deck's courts print a title and its pips print nothing, the printed title governs: those words are on the artwork, so they are the deck's own.
 
@@ -1095,7 +1099,24 @@ name = "Roy"
 Like [`[suits]`](#44-suits), `[ranks]` describes rather than creates: a rank is created by a file, or by a suit's `ranks` sequence. The whole table is OPTIONAL.
 
 
-### 4.6 `[excluded_cards]`
+### 4.6 `[minor_arcana]`
+
+A deck states the grammar by which its minor arcana names are composed from its suit and rank names:
+
+```toml
+[minor_arcana]
+name_template = "{rank} de {suit}"
+```
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name_template` | String | No | the built-in template of [§6.3.1](#631-minor-arcana-name-composition) | The deck's own grammar for composing a minor arcanum's name from its suit and rank names. |
+
+Like [`[suits]`](#44-suits) and [`[ranks]`](#45-ranks), `[minor_arcana]` describes rather than creates. The whole table is OPTIONAL.
+
+The template is the deck's own words about its own cards, so it belongs to the source layer ([§6.2](#62-language-resolution)) beside the [`[suits]`](#44-suits) and [`[ranks]`](#45-ranks) names it joins. A suit whose name takes a different grammar overrides it ([§4.4](#44-suits)).
+
+### 4.7 `[excluded_cards]`
 
 ```toml
 [excluded_cards]
@@ -1250,7 +1271,7 @@ Where the requested card has no variant under that key, the application MUST res
 
 #### 5.7.6 When No Asset Is Found
 
-Where resolution yields no file for a card in any image root of any kind and the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#46-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a canonical minor arcanum or a major arcanum keyed `00` through `21`.
+Where resolution yields no file for a card in any image root of any kind and the library designates a [reference deck](#13-terminology) and the card is not deliberately absent under [`[excluded_cards]`](#47-excluded_cards), the application SHOULD resolve the same card against that deck. This step applies only to a canonical minor arcanum or a major arcanum keyed `00` through `21`.
 
 An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#58-surrogate-assets). Where it displays attribution or rights metadata for a borrowed card, it MUST take that metadata from the reference deck, whose terms may be narrower than those of the deck it stands in for.
 
@@ -1356,24 +1377,24 @@ Display strings such as card names, suit names, rank names and alt text are decl
 
 - Tags SHOULD be canonical, using the shortest available ISO 639 subtag (`en`, not `eng`), lowercase language, titlecase script and uppercase region.
 - Applications MUST compare tags case-insensitively. A deck MUST NOT ship two name files whose tags differ only in case.
-- `[deck].default_language` declares the tag of the deck's default name file, and nothing else. Where absent, applications assume `en`.
+- `[deck].default_language` nominates the name file an application prefers where the reader has stated no preference. It selects among the files the deck ships and does nothing else: it does not declare what language the deck itself is in, it does not terminate resolution ([§6.2](#62-language-resolution)), and a deck need neither declare it nor ship a file for it.
 
 A deck has up to three languages and they are not the same question:
 
 | Key | Names the language of |
 | --- | --- |
-| `default_language` | the name file a lookup falls back to ([§6.2](#62-language-resolution)) |
+| `default_language` | the name file an application prefers where the reader has stated none ([§6.2](#62-language-resolution)) |
 | `metadata_language` | the packager's own prose |
 | `artwork_language` | the text printed on the cards themselves |
 
-`metadata_language` defaults to `default_language`, so a deck that declares neither is unchanged in meaning. It is not itself localizable.
+`metadata_language` defaults to `default_language`, and to `en` where the deck declares neither, so a deck that declares neither is unchanged in meaning. It is not itself localizable.
 
 `artwork_language` is an array (multilingual card faces are common). A deck whose cards carry no text declares `zxx` (no linguistic content).
 
 ```toml
-default_language  = "fr"          # the name file, and the card faces
+default_language  = "fr"          # prefer names/fr.toml where the reader states no preference
 metadata_language = "en"          # the packager, who is writing in English
-artwork_language  = ["fr"]
+artwork_language  = ["fr"]        # the text printed on the cards
 ```
 
 ### 6.2 Language Resolution
@@ -1382,7 +1403,9 @@ Display strings live in two layers. A **name file** is a translation catalogue: 
 
 A string that reproduces text printed on an artwork belongs in the manifest, whatever language that text is in.
 
-Given a requested tag, applications resolve it using the Lookup scheme of RFC 4647, trying the requested tag, then progressively shorter forms of it, then the deck's `default_language`. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`, then the default language file. A key that no name file supplies falls through to the further fallbacks in [§6.3](#63-display-name-resolution).
+Given a requested tag, applications resolve it using the Lookup scheme of RFC 4647, trying the requested tag and then progressively shorter forms of it. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`. Where the reader has stated no preference an application begins from [`default_language`](#41-deck), where the deck nominates one.
+
+The name files are where lookup ends. A key that no name file in that order supplies falls through to the manifest and then to the further fallbacks of [§6.3](#63-display-name-resolution): **the source layer is the terminal fallback**, so a deck need not nominate a reader's language in order to have one, and a deck that ships no name file at all resolves every string from the manifest.
 
 A name file is organized by **facet**: the outermost table names the kind of string, the tables below it name the kind of entity, and the keys name entities.
 
@@ -1556,15 +1579,38 @@ Because a deck MAY rename its suits and ranks, most decks need not write out all
 name_template = "{rank} of {suit}"
 ```
 
-`{rank}` and `{suit}` are replaced by the rank and suit names resolved above. No other placeholders are defined, and an application MUST leave any other braced text in the template alone. The template is resolved by the same [Language Resolution](#62-language-resolution) rules as any other key, so a translation supplies its own. The default template is `"{rank} of {suit}"`.
+`{rank}` and `{suit}` are replaced by the rank and suit names resolved above. No other placeholders are defined, and an application MUST leave any other braced text in the template alone.
 
-A template and the names it composes MUST come from one language. Where a name file in the resolution order supplies `name_template`, `{rank}` and `{suit}` are resolved from that same file, and a file that supplies none of the three is skipped for all three together.
+A template is a display string like any other and resolves in steps, the most specific first:
 
-The manifest holds the deck's own words, in the artwork's language rather than a reader's ([§6.2](#62-language-resolution)), so it is consulted for `{rank}` and `{suit}` only where the template came from the deck's [`default_language`](#41-deck) name file, or where no name file supplies a template and the deck takes the default above. A template drawn from any other name file MUST NOT compose with a manifest string: where that file names no suit or rank, resolution continues to the terminal step of [§6.3](#63-display-name-resolution)'s Suit name and Rank name rows instead. A deck whose `default_language` is not `en` SHOULD supply its own template, since the default above is English and would otherwise set English grammar over the deck's own words.
+| | The template at |
+| --- | --- |
+| 1 | the name file's `[name.card.minor_arcana.<suit>].name_template` |
+| 2 | the name file's `[name.card.minor_arcana].name_template` |
+| 3 | the manifest's [`[suits.<key>].name_template`](#44-suits) |
+| 4 | the manifest's [`[minor_arcana].name_template`](#46-minor_arcana) |
+| 5 | the built-in default `"{rank} of {suit}"` |
 
-Without these rules a partially translated deck would compose a name from two languages at once.
+Steps 1 and 2 are reached by [Language Resolution](#62-language-resolution) like any other name file key, so a translation supplies its own grammar. Steps 3 and 4 are the deck's own grammar for its own words.
 
-The template performs substitution only. Where a language requires elision, inflection or agreement between the rank and suit names, a deck SHOULD write the affected names out explicitly rather than expect the template to produce them: French elides before a vowel, so the template `"{rank} de {suit}"` cannot turn `de` and `Épée` into `d'Épée`.
+```toml
+[minor_arcana]
+name_template = "{rank} de {suit}"
+
+[suits]
+wands  = { name = "Baton" }
+swords = { name = "Epee", name_template = "{rank} d'{suit}" }
+```
+
+A template and the names it composes MUST come from one layer and one language:
+
+- A template from a name file (steps 1 and 2) composes with `{rank}` and `{suit}` from that same file.
+- A template from the manifest (steps 3 and 4) composes with the manifest's [`[suits]`](#44-suits) and [`[ranks]`](#45-ranks) names, which are the deck's own words in the artwork's language.
+- The built-in default composes with whichever layer supplied the names, being the fallback for a deck that has stated no grammar anywhere.
+
+A deck whose own words are not English SHOULD declare [`[minor_arcana].name_template`](#46-minor_arcana), since the built-in default is English and would otherwise set English grammar over them.
+
+The template performs substitution only, and a per-suit template reaches a join that varies with the suit and nothing further. Where a language inflects, declines or pluralizes a rank or suit name inside the composed phrase, no template can produce it from the names as declared, and a deck SHOULD write the affected names out explicitly instead.
 
 Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology), subject to the same pattern condition.
 
@@ -1802,7 +1848,7 @@ A conforming application:
 - MUST ignore `[app]` subtables it does not own ([§8](#82-the-app-table)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
-An application need not implement card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
+An application need not implement card variants, ANSI art, SVG, surrogates or localization beyond the strings the manifest supplies. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
 
 Neither an application nor a validator need accept a [container](#24-deck-containers). One that does not is unaffected by the container rules of [§9.4](#94-validation-rules) and remains conforming; those rules are written as though a container were given, and a validator that sees only a directory reports none of them. Likewise, a rule stated over a library binds a validator only where it can see one.
 
@@ -1818,13 +1864,15 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | `[deck].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
 | **E** | `[deck].published_date` is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.7](#417-published-date)). |
 | **E** | Every top-level table in a name file is a facet this specification defines, meaning `name` or `alt_text`, or is the reserved `[metadata]` table ([§6.2](#62-language-resolution)). |
-| **E** | Below the facet, every table names an [entity kind](#62-language-resolution) this specification defines, and every key corresponds to a card, suit, rank, card variant or card back design the deck defines or to a [group family member](#622-group-names), or is `name_template` under `[name.card.minor_arcana]`, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
-| **E** | `[name.card.minor_arcana].name_template`, where present, contains no placeholder other than `{rank}` and `{suit}`. |
-| **E** | Every name file's stem is a well-formed BCP 47 language tag, no two differ only in case, and `[deck].default_language` has a corresponding file. |
+| **E** | Below the facet, every table names an [entity kind](#62-language-resolution) this specification defines, and every key corresponds to a card, suit, rank, card variant or card back design the deck defines or to a [group family member](#622-group-names), or is `name_template` under `[name.card.minor_arcana]` or one of its suit subtables, or appears in the reserved `[metadata]` table or its `alt_text` subtable. |
+| **E** | Every `name_template`, at any of the four sites [§6.3.1](#631-minor-arcana-name-composition) defines, is a string containing no placeholder other than `{rank}` and `{suit}`. |
+| **E** | Every name file's stem is a well-formed BCP 47 language tag and no two differ only in case. |
+| **W** | `[deck].default_language` names no name file the deck ships. The nomination selects among the deck's own files and resolution falls through to the manifest either way, so a deck missing the file it prefers is still complete ([§6.2](#62-language-resolution)). |
 | **E** | A name file carries no top-level `[inscription]` table. Inscriptions are declared as [`[cards].inscription`](#433-inscriptions), which a validator reporting this SHOULD name. |
 | **E** | `metadata_language`, where present, is a well-formed BCP 47 language tag, and `artwork_language`, where present, is a non-empty array of well-formed BCP 47 language tags ([§6.1](#61-language-tags)). |
 | **W** | An `artwork_language` containing `zxx` alongside any other tag. *No linguistic content* and a named language cannot both describe the same faces ([§6.1](#61-language-tags)). |
 | **W** | A deck declaring a `metadata_language` different from its `default_language`. Informational, so that a packager can see the distinction was read as intended rather than as a typo ([§6.1](#61-language-tags)). |
+| **W** | A deck that declares an `artwork_language`, none of whose tags has the primary subtag `en`, and that declares no [`[minor_arcana].name_template`](#46-minor_arcana). The built-in template would set English grammar over the deck's own words ([§6.3.1](#631-minor-arcana-name-composition)). |
 | **E** | Every `[ranks.<key>]` table key is a well-formed [custom name](#32-custom-names) or a canonical rank ([§4.5](#45-ranks)). |
 | **W** | A deck for which no single name file supplies alt text for every card ([§6.4](#64-alt-text-guidelines)). |
 | **W** | A name file that names an entity and gives it no alt text, where that file gives alt text to any other entity of the same [kind](#62-language-resolution). The two facets are written as separate blocks ([§6.2](#62-language-resolution)), so an entity missed out of one of them is invisible to a reader checking the other. |
@@ -1861,7 +1909,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | No custom major arcana key is a two-digit string, and no custom rank or suit key shadows a canonical one. |
 | **E** | Every rank named in a `ranks` list has files in that suit, and no `ranks` list contains duplicates. |
 | **E** | No card is both excluded by `[excluded_cards]` and declared in `[cards]`. |
-| **W** | A card listed in `[excluded_cards]` that has an image file. An exclusion is a statement of intent ([§4.6](#46-excluded_cards)), so a deck shipping the asset anyway has probably changed its mind and not updated the list. |
+| **W** | A card listed in `[excluded_cards]` that has an image file. An exclusion is a statement of intent ([§4.7](#47-excluded_cards)), so a deck shipping the asset anyway has probably changed its mind and not updated the list. |
 | **W** | A `position` **declared** by two cards. Ordering remains well defined ([§4.3.2](#432-ordering)). A declared `position` that coincides with an implicit one is not reported. |
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§10.1](#101-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
@@ -2218,12 +2266,13 @@ Applications MUST ignore these names in a 2.0 deck.
 | `[deck].signifies` | The deck whose artwork a package describes and does not carry, as a flat key in an earlier 2.0 draft; named from the tarot significator | Folded into [`[deck].related`](#419-related-decks) as `rel = "surrogate_for"`, from the cataloguing term *surrogate record* ([§4.1.2](#412-surrogate_for)) |
 | `[deck].follows` | The deck this deck is patterned on, as a flat key in an earlier 2.0 draft | Folded into [`[deck].related`](#419-related-decks) as `rel = "pattern"` ([§4.1.3](#413-pattern)) |
 | `rel = "follows"` | The same relation under `[deck].related`, in an earlier 2.0 draft | Renamed to `rel = "pattern"`, from the playing-card sense of *pattern* ([§4.1.3](#413-pattern)) |
+| `[deck].name_template` | The minor arcana name template, as a flat key in an earlier 2.0 draft | Moved to [`[minor_arcana]`](#46-minor_arcana), the table it describes, with a per-suit override on [`[suits]`](#44-suits) ([§6.3.1](#631-minor-arcana-name-composition)) |
 | `[deck].id` | The deck's identifier in 1.0. | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
 | `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
 | A name file's `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]`, `[suits]`, `[ranks]`, `[card_backs]` and `[card_variants]` | The `name` facet of a 1.0 name file, written without naming the facet | Renamed in 2.0. Every facet is now written out fully. |
 | `[card_backs.variants]` | Card back designs in 1.0 | Renamed to [`[card_backs.designs]`](#42-card_backs) in 2.0. |
-| `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#46-excluded_cards) in 2.0 |
+| `[deck.excluded_cards]` | Excluded cards, nested under `[deck]` in 1.0 | Moved to top-level [`[excluded_cards]`](#47-excluded_cards) in 2.0 |
 | `[deck.companions]` | Never specified. | Superseded by [qualified identifiers](#33-qualified-identifiers), by which another Arcana Land document names a deck rather than the deck naming it |
 | `[custom_cards]` | Custom major arcana, suits and ranks in 1.0 | Split in 2.0. Per-card metadata for every card, canonical or custom, moved to [`[cards]`](#43-cards) and suit structure moved to [`[suits]`](#44-suits). |
 | `image` on `[custom_cards.major_arcana.<key>]` | An explicit path to a custom card's image in 1.0 | Removed in 2.0. A card's images come from [discovery](#51-asset-discovery)|
@@ -2289,7 +2338,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Renames `[deck].author` to [`[deck].artist`](#76-roles-and-credits).
 - Renames `[card_backs.variants]` to `[card_backs.designs]`.
 - Splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits).
-- Moves `[deck.excluded_cards]` to a top-level [`[excluded_cards]`](#46-excluded_cards).
+- Moves `[deck.excluded_cards]` to a top-level [`[excluded_cards]`](#47-excluded_cards).
 - Keys [`[app]`](#82-the-app-table) subtables by a realm rather than a bare custom name.
 - Renames every table in a [name file](#62-language-resolution) so that the facet is written out.
 
@@ -2308,7 +2357,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].packager`](#76-roles-and-credits), naming who assembled the package.
 - [`[deck].creator`](#76-roles-and-credits), naming who devised a deck they did not draw.
 - [`[deck].related`](#419-related-decks), one table of typed outbound references to other decks. It carries [`pattern`](#413-pattern), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#412-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); `expands`, by which an add-on package names the deck it adds cards to; and `companion`. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
-- [`[deck].metadata_language`](#61-language-tags) and [`[deck].artwork_language`](#61-language-tags), separating the language the packager writes in and the language printed on the cards from the `default_language` that selects a name file.
+- [`[deck].metadata_language`](#61-language-tags) and [`[deck].artwork_language`](#61-language-tags), separating the language the packager writes in and the language printed on the cards from the `default_language` that nominates a preferred name file.
+- [`[minor_arcana]`](#46-minor_arcana), the source-layer home for the grammar joining a deck's own suit and rank names, so that a deck whose words are not English states how they join without shipping a name file, and a `name_template` on [`[suits]`](#44-suits) and on a name file's suit table for a join that varies with the suit.
 - The [two-layer rule](#62-language-resolution) for display strings: a name file is a translation catalogue and the manifest is the source layer. [`[ranks]`](#45-ranks) is new, supplying the source step a rank never had, and a canonical suit or rank the deck does not name now falls to a string the application localizes rather than to a title-cased English key.
 - [`inscription`](#433-inscriptions) on a card, a card variant and a card back design, transcribing text printed on the artwork other than its name and its number.
 - [`unnumbered`](#431-card-numbers) and [`unnamed`](#63-display-name-resolution) on a card, by which a face that carries no numeral or no title says so without being unseated from the sequence.
@@ -2327,7 +2377,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Made every card discoverable from the directory structure.
 - Added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own.
 - Allowed custom `ranks` for canonical suits and added `name_template` composition.
-- Specified name file language tags as BCP 47 and added `default_language`.
+- Specified name file language tags as BCP 47 and added `default_language`, which in 2.0 nominates a preferred name file rather than terminating resolution: name file lookup ends at the name files and falls through to the manifest, which is the terminal fallback, and no file is required to exist for the tag.
 - Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)).
 - Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files.
 - Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe.
