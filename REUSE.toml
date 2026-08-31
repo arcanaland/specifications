@@ -1,6 +1,6 @@
 version = 1
 SPDX-PackageName = "arcanaland-specifications"
-SPDX-PackageSupplier = "Adam Fidel <adam@fidel.cloud>"
+SPDX-PackageSupplier = "Adam Fidel <adam@arcana.land>"
 SPDX-PackageDownloadLocation = "https://github.com/arcanaland/specifications"
 
 [[annotations]]
