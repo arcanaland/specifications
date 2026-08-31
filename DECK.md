@@ -829,7 +829,7 @@ This registry is open ([§8](#81-open-registries)).
 
 `iptc-dst` names the [IPTC Digital Source Type](https://cv.iptc.org/newscodes/digitalsourcetype/) vocabulary adopted whole. Terms are written verbatim to maintain interoperability.
 
-The terms a packager may reach for, informatively:
+Guidance for choosing terms, informatively:
 
 | If the artwork... | Term |
 | --- | --- |
