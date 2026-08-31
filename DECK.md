@@ -1215,7 +1215,7 @@ Within an image root, assets are arranged by card type and suit as shown in [§2
 
 Every other top-level directory is ignored by discovery.
 
-The top-level names this specification defines are `deck.toml`, `card_backs/`, `names/` and the image roots above. A deck MAY therefore keep material of its own beside its card assets under any name that is not one of the above.
+The top-level names this specification defines are `deck.toml`, `card_backs/`, `names/`, `mimetype` ([§2.4](#24-deck-containers)) and the image roots above. A deck MAY therefore keep material of its own beside its card assets under any name that is not one of the above.
 
 #### 5.7.2 Extensions, Stems and Bases
 
@@ -2256,17 +2256,13 @@ thumbhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 
 ## Appendix B. Reserved and Deprecated Names
 
-The names below were defined by an earlier version of this specification, or by an earlier draft of this one, and are not defined by it now. A future version of this specification MUST NOT reuse any of them with a new meaning.
+The names below were defined by an earlier version of this specification and are not defined by it now. A future version of this specification MUST NOT reuse any of them with a new meaning.
 
 Applications MUST ignore these names in a 2.0 deck.
 
 | Name | Was | Status |
 | --- | --- | --- |
 | `[deck].author` | The artwork's author in 1.0 | Renamed in 2.0 to [`[deck].artist`](#41-deck) and split the role with [`[deck].creator`](#76-roles-and-credits) |
-| `[deck].signifies` | The deck whose artwork a package describes and does not carry, as a flat key in an earlier 2.0 draft; named from the tarot significator | Folded into [`[deck].related`](#419-related-decks) as `rel = "surrogate_for"`, from the cataloguing term *surrogate record* ([§4.1.2](#412-surrogate_for)) |
-| `[deck].follows` | The deck this deck is patterned on, as a flat key in an earlier 2.0 draft | Folded into [`[deck].related`](#419-related-decks) as `rel = "pattern"` ([§4.1.3](#413-pattern)) |
-| `rel = "follows"` | The same relation under `[deck].related`, in an earlier 2.0 draft | Renamed to `rel = "pattern"`, from the playing-card sense of *pattern* ([§4.1.3](#413-pattern)) |
-| `[deck].name_template` | The minor arcana name template, as a flat key in an earlier 2.0 draft | Moved to [`[minor_arcana]`](#46-minor_arcana), the table it describes, with a per-suit override on [`[suits]`](#44-suits) ([§6.3.1](#631-minor-arcana-name-composition)) |
 | `[deck].id` | The deck's identifier in 1.0. | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
 | `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
