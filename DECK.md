@@ -85,6 +85,8 @@
   - [7.6 Roles and Credits](#76-roles-and-credits)
   - [7.7 Deck Names and Trademarks](#77-deck-names-and-trademarks)
 - [8. Extensibility](#8-extensibility)
+  - [8.1 Open Registries](#81-open-registries)
+  - [8.2 The `[app]` Table](#82-the-app-table)
 - [9. Conformance and Validation](#9-conformance-and-validation)
   - [9.1 Conforming Deck](#91-conforming-deck)
   - [9.2 Errors and Warnings](#92-errors-and-warnings)
@@ -399,7 +401,7 @@ The type segments this specification allows:
 | `spread` | A spread | Spread specification (not yet published) |
 | `esoterica` | An esoterica document | Tarot Esoterica Specification |
 
-This registry is open ([§8](#8-extensibility)), and a later version of this or another Arcana Land specification MAY add to it.
+This registry is open ([§8](#81-open-registries)), and a later version of this or another Arcana Land specification MAY add to it.
 
 > **Note:** a type segment is a path segment, so a realm holder minting one prefixes it `x-` and not the `x_` used for a custom name.
 
@@ -500,7 +502,7 @@ A [canonical ID](#31-canonical-ids) is compound, so it is written in TOML either
 | Site | Form |
 | --- | --- |
 | [`[cards."<card-ref>"]`](#43-cards) | Single key |
-| [`[app."<realm>"]`](#8-extensibility) | Single key |
+| [`[app."<realm>"]`](#82-the-app-table) | Single key |
 | A name file's `[name.variant]` and `[alt_text.variant]` ([§6.2](#62-language-resolution)) | Single key, a variant reference |
 | A name file's `[<facet>.card.major_arcana]` and `[<facet>.card.minor_arcana.<suit>]` | Key path |
 | [`[suits.<key>]`](#44-suits) | Key path |
@@ -509,7 +511,7 @@ A [canonical ID](#31-canonical-ids) is compound, so it is written in TOML either
 
 Every table this specification defines is listed below with its fields.
 
-A key not listed here and not under `[app]` is not defined by this specification, and [§8](#8-extensibility) reserves such names for future versions of it.
+A key not listed here and not under `[app]` is not defined by this specification, and [§8](#82-the-app-table) reserves such names for future versions of it.
 
 ### 4.1 `[deck]`
 
@@ -548,17 +550,17 @@ A key not listed here and not under `[app]` is not defined by this specification
 
 ```toml
 [deck]
-schema_version = "2.0"
 name = "Rider-Waite-Smith Tarot"
-version = "1.0"
 identifier = "land.arcana/deck/rider-waite-smith"
-creator = "A. E. Waite"
+version = "1.0"
 artist = "Pamela Colman Smith"
+creator = "A. E. Waite"
 icon = "deck-icon.png"
-license = "CC0-1.0"
+license = "LicenseRef-PublicDomain AND CC0-1.0"
 license_files = ["LICENSE"]
 published_date = "1909-12"
 tags = ["traditional", "classic"]
+schema_version = "2.0"
 ```
 
 #### 4.1.1 Links
@@ -569,7 +571,7 @@ tags = ["traditional", "classic"]
 | --- | --- | --- | --- | --- |
 | `rel` | String | **Yes** | n/a | What the target is, from the registry below. MUST be a [custom name](#32-custom-names). |
 | `url` | String (URI) | **Yes** | n/a | An absolute URL with a scheme of `http` or `https`. |
-| `title` | String | No | none | A label for the link, in the deck's [`metadata_language`](#41-deck). |
+| `title` | String | No | none | A label for the link in [`metadata_language`](#41-deck). |
 
 The registry:
 
@@ -591,7 +593,7 @@ links = [
 publisher = "Example Press"
 ```
 
-This registry is open ([§8](#8-extensibility)).
+This registry is open ([§8](#81-open-registries)).
 
 #### 4.1.2 `surrogate_for`
 
@@ -689,7 +691,7 @@ Rules:
 - A `gtin` value is written as digits alone and SHOULD be zero-padded to fourteen digits. Applications comparing two values MUST first zero-pad each to fourteen digits, so that a UPC written as twelve digits matches the same UPC written as fourteen.
 - A `publisher_sku` value is opaque and is unique only within one publisher, so two publishers' numbers can collide. An application MUST NOT use it as evidence that two packages describe the same product.
 
-This registry is open ([§8](#8-extensibility)).
+This registry is open ([§8](#81-open-registries)).
 
 #### 4.1.6 Content Rating
 
@@ -710,7 +712,7 @@ The registry:
 | --- | --- |
 | `oars-1.1` | The attribute ids of OARS 1.1, each `-` written as `_`, valued `none`, `mild`, `moderate` or `intense` |
 
-This registry is open ([§8](#8-extensibility)).
+This registry is open ([§8](#81-open-registries)).
 
 `oars-1.1` names version 1.1 of the [Open Age Ratings Service](https://hughsie.github.io/oars/) vocabulary, whose descriptor keys are its twenty-three attribute ids: `sex_nudity`, `sex_themes`, `violence_cartoon`, `violence_fantasy`, `violence_realistic`, `violence_bloodshed`, `violence_desecration`, `violence_slavery`, `violence_sexual`, `drugs_alcohol`, `drugs_narcotics`, `drugs_tobacco`, `language_profanity`, `language_humor`, `language_discrimination`, `money_advertising`, `money_gambling`, `money_purchasing`, `social_chat`, `social_audio`, `social_contacts`, `social_info` and `social_location`. The underscore rewriting keeps every key a [custom name](#32-custom-names) and is reversed mechanically where an application emits OARS.
 
@@ -774,7 +776,7 @@ sex_nudity = "mild"
 violence_bloodshed = "mild"
 ```
 
-The other seventy-one cards are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"` — none of which appears in the file. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its artwork carries.
+The other seventy-one cards are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"`. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its artwork carries.
 
 In a different deck, one whose default Lovers artwork is clothed and which ships a nude alternate beside it, each artwork states its own value:
 
@@ -782,7 +784,7 @@ In a different deck, one whose default Lovers artwork is clothed and which ships
 [cards."major_arcana.06".content_rating."oars-1.1"]
 # the default artwork, reviewed and depicting nothing this system describes
 
-[cards."major_arcana.06:two_women".content_rating."oars-1.1"]
+[cards."major_arcana.06:nude".content_rating."oars-1.1"]
 sex_nudity = "mild"
 ```
 
@@ -802,7 +804,7 @@ sex_nudity = "mild"
 
 The value is a `published-date` ([§3.5](#35-grammar)) — a year, a year and month, or a full date. `"1909"` where the year is all that is known, `"1909-12"` where the month is on record, `"2018-10-16"` where the day is.
 
-A packager MUST NOT state a precision they do not have. Where only the year is known, the year alone is the correct value; padding it to `1909-01-01` asserts a day nobody knows.
+A packager MUST NOT state a precision they do not have. Where only the year is known, the year alone is the correct value.
 
 `published_date` is a TOML string. TOML's native types MUST NOT be used for it: unquoted, `1909-12-01` reads as a local date and `1909` reads as an integer ([§9.4](#94-validation-rules)).
 
@@ -821,7 +823,7 @@ The registry:
 | --- | --- |
 | `iptc-dst` | Term names of the IPTC Digital Source Type NewsCodes vocabulary |
 
-This registry is open ([§8](#8-extensibility)).
+This registry is open ([§8](#81-open-registries)).
 
 `iptc-dst` names the [IPTC Digital Source Type](https://cv.iptc.org/newscodes/digitalsourcetype/) vocabulary adopted whole. Terms are written verbatim to maintain interoperability.
 
@@ -901,7 +903,7 @@ Rules:
 - **Relations are not reciprocated.** The dependent package carries the pointer and the target says nothing back.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator checks that the value is well formed and no more. A relation to a deck nobody has packaged is legal.
 
-**Recognition.** This registry is open for **advisory** relations ([§8](#8-extensibility)), and closed for recognized ones.
+**Recognition.** This registry is open for **advisory** relations ([§8](#81-open-registries)), and closed for recognized ones.
 
 A **recognized** relation is different in kind, because it governs what the package *is* rather than what it points at. A package declaring one is not a deck an application may render on its own terms. An application that does not implement a recognized `rel` MUST NOT present the package as though the relation were absent. It SHOULD tell the user it cannot fully render the package, and it MUST NOT complete the package's canonical cards from a [reference deck](#13-terminology) ([§5.7.6](#576-when-no-asset-is-found)).
 
@@ -1750,9 +1752,13 @@ Nothing here is a legal determination and this specification does not make one.
 
 ## 8. Extensibility
 
-**Open registries.** Several sections of this specification carry a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#415-product-identifiers), [rating systems](#416-content-rating), [origin vocabularies](#418-artwork-origin) and the advisory [related-deck relations](#419-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
+### 8.1 Open Registries
+
+Several sections of this specification carry a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#415-product-identifiers), [rating systems](#416-content-rating), [origin vocabularies](#418-artwork-origin) and the advisory [related-deck relations](#419-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
 
 The prefix differs with what the name is. A [custom name](#32-custom-names) takes `x_`, as in `x_kickstarter`; a path segment takes `x-`, as in `x-collection-notes`. A custom name admits `_` and not `-`, and a path segment admits `-` and not `_` ([§3.5](#35-grammar)).
+
+### 8.2 The `[app]` Table
 
 The `[app]` table is reserved for applications to record data about a deck that this specification does not model. Each application takes a subtable keyed by a [realm](#33-qualified-identifiers):
 
@@ -1792,7 +1798,7 @@ A conforming application:
 
 - MUST implement the library model and scanning rules ([§2.2](#22-the-deck-library)) over whatever roots it uses, asset discovery ([§5.1](#51-asset-discovery)), display name resolution ([§6.3](#63-display-name-resolution)) and card image resolution ([§5.7](#57-card-image-resolution)).
 - MUST support decoding the baseline formats PNG, JPEG and WebP ([§5.7.4](#574-the-extension-chain)).
-- MUST ignore `[app]` subtables it does not own ([§8](#8-extensibility)), and every table, key and value this specification does not define.
+- MUST ignore `[app]` subtables it does not own ([§8](#82-the-app-table)), and every table, key and value this specification does not define.
 - MUST NOT reject a deck for warnings ([§9.2](#92-errors-and-warnings)).
 
 An application need not implement card variants, ANSI art, SVG, surrogates or localization beyond the deck's default language. Where it does not, it uses the defaults those sections define. An application that does not implement surrogates ignores the `surrogate/` root as it ignores any kind it cannot render, and so treats a [surrogate deck](#59-surrogate-decks) as a deck whose cards have no assets, which [§5.7.6](#576-when-no-asset-is-found) already defines. A conforming validator implements the rules in [§9.4](#94-validation-rules).
@@ -1830,7 +1836,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A card whose every raster asset, across all image roots, is in no [baseline format](#574-the-extension-chain). |
 | **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a name reserved by [§3.2](#32-custom-names), excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment ([§3.4](#34-deck-identity)). |
-| **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more ([§8](#8-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
+| **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more ([§8](#82-the-app-table)). The contents of such a subtable are the owning application's to define and are not validated. |
 | **W** | `[deck].identifier`'s first path segment is `deck` ([§3.3](#33-qualified-identifiers)). |
 | **W** | A deck with no `[deck].identifier`. It is RECOMMENDED, and a deck without one cannot be referenced from another Arcana Land document ([§3.4](#34-deck-identity)). |
 | **W** | Where a validator can see a whole library, two visible decks declaring the same `[deck].identifier`. That is a legitimate arrangement — a fork, or two versions installed side by side — so it is only a warning ([§3.4](#34-deck-identity)). |
@@ -2282,7 +2288,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Renames `[card_backs.variants]` to `[card_backs.designs]`.
 - Splits `[custom_cards]` into [`[cards]`](#43-cards) and [`[suits]`](#44-suits).
 - Moves `[deck.excluded_cards]` to a top-level [`[excluded_cards]`](#46-excluded_cards).
-- Keys [`[app]`](#8-extensibility) subtables by a realm rather than a bare custom name.
+- Keys [`[app]`](#82-the-app-table) subtables by a realm rather than a bare custom name.
 - Renames every table in a [name file](#62-language-resolution) so that the facet is written out.
 
 **Newly specified.**
@@ -2323,4 +2329,4 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§5.6](#56-aspect-ratio)).
 - Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files.
 - Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe.
-- Defined what [`[app]`](#8-extensibility) is for and reserved top-level table names outside it.
+- Defined what [`[app]`](#82-the-app-table) is for and reserved top-level table names outside it.
