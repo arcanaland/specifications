@@ -34,7 +34,7 @@
   - [4.1 `[deck]`](#41-deck)
     - [4.1.1 Links](#411-links)
     - [4.1.2 `surrogate_for`](#412-surrogate_for)
-    - [4.1.3 `follows`](#413-follows)
+    - [4.1.3 `pattern`](#413-pattern)
     - [4.1.4 `pips`](#414-pips)
     - [4.1.5 Product Identifiers](#415-product-identifiers)
     - [4.1.6 Content Rating](#416-content-rating)
@@ -154,6 +154,7 @@ Where this document says a deck "declares" or "says" something, the [packager](#
 | **minor arcana** | The suited cards, canonically fifty-six, keyed by **suit** and **rank** under `minor_arcana`. The canonical suits are `wands`, `cups`, `swords` and `pentacles`. The canonical ranks are `ace` through `ten`, then `page`, `knight`, `queen` and `king`. A deck MAY define others. |
 | **name file** | A `names/<tag>.toml` file enumerating display strings for one language tag. |
 | **packager** | Whoever assembled a deck package: the artist who made the artwork, the publisher who holds the rights to it, or a third party with neither, such as a collector or a distribution maintainer. Not necessarily the artist and not necessarily the rights holder. |
+| **pattern** | The deck whose structure and iconography another deck is patterned on, named by a [`pattern`](#413-pattern) relation ([§4.1.3](#413-pattern)). |
 | **position** | An integer sort key placing a major arcanum in the deck's sequence ([§4.3.2](#432-ordering)). |
 | **realm** | A domain name (preferably, one the packager controls) written in reverse ([§3.3](#33-qualified-identifiers)). |
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, composed of a **realm** and a path ([§3.3](#33-qualified-identifiers)). |
@@ -615,29 +616,29 @@ Rules, in addition to those every relation carries ([§4.1.9](#419-related-decks
 - The relation names a package. Where the artwork belongs to a commercial product that no one has packaged, there is no value for this relation and [`[deck.product_ids]`](#415-product-identifiers) records the correspondence instead ([§5.9](#59-surrogate-decks)).
 - `surrogate_for` is a [recognized relation](#419-related-decks): an application that does not implement it MUST NOT present the package as an ordinary deck.
 
-#### 4.1.3 `follows`
+#### 4.1.3 `pattern`
 
-A `follows` [relation](#419-related-decks) names the deck whose structure and iconography this deck is patterned on. It allows an application to tell whether borrowing from a [reference deck](#13-terminology) is safe ([§5.7.6](#576-when-no-asset-is-found)).
+A `pattern` [relation](#419-related-decks) names this deck's [pattern](#13-terminology): the deck whose structure and iconography it is drawn after. It allows an application to tell whether borrowing from a [reference deck](#13-terminology) is safe ([§5.7.6](#576-when-no-asset-is-found)).
 
 ```toml
 [deck]
 name = "My Example Tarot"
 identifier = "com.example/deck/example-tarot"
 related = [
-  { rel = "follows", deck = "land.arcana/deck/rider-waite-smith" },
+  { rel = "pattern", deck = "land.arcana/deck/rider-waite-smith" },
 ]
 ```
 
-> Note: this example uses `land.arcana/deck/rider-waite-smith` as the globally-unique qualified identifier for the traditional Rider-Waite-Smith. This specification assigns no specific meaning to this string, but packagers may use it as the identifier for the traditional Rider-Waite-Smith deck.
+> Note: this example uses `land.arcana/deck/rider-waite-smith` as the globally-unique qualified identifier of the traditional Rider-Waite-Smith patterned deck. This specification assigns no specific meaning to this string, but packagers may use it as the identifier for the traditional Rider-Waite-Smith deck.
 
 Rules, in addition to those every relation carries ([§4.1.9](#419-related-decks)):
 
-- A deck MUST NOT declare more than one `follows` relation. [§5.7.6](#576-when-no-asset-is-found)'s lineage condition compares a deck against one pattern and this specification defines no ordering over several.
-- `follows` carries no merge semantics, in contrast to `rel = "surrogate_for"` ([§4.1.2](#412-surrogate_for), [§5.9](#59-surrogate-decks)); an application MUST NOT treat the two decks as one.
-- `follows` is not a rights claim. It asserts solely a resemblance in structure and iconography, grants and implies no permission, and does not exempt a deck from [§7.7](#77-deck-names-and-trademarks)'s prohibition on implying endorsement. Rights are stated in [§7](#7-licensing-and-attribution).
-- Following is not transitive for any purpose this specification defines.
+- A deck MUST NOT declare more than one `pattern` relation. [§5.7.6](#576-when-no-asset-is-found)'s pattern condition compares a deck against one pattern and this specification defines no ordering over several.
+- `pattern` carries no merge semantics, in contrast to `rel = "surrogate_for"` ([§4.1.2](#412-surrogate_for), [§5.9](#59-surrogate-decks)); an application MUST NOT treat the two decks as one.
+- `pattern` is not a rights claim. It asserts solely a resemblance in structure and iconography, grants and implies no permission, and does not exempt a deck from [§7.7](#77-deck-names-and-trademarks)'s prohibition on implying endorsement. Rights are stated in [§7](#7-licensing-and-attribution).
+- The relation is not transitive for any purpose this specification defines.
 
-Two printings that differ in their cards are two decks, optionally related by a `follows` relation. A printing that differs only in its card back is a [card back design](#42-card_backs) rather than a deck of its own.
+Two printings that differ in their cards are two decks, optionally related by a `pattern` relation. A printing that differs only in its card back is a [card back design](#42-card_backs) rather than a deck of its own.
 
 #### 4.1.4 `pips`
 
@@ -879,7 +880,7 @@ The registry:
 
 | `rel` | The target is | Recognition |
 | --- | --- | --- |
-| `follows` | The deck whose structure and iconography this deck is patterned on ([§4.1.3](#413-follows)) | Advisory |
+| `pattern` | The deck whose structure and iconography this deck is patterned on ([§4.1.3](#413-pattern)) | Advisory |
 | `surrogate_for` | The deck whose artwork this package describes and does not carry; a merge key ([§4.1.2](#412-surrogate_for)) | **Recognized** |
 | `expands` | The deck this package adds cards to. The package is not a standalone deck ([§5.7.6](#576-when-no-asset-is-found)) | **Recognized** |
 | `companion` | A deck this one was published to be used alongside. The relation is self-inverse and carries no behavior | Advisory |
@@ -899,7 +900,7 @@ Rules:
 
 - The value of `deck` MUST be a well-formed qualified identifier naming a deck: it MUST NOT carry a fragment and is neither a [card reference nor a variant reference](#312-card-references-and-the-variant-suffix).
 - It MUST NOT equal this deck's own `identifier`.
-- No deck may name the same target under both `follows` and `surrogate_for`.
+- No deck may name the same target under both `pattern` and `surrogate_for`.
 - Relations are not reciprocated. The dependent package carries the pointer only.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator checks that the value is well formed and no more. A relation to a deck nobody has packaged is legal.
 
@@ -1257,7 +1258,7 @@ An application MUST NOT resolve a card against a reference deck for a package th
 
 The remaining conditions assume the two decks agree about what the card is. Each is checked against the decks' own declarations, so a deck that declares nothing fails none of them:
 
-- **Lineage.** An application SHOULD NOT borrow where the two decks declare incompatible lineage via a [`follows`](#413-follows) relation. Two decks are lineage-compatible where the borrowing deck `follows` the reference deck's `identifier`, or the reference deck `follows` the borrowing deck's `identifier`, or both follow the same deck, or either declares no `follows`. Lineage blocks a borrow only where both decks name a lineage and the two disagree.
+- **Pattern.** An application SHOULD NOT borrow where the two decks name incompatible [patterns](#13-terminology) via a [`pattern`](#413-pattern) relation. Two decks are pattern-compatible where the borrowing deck names the reference deck's `identifier` as its pattern, or the reference deck names the borrowing deck's `identifier` as its pattern, or both name the same pattern, or either declares none. The condition blocks a borrow only where both decks name a pattern and the two disagree.
 - **Pip style.** An application SHOULD NOT borrow an image for a minor arcanum keyed `two` through `ten` where both decks declare a [`pips`](#414-pips) value and the values differ. Aces, court cards and the major arcana are unaffected ([§4.1.4](#414-pips)).
 - **Name coherence.** An application SHOULD NOT borrow an image for a card where the borrowing deck supplies its own name for that card and the reference deck's name for the same [canonical ID](#31-canonical-ids) differs, since a canonical ID is a [slot](#311-a-canonical-id-is-a-slot) and two decks may put different cards in it. Both names are resolved by [§6.3](#63-display-name-resolution) in the language being displayed, rather than compared as declared strings, since a deck may name a card in its manifest instead of a name file ([§6.2](#62-language-resolution)).
 
@@ -1518,7 +1519,7 @@ Each chain below is applied to name files in the order given by [Language Resolu
 
 A resolved display string is used verbatim. Applications MUST NOT apply case conversion or any other transformation to a string a deck supplies. Case transformation appears in this specification only as a fallback for keys the deck does not define a string for.
 
-Every chain has the same three steps: **the name file, then the corresponding field in the manifest, then a fallback that depends on what is being named.** Two rows depart from that pattern: a minor arcanum's name is composed rather than fetched, and the major arcana chain carries two further steps that apply to the canonical keys `00` through `21` alone.
+Every chain has the same three steps: **the name file, then the corresponding field in the manifest, then a fallback that depends on what is being named.** Two rows depart from that shape: a minor arcanum's name is composed rather than fetched, and the major arcana chain carries two further steps that apply to the canonical keys `00` through `21` alone.
 
 | Value | In the name file | In the manifest | Then |
 | --- | --- | --- | --- |
@@ -1540,7 +1541,7 @@ A card that declares `unnamed = true` resolves its name through the name file an
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key the packager chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
-The reference deck steps of these chains are subject to the lineage condition of [§5.7.6](#576-when-no-asset-is-found): an application SHOULD NOT borrow a name where the two decks declare incompatible lineage, and resolution continues to the next step of the chain instead. The pip-style and name-coherence conditions govern images alone and do not apply here.
+The reference deck steps of these chains are subject to the pattern condition of [§5.7.6](#576-when-no-asset-is-found): an application SHOULD NOT borrow a name where the two decks name incompatible patterns, and resolution continues to the next step of the chain instead. The pip-style and name-coherence conditions govern images alone and do not apply here.
 
 The reference-deck and [Appendix C](#appendix-c-canonical-card-names-informative) steps of the major arcana chain assume the deck seats the canonical cards where those names expect them. A deck that departs from that seating SHOULD supply its own names for at least the departing keys, and a validator says so ([§9.4](#94-validation-rules)). This is a SHOULD on the deck rather than a MUST on the application because an application cannot detect the departure.
 
@@ -1565,7 +1566,7 @@ Without these rules a partially translated deck would compose a name from two la
 
 The template performs substitution only. Where a language requires elision, inflection or agreement between the rank and suit names, a deck SHOULD write the affected names out explicitly rather than expect the template to produce them: French elides before a vowel, so the template `"{rank} de {suit}"` cannot turn `de` and `Épée` into `d'Épée`.
 
-Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology), subject to the same lineage condition.
+Where a deck supplies no name for a minor arcanum at any level, applications MAY fall back to the corresponding string from the [reference deck](#13-terminology), subject to the same pattern condition.
 
 ### 6.4 Alt Text Guidelines
 
@@ -1882,7 +1883,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | On every `[deck].related` entry, `rel` is a well-formed [custom name](#32-custom-names) and `deck` is a well-formed qualified identifier carrying no fragment and not equal to this deck's own `identifier` ([§4.1.9](#419-related-decks)). Whether it names a deck that exists is not checked. That both keys are present is the required-key rule's to report. |
-| **E** | A deck declares at most one `follows` relation and at most one `surrogate_for` relation, and names no deck under both ([§4.1.2](#412-surrogate_for), [§4.1.3](#413-follows)). |
+| **E** | A deck declares at most one `pattern` relation and at most one `surrogate_for` relation, and names no deck under both ([§4.1.2](#412-surrogate_for), [§4.1.3](#413-pattern)). |
 | **W** | A `related` `rel` outside the registry of [§4.1.9](#419-related-decks) that is not prefixed (as above). |
 | **W** | A package declaring `rel = "expands"` that also declares `[excluded_cards]` covering the canonical slots it does not carry. The relation already says the package is not a whole deck ([§5.7.6](#576-when-no-asset-is-found)). |
 | **E** | `pips`, where present, is one of `scenic`, `emblematic` or `unstated` ([§4.1.4](#414-pips)). |
@@ -2067,7 +2068,7 @@ flames = "A dynamic pattern of red and orange flames swirling around a central s
 
 ### A.4 A Lowercase Typographic Convention
 
-A deck that prints every minor arcana in lower case writes its suit and rank names that way and lets composition do the rest. Cards that break the deck's own pattern are written out individually and take precedence over the template.
+A deck that prints every minor arcana in lower case writes its suit and rank names that way and lets composition do the rest. Cards that break the deck's own convention are written out individually and take precedence over the template.
 
 ```toml
 # names/en.toml
@@ -2215,7 +2216,8 @@ Applications MUST ignore these names in a 2.0 deck.
 | --- | --- | --- |
 | `[deck].author` | The artwork's author in 1.0 | Renamed in 2.0 to [`[deck].artist`](#41-deck) and split the role with [`[deck].creator`](#76-roles-and-credits) |
 | `[deck].signifies` | The deck whose artwork a package describes and does not carry, as a flat key in an earlier 2.0 draft; named from the tarot significator | Folded into [`[deck].related`](#419-related-decks) as `rel = "surrogate_for"`, from the cataloguing term *surrogate record* ([§4.1.2](#412-surrogate_for)) |
-| `[deck].follows` | The deck this deck is patterned on, as a flat key in an earlier 2.0 draft | Folded into [`[deck].related`](#419-related-decks) as `rel = "follows"` ([§4.1.3](#413-follows)) |
+| `[deck].follows` | The deck this deck is patterned on, as a flat key in an earlier 2.0 draft | Folded into [`[deck].related`](#419-related-decks) as `rel = "pattern"` ([§4.1.3](#413-pattern)) |
+| `rel = "follows"` | The same relation under `[deck].related`, in an earlier 2.0 draft | Renamed to `rel = "pattern"`, from the playing-card sense of *pattern* ([§4.1.3](#413-pattern)) |
 | `[deck].id` | The deck's identifier in 1.0. | Removed in 2.0. The handle is the directory name and the global identity is [`[deck].identifier`](#34-deck-identity). |
 | `[aliases]` | Suit and court display names in 1.0 | Removed in 2.0. Superseded by [name files](#6-internationalization) |
 | `[variants]` | Deck editions in 1.0 | Removed in 2.0. A printing that differs only in its card back is a [card back design](#42-card_backs). The word "variant" now means a [card variant](#312-card-references-and-the-variant-suffix) |
@@ -2305,7 +2307,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Group names](#622-group-names), by which a name file supplies the deck's own localized strings for its arcana and its card classes.
 - [`[deck].packager`](#76-roles-and-credits), naming who assembled the package.
 - [`[deck].creator`](#76-roles-and-credits), naming who devised a deck they did not draw.
-- [`[deck].related`](#419-related-decks), one table of typed outbound references to other decks. It carries [`follows`](#413-follows), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#412-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); `expands`, by which an add-on package names the deck it adds cards to; and `companion`. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
+- [`[deck].related`](#419-related-decks), one table of typed outbound references to other decks. It carries [`pattern`](#413-pattern), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#412-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); `expands`, by which an add-on package names the deck it adds cards to; and `companion`. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
 - [`[deck].metadata_language`](#61-language-tags) and [`[deck].artwork_language`](#61-language-tags), separating the language the packager writes in and the language printed on the cards from the `default_language` that selects a name file.
 - The [two-layer rule](#62-language-resolution) for display strings: a name file is a translation catalogue and the manifest is the source layer. [`[ranks]`](#45-ranks) is new, supplying the source step a rank never had, and a canonical suit or rank the deck does not name now falls to a string the application localizes rather than to a title-cased English key.
 - [`inscription`](#433-inscriptions) on a card, a card variant and a card back design, transcribing text printed on the artwork other than its name and its number.
