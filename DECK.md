@@ -49,10 +49,12 @@
   - [4.3 `[cards]`](#43-cards)
     - [4.3.1 Card Numbers](#431-card-numbers)
     - [4.3.2 Inscriptions](#432-inscriptions)
+    - [4.3.3 Supplied Names](#433-supplied-names)
   - [4.4 `[suits]`](#44-suits)
   - [4.5 `[ranks]`](#45-ranks)
   - [4.6 `[minor_arcana]`](#46-minor_arcana)
   - [4.7 `[excluded_cards]`](#47-excluded_cards)
+  - [4.8 `[strings]`](#48-strings)
 - [5. Ordering](#5-ordering)
   - [5.1 Major Arcana](#51-major-arcana)
   - [5.2 Minor Arcana](#52-minor-arcana)
@@ -87,7 +89,7 @@
 - [8. Licensing and Attribution](#8-licensing-and-attribution)
   - [8.1 License Expressions](#81-license-expressions)
   - [8.2 Attribution and Notices](#82-attribution-and-notices)
-  - [8.3 Name File Licensing](#83-name-file-licensing)
+  - [8.3 Licensing Display Strings](#83-licensing-display-strings)
   - [8.4 Rights Status](#84-rights-status)
   - [8.5 Redistribution and Derivation](#85-redistribution-and-derivation)
   - [8.6 Roles and Credits](#86-roles-and-credits)
@@ -1047,6 +1049,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
 | `unnumbered` | Boolean | No | `false` | The card's face shows no number, whatever its key shape implies ([§4.3.1](#431-card-numbers)). Display only and does not affect ordering ([§5](#5-ordering)). |
 | `unnamed` | Boolean | No | `false` | The card's face shows no name. Truncates display name resolution ([§7.3](#73-display-name-resolution)). |
+| `supplied_name` | Table | No | none | A name the deck supplies for a card whose face shows none, taken from the booklet, the packaging or the packager ([§4.3.3](#433-supplied-names)). |
 | `inscription` | String or Array of String | No | none | Text printed on this card's artwork other than its name and its number ([§4.3.2](#432-inscriptions)). Not localized. |
 | `position` | Integer | No | see [§5](#5-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 | `content_rating` | Table | No | none | What this card depicts, keyed by rating system, on the terms in [§4.1.5](#415-content-rating). |
@@ -1054,7 +1057,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `image` | String (path) | No | found by discovery | An explicit path to this card's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§6.7.4](#674-the-extension-chain)). |
 | `default_variant` | String | Required where the card has variant files but no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§6.7.5](#675-variants)). MUST name a variant of this card ([§10.4](#104-validation-rules)). |
 
-`name` and `alt_text` are the deck's own strings. Where a deck's card names are printed on the artwork a deck SHOULD declare them here, and reserve `names/<tag>.toml` for strings addressed to a reader of a particular language ([§7.2](#72-language-resolution)). Where a deck's names are the packager's own words, a deck SHOULD put them in a name file, where they can be localized ([§7.3](#73-display-name-resolution)).
+`name` and `alt_text` are the deck's own strings. Where a deck's card names are printed on the artwork a deck SHOULD declare them here, and reserve `names/<tag>.toml` for strings addressed to a reader of a particular language ([§7.2](#72-language-resolution)). Where a deck's names are the packager's own words, a deck SHOULD put them in a name file, where they can be localized ([§7.3](#73-display-name-resolution)). Where a card's face prints no name and the deck has one anyway, from the booklet or the box, neither branch fits and the string is a [`supplied_name`](#433-supplied-names).
 
 An entry for a canonical minor arcanum or for `major_arcana.00` through `major_arcana.21` is always accepted, since those slots exist for every deck. An entry for any other card, and an entry for any variant, is an error unless the deck has files for it ([§10.4](#104-validation-rules)).
 
@@ -1101,6 +1104,51 @@ inscription = "Ex libris"
 - An inscription is not a resolved display string and has no resolution chain. It is a fact about the artwork, like [`number`](#431-card-numbers). Absence means the artwork has none.
 
 An inscription is never translated. Where a deck exists in two printings whose ink differs, those are two artworks and the axis is the [card variant](#312-card-references-and-the-variant-suffix), not the name file ([§7.2](#72-language-resolution)).
+
+#### 4.3.3 Supplied Names
+
+A supplied name is a name that a deck gives a card when the artwork does not prints one. It is neither ink nor translation. It is designed for a card name that comes from the booklet that shipped with the deck, from the packaging or from the packager. The normal `name` field reproduces what is printed on the art ([§7.2](#72-language-resolution)) and a name file is for translation, so this field is for a third external source.
+
+```toml
+[cards."major_arcana.cest_si_bon"]
+unnamed = true
+supplied_name = { text = "C'est Si Bon", source = "booklet" }
+
+[cards."major_arcana.time"]
+unnamed = true
+supplied_name = { text = "Time", lang = "en", source = "booklet" }   # a bilingual booklet
+```
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `text` | String | **Yes** | — | The name, verbatim as the supplying source gives it. |
+| `lang` | String | No | see below | A well-formed BCP 47 language tag naming the language of `text`. |
+| `source` | String | No | none | Where the name came from, from the registry below. |
+
+`text` is a non-empty string, reproduced verbatim. Applications MUST NOT case-convert it, as with every other display string ([§7.3](#73-display-name-resolution)).
+
+Where `lang` is absent the name is in the deck's artwork language. A supplied title takes the language of the resource rather than of whoever supplied it. That resolves to a tag only where [`artwork_language`](#71-language-tags) declares exactly one that is not `zxx`. Where the deck declares several, declares `zxx`, or declares none, the language of the name is unstated, and an application treats it as it treats any other string whose language it does not know.
+
+The `lang` field is useful particularly for the following two cases:
+1. More than one language on the art and where the supplied name is not in the language of the cards
+2. A bilingual booklet naming some cards in one language and some in another.
+
+**`source` is an [open registry](#91-open-registries).** The names this specification defines:
+
+| Name | The name came from |
+| --- | --- |
+| `booklet` | a booklet or other printed matter issued with the deck |
+| `packaging` | the box, the wrapper or the card that came in it |
+| `publisher` | the publisher, in a catalogue, a listing or correspondence |
+| `packager` | the packager, who devised it because no source gives one |
+
+Where a value would say more than the registry admits, a later version of this specification MAY add to it and a packager MAY prefix their own with `x_` ([§9.1](#91-open-registries)).
+
+`supplied_name` and `name` MUST NOT both be declared on one entry ([§10.4](#104-validation-rules)). The face either prints a name or it does not, and a deck that declares both has said both. `supplied_name` alongside `unnamed = true` is the expected combination.
+
+`supplied_name` is legal on a [variant-reference](#312-card-references-and-the-variant-suffix) key, on the same terms as [`inscription`](#432-inscriptions).
+
+Where a supplied name was taken from a work the deck does not otherwise account for, such as a publisher's booklet, [`[strings]`](#48-strings) is where the deck states that work's terms ([§8.3](#83-licensing-display-strings)).
 
 ### 4.4 `[suits]`
 
@@ -1185,6 +1233,19 @@ reason = "This deck excludes these specific court cards."
 | `reason` | String | No | none | Why they are excluded, for display to a user. |
 
 An exclusion records that the absence of an expected card is deliberate.
+
+### 4.8 `[strings]`
+
+The terms under which the manifest's own display strings are offered. It is OPTIONAL, and a deck that has nothing to say beyond [`[deck].license`](#41-deck) omits it.
+
+```toml
+[strings]
+source = "Card names transcribed from the faces; names for the five unlettered cards taken from the publisher's booklet."
+copyright = "© 2025 Example Press"
+license = "LicenseRef-Example-Booklet"
+```
+
+It takes the same keys as a name file's [`[metadata]`](#721-name-file-metadata) table, with the same meanings: `source`, `origin`, `license`, `license_files`, `copyright`, `rights_status` and `attribution`. [§8.3](#83-licensing-display-strings) governs both and says which strings each covers.
 
 ## 5. Ordering
 
@@ -1475,7 +1536,9 @@ A surrogate deck SHOULD also declare [`[deck].rights_status`](#84-rights-status)
 
 Because [`[deck].license`](#41-deck) covers the card assets in the package ([§8](#8-licensing-and-attribution)), a surrogate deck covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
 
-A surrogate deck's `icon`, where it has one, SHOULD avoid using the signified deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates inside the deck.
+A surrogate deck's `icon`, where it has one, SHOULD avoid using the original deck's artwork or a crop, scaling or recompression of it. It SHOULD be the packager's own work or a rendering of the surrogates inside the deck.
+
+> **Note:** the practice of deriving lower-rank representations from copyrighted artwork and publishing them is established in cultural-heritage cataloging. See Cooper Hewitt, Smithsonian Design Museum's [palette extraction](https://labs.cooperhewitt.org/2013/giv-do) project and [derived CC0 data](https://labs.cooperhewitt.org/2012/releasing-collection-github/). This document makes no legal determination; see [§8](#8-licensing-and-attribution) for what a deck's license covers.
 
 ## 7. Internationalization
 
@@ -1511,7 +1574,15 @@ artwork_language  = ["fr"]        # the text printed on the cards
 
 Display strings live in two layers. A **name file** is a translation catalogue: every string in it is addressed to a reader of that file's language tag. The manifest is the source layer where every string in it reproduces or describes the deck itself, in whatever language the deck is in.
 
-A string that reproduces text printed on an artwork belongs in the manifest, whatever language that text is in.
+Which layer a string belongs in follows from what the string is, not from what language it happens to be in:
+
+| The string is | It goes in | Its language is |
+| --- | --- | --- |
+| printed on the artwork | the manifest, as [`name`](#43-cards), [`number`](#431-card-numbers) or an [`inscription`](#432-inscriptions) | the artwork's ([`artwork_language`](#71-language-tags)) |
+| the deck's name for a card that prints none | the manifest, as a [`supplied_name`](#433-supplied-names) | declared on the string, or the deck's single artwork language ([§4.3.3](#433-supplied-names)) |
+| the packager's own words, or a translation of any of the above | a name file | the file's tag |
+
+A string that reproduces text printed on an artwork therefore belongs in the manifest whatever language that text is in, and a French deck packaged by an English-speaking packager does not put its card names in `names/en.toml` merely because the packager writes English.
 
 Given a requested tag, applications resolve it using the Lookup scheme of RFC 4647, trying the requested tag and then progressively shorter forms of it. A request for `pt-BR` therefore reads `names/pt-BR.toml`, then `names/pt.toml`. Where the reader has stated no preference an application begins from [`default_language`](#41-deck), where the deck nominates one.
 
@@ -1606,7 +1677,7 @@ The `[metadata]` table is OPTIONAL and describes the name file itself rather tha
 | `rights_status` | URI for the artwork's copyright status |
 | `attribution` | The credit line the license requires downstream users to display |
 
-The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Name File Licensing](#83-name-file-licensing).
+The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides them for alt text alone. See [Licensing Display Strings](#83-licensing-display-strings).
 
 `source` and `attribution` are the packager's own prose about the file rather than strings addressed to its reader, so they are written in the deck's [`metadata_language`](#41-deck) like the manifest's prose fields, and not in the language the file's tag names.
 
@@ -1658,10 +1729,10 @@ Every chain has the same three steps: **the name file, then the corresponding fi
 | --- | --- | --- | --- |
 | Suit name | `[name.suit].<key>` | `[suits.<key>].name` | for a canonical key, a string the application supplies; for a custom key, the [title-cased key](#13-terminology) |
 | Rank name | `[name.rank].<key>` | `[ranks.<key>].name` | as above |
-| Major arcana name | `[name.card.major_arcana].<key>` | `[cards."major_arcana.<key>"].name` | for a key `00` through `21` only, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
-| Minor arcana name | `[name.card.minor_arcana.<suit>].<rank>` | `[cards."minor_arcana.<suit>.<rank>"].name` | [composition](#731-minor-arcana-name-composition) from the card's suit and rank names |
+| Major arcana name | `[name.card.major_arcana].<key>` | `[cards."major_arcana.<key>"].name`, then its [`supplied_name.text`](#433-supplied-names) | for a key `00` through `21` only, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
+| Minor arcana name | `[name.card.minor_arcana.<suit>].<rank>` | `[cards."minor_arcana.<suit>.<rank>"].name`, then its [`supplied_name.text`](#433-supplied-names) | [composition](#731-minor-arcana-name-composition) from the card's suit and rank names |
 | Card back design name | `[name.card_back].<key>` | `[card_backs.designs.<key>].name` | the title-cased key |
-| Card variant name | `[name.variant]."<variant-ref>"` | `[cards."<variant-ref>"].name` | the name of the card itself |
+| Card variant name | `[name.variant]."<variant-ref>"` | `[cards."<variant-ref>"].name`, then its [`supplied_name.text`](#433-supplied-names) | the name of the card itself |
 | Group name | `[name.group.<family>].<member>` | — | a string the application supplies ([§7.2.2](#722-group-names)) |
 | Alt text | `[alt_text.<kind>…].<key>` | the `alt_text` field of the corresponding `[cards]` or `[card_backs.designs]` entry | none |
 | Card variant alt text | `[alt_text.variant]."<variant-ref>"` | `[cards."<variant-ref>"].alt_text` | the card's own alt text |
@@ -1670,7 +1741,9 @@ A dash means the manifest has no field for that value, a group being the one thi
 
 Canonical suit and rank keys are a closed set this specification defines, so where no name file and no manifest field supplies a string an application supplies its own, localized to the language it is displaying, exactly as it does for a group name ([§7.2.2](#722-group-names)). A **custom** key is a word the packager chose, so its title-cased form is a string in the deck's [`metadata_language`](#41-deck). An application presents it as given and MUST NOT translate it. The same rule governs the two other places a title-cased key survives: a card back design key, and a custom major arcana key.
 
-A card that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the reference-deck step and [Appendix C](#appendix-c-canonical-card-names-informative) do not apply, and where neither supplies a string the card has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it. What the flag forbids is a name being invented for a face that shows none. A card MUST NOT declare both `unnamed = true` and a `name`.
+The manifest step of a card's chain reads `name` and then [`supplied_name.text`](#433-supplied-names), which cannot both be present. A supplied name is a manifest string like any other: a name file outranks it, and nothing outranks a name file.
+
+A card that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the reference-deck step and [Appendix C](#appendix-c-canonical-card-names-informative) do not apply, and where neither supplies a string the card has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it. What the flag forbids is a name being *invented* for a face that shows none — not a name the deck actually has for it, which is what a [`supplied_name`](#433-supplied-names) carries. A card MUST NOT declare both `unnamed = true` and a `name`.
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key the packager chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
@@ -1730,14 +1803,15 @@ Where a deck supplies no name for a minor arcanum at any level, applications MAY
 - A deck SHOULD include at least one language file with alt text.
 - Every card variant SHOULD have its own alt text.
 - Alt text given in `[cards]` or `[card_backs.designs]` is a fallback only, and a name file always prevails.
-- Where a card has text on its face, put the transcription in [`inscription`](#432-inscriptions) and let the alt text describe the artwork. Alt text need not repeat the ink, and a deck that puts printed epithets inside its alt text SHOULD move them: the ink is part of the artwork and is covered by the artwork's licence, while alt text is the packager's own writing and is often licensed separately ([§8.3](#83-name-file-licensing)).
+- Where a card has text on its face, put the transcription in [`inscription`](#432-inscriptions) and let the alt text describe the artwork. Alt text need not repeat the ink, and a deck that puts printed epithets inside its alt text SHOULD move them: the ink is part of the artwork and is covered by the artwork's licence, while alt text is the packager's own writing and is often licensed separately ([§8.3](#83-licensing-display-strings)).
 
 ## 8. Licensing and Attribution
 
-A deck comprises several components that can have separate licensing terms.
+A deck contains several components that may have separate licensing terms for each component.
 
 - The license specified by `[deck].license` covers the card assets the package contains. For most decks those assets are the artwork and the field says what may be done with it. For a [surrogate deck](#69-surrogate-decks) they are the surrogates and the artwork they describe is covered by [`rights_status`](#84-rights-status) instead.
-- The license in the `[metadata].license` field of a name file covers the strings in that file and `[metadata.alt_text]` narrows that to the alt text alone.
+- The license in the `[metadata].license` field of a name file covers the strings in that file.
+- The license in [`[strings]`](#48-strings) covers the display strings the manifest itself carries.
 
 Each of these names its own license texts through its own `license_files`.
 
@@ -1766,7 +1840,7 @@ license_files = ["LICENSE"]
 | Field | Purpose |
 | --- | --- |
 | `license` | SPDX license expression governing the card assets the package contains |
-| `license_files` | Paths, relative to the deck root, to the full license text and any notices. Empty by default. No filename is picked up by convention ([§8](#8-licensing-and-attribution)) |
+| `license_files` | Paths, relative to the deck root, to the full license text and any notices. Empty by default.|
 | `copyright` | The copyright notice, verbatim as the rights holder wrote it |
 | `attribution` | The credit line the license requires downstream users to display |
 
@@ -1790,9 +1864,21 @@ attribution = "\"The Example Tarot\" by Some Artist, licensed under CC BY 4.0. C
 links = [{ rel = "source", url = "https://example.org/archive/example-tarot" }]
 ```
 
-### 8.3 Name File Licensing
+### 8.3 Licensing Display Strings
 
-The strings in a name file are not necessarily the packager's own work, since alt text might be written by a contributor or adapted from a published source. Each name file states its own terms in its [`[metadata]`](#721-name-file-metadata) table, using the same fields as `[deck]` and with the same meanings.
+A deck's display strings are not necessarily the packager's own work, and they do not all live in one file. `[deck].license` covers the card assets ([§8](#8-licensing-and-attribution)) and says nothing about the words. Two tables cover the words, one for each layer strings live in ([§7.2](#72-language-resolution)): [`[strings]`](#48-strings) in the manifest, and [`[metadata]`](#721-name-file-metadata) in each name file. Both take the same fields as `[deck]`, with the same meanings, and each names its own license texts through its own `license_files`.
+
+**`[strings]` covers the manifest's display strings**: the card, suit, rank and card back names it declares, its [inscriptions](#432-inscriptions), its [supplied names](#433-supplied-names) and its alt text. Most decks need no such statement, because those strings are either the packager's own words or a transcription of the artwork, which [`[deck].license`](#41-deck) and [`rights_status`](#84-rights-status) already reach. A deck needs one where they are neither. A [supplied name](#433-supplied-names) taken from a booklet is the ordinary case: the booklet is a separate literary work from the artwork, published under its own terms, and a package that carries words out of it accounts for them here or nowhere.
+
+```toml
+[strings]
+source = "Names for the five unlettered cards taken from the publisher's booklet."
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+```
+
+`[strings]` does not license the manifest as a file. The identifiers, numbers, paths and structural facts in `deck.toml` are not anybody's expression, and a licensing statement over them would assert a right this specification does not think exists ([§1.6](#16-licensing-of-this-specification-informative)).
+
+**A name file's `[metadata]` covers the strings in that file**, since alt text might be written by a contributor or adapted from a published source. Each name file states its own terms in its [`[metadata]`](#721-name-file-metadata) table.
 
 ```toml
 # names/en.toml
@@ -1827,25 +1913,28 @@ For an ordinary deck these coincide and both describe the artwork. For a [surrog
 - a [RightsStatements.org](https://rightsstatements.org/) URI; or
 - a [Creative Commons](https://creativecommons.org/) URI.
 
-```toml
-# A deck whose artwork is old enough that its copyright has expired.
-[deck]
-license = "CC0-1.0"
-rights_status = "https://creativecommons.org/publicdomain/mark/1.0/"
-```
-
-For copyrighted decks:
+For a copyrighted deck that should not be redistributed:
 
 ```toml
 [deck]
 rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 copyright = "© 2012 Some Artist"
 attribution = "The Example Tarot by Some Artist."
+redistribution = "none"
+```
+
+
+Or for a deck whose artwork is old enough that its copyright has expired:
+
+```toml
+[deck]
+license = "CC0-1.0"
+rights_status = "https://creativecommons.org/publicdomain/mark/1.0/"
 ```
 
 `license` and `rights_status` answer different questions about, in general, different objects, and a deck MAY declare both, one, or neither. Where both are present and both are about the artwork, which is the case for any deck that contains its artwork, they MUST NOT contradict each other. A validator checks only the coarse cases [§10.4](#104-validation-rules) lists.
 
-The same field is available in a name file's `[metadata]` and `[metadata.alt_text]` tables, with the same meaning ([§8.3](#83-name-file-licensing)).
+The same field is available in a name file's `[metadata]` and `[metadata.alt_text]` tables, with the same meaning ([§8.3](#83-licensing-display-strings)).
 
 ### 8.5 Redistribution and Derivation
 
@@ -1881,16 +1970,14 @@ Four fields credit people. A name, an email address, or both are reasonable valu
 
 ```toml
 [deck]
-name = "The Example Tarot"
-creator = "A. E. Deviser"        # who devised it
-artist = "Some Artist"          # who drew it
-publisher = "Example Press"     # who published it
-packager = "Jane Doe <jane@example.org>"   # who built this directory
+name = "Rider-Waite-Smith Tarot"
+artist = "Pamela Colman Smith"           # who illustrated it
+creator = "A. E. Waite"                  # who devised it
+publisher = "William Rider & Son"        # who published it
+packager = "Jane Doe <jane@example.org>" # who packaged it
 ```
 
 Most decks need fewer than four. Where one person occupies two roles, the deck SHOULD name them once in the more specific field. For example, a deck drawn by the person who devised it only needs to declare `artist` instead of both `artist` and `creator`.
-
-For example, A. E. Waite devised the Rider-Waite-Smith deck and Pamela Colman Smith drew the cards.
 
 A deck SHOULD declare `packager` where the packager is not the deck's `artist`, and a package describing artwork it does not own SHOULD always declare it.
 
@@ -1911,7 +1998,7 @@ Nothing here is a legal determination and this specification does not make one.
 
 ### 9.1 Open Registries
 
-Several sections of this specification define a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#414-product-identifiers), [rating systems](#415-content-rating), [origin vocabularies](#417-artwork-origin) and the advisory [related-deck relations](#412-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
+Several sections of this specification define a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#414-product-identifiers), [rating systems](#415-content-rating), [origin vocabularies](#417-artwork-origin), [supplied-name sources](#433-supplied-names) and the advisory [related-deck relations](#412-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
 
 The prefix differs with what the name is. A [custom name](#32-custom-names) takes `x_`, as in `x_kickstarter`; a path segment takes `x-`, as in `x-collection-notes`. A custom name admits `_` and not `-`, and a path segment admits `-` and not `_` ([§3.5](#35-grammar)).
 
@@ -1980,6 +2067,10 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | `[deck].default_language` names no name file the deck ships. The nomination selects among the deck's own files and resolution falls through to the manifest either way, so a deck missing the file it prefers is still complete ([§7.2](#72-language-resolution)). |
 | **E** | A name file has no top-level `[inscription]` table. Inscriptions are declared as [`[cards].inscription`](#432-inscriptions), which a validator reporting this SHOULD name. |
 | **E** | `metadata_language`, where present, is a well-formed BCP 47 language tag, and `artwork_language`, where present, is a non-empty array of well-formed BCP 47 language tags ([§7.1](#71-language-tags)). |
+| **E** | Every `supplied_name` is a table with a non-empty string `text`, and a `lang`, where present, that is a well-formed BCP 47 language tag ([§4.3.3](#433-supplied-names)). |
+| **E** | No entry declares both `name` and `supplied_name`. The face either prints a name or it does not ([§4.3.3](#433-supplied-names)). |
+| **W** | A `supplied_name` whose card does not declare `unnamed = true`, the card being the one a [variant-reference](#312-card-references-and-the-variant-suffix) key names where the entry is a variant's. Usually the face does print the name and [`name`](#43-cards) is the field; a validator reporting this SHOULD say so ([§4.3.3](#433-supplied-names)). |
+| **W** | A deck that declares a `supplied_name` whose `source` is `booklet`, `packaging` or `publisher` and declares no [`[strings]`](#48-strings) `license` or `rights_status`. The names came from a work the package does not otherwise account for ([§8.3](#83-licensing-display-strings)). |
 | **W** | An `artwork_language` containing `zxx` alongside any other tag. *No linguistic content* and a named language cannot both describe the same faces ([§7.1](#71-language-tags)). |
 | **W** | A deck declaring a `metadata_language` different from its `default_language`. Informational, so that a packager can see the distinction was read as intended rather than as a typo ([§7.1](#71-language-tags)). |
 | **W** | A deck that declares an `artwork_language`, none of whose tags has the primary subtag `en`, and that declares no [`[minor_arcana].name_template`](#46-minor_arcana). The built-in template would set English grammar over the deck's own words ([§7.3.1](#731-minor-arcana-name-composition)). |
@@ -2023,13 +2114,13 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A `position` **declared** by two cards. Ordering remains well defined ([§5.1](#51-major-arcana)). A declared `position` that coincides with an implicit one is not reported. |
 | **E** | No path field, meaning `icon`, `image` or any `license_files` entry, begins with `/`, contains a `..` segment or resolves outside the deck root ([§2.3](#23-file-format-and-encoding), [§11.1](#111-path-traversal)). |
 | **E** | No directory holds two files whose stems differ only in case ([§2.3](#23-file-format-and-encoding)). |
-| **E** | Every file listed in a `license_files` list exists, in `[deck]` and in every name file's `[metadata]` alike, and `[metadata.alt_text]` contains no key that is not defined for `[metadata]`. |
+| **E** | Every file listed in a `license_files` list exists, in `[deck]`, in [`[strings]`](#48-strings) and in every name file's `[metadata]` alike, and `[metadata.alt_text]` contains no key that is not defined for `[metadata]`. |
 | **W** | Two files in one directory sharing a stem and differing only in a chain extension, such as `06.png` beside `06.webp`. Resolution is well defined ([§6.7.4](#674-the-extension-chain)), but one of the two is usually a conversion left behind. |
 | **W** | A card asset whose own aspect ratio differs from `[deck].aspect_ratio` by more than 10%, measured as `\|actual - declared\| / declared` ([§4.1](#41-deck)). Card backs are exempt, since `[deck].aspect_ratio` describes the fronts, and so is ANSI art, whose extent is counted in character cells rather than pixels and is not comparable to a ratio of lengths. |
 | **E** | `card_size_mm`, where present, holds exactly two numbers and both are greater than zero ([§4.1](#41-deck)). |
 | **W** | Where both `card_size_mm` and `aspect_ratio` are present, the ratio `width ÷ height` of `card_size_mm` differs from `aspect_ratio` by more than 10%, measured as above. One of the two is likely a transcription error, though `aspect_ratio` governs either way ([§6.6](#66-aspect-ratio)). |
 | **W** | A `license` field that is not a well-formed SPDX license expression. A deck that fails this check MUST NOT be rejected ([§8](#8-licensing-and-attribution)). |
-| **W** | A `rights_status` that is not a RightsStatements.org or Creative Commons URI, in `[deck]` and in every name file's `[metadata]` alike. As with `license`, a deck that fails this check MUST NOT be rejected ([§8.4](#84-rights-status)). |
+| **W** | A `rights_status` that is not a RightsStatements.org or Creative Commons URI, in `[deck]`, in [`[strings]`](#48-strings) and in every name file's `[metadata]` alike. As with `license`, a deck that fails this check MUST NOT be rejected ([§8.4](#84-rights-status)). |
 | **E** | `redistribution` and `derivation`, where present, are one of `full`, `surrogate`, `none` or `unstated` ([§8.5](#85-redistribution-and-derivation)). |
 | **W** | A deck that declares neither `license` nor `rights_status`. One of the two is how a deck says what may be done with its artwork, and a deck that says neither leaves every downstream user guessing ([§8](#8-licensing-and-attribution)). |
 | **W** | A `redistribution` or `derivation` of `full` alongside a `rights_status` asserting the artwork is in copyright with no license granted, meaning a RightsStatements.org `InC` URI or one of its refinements. The deck says both that nobody granted permission and that the packager passes it on ([§8.5](#85-redistribution-and-derivation)). One of the two fields is wrong, and a validator cannot tell which. |
@@ -2464,6 +2555,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[deck].creator`](#86-roles-and-credits), naming who devised a deck they did not draw.
 - [`[deck].related`](#412-related-decks), one table of typed outbound references to other decks. It includes [`pattern`](#4121-pattern), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#4122-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); [`expands`](#4123-expands), by which an add-on package names the deck it adds cards to; and [`companion`](#4124-companion), by which a deck names one it was published to be used alongside. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
 - [`[deck].metadata_language`](#71-language-tags) and [`[deck].artwork_language`](#71-language-tags), separating the language the packager writes in and the language printed on the cards from the `default_language` that nominates a preferred name file.
+- [`[cards].supplied_name`](#433-supplied-names), a name the deck gives a card whose face prints none, taken from the booklet, the packaging or the packager. It carries its own BCP 47 `lang`, which is the only field in this specification that names the language of one string, and a `source` from an open registry. The manifest was one kind of string and is now two: what the artwork prints, and what the deck supplies for what it does not.
+- [`[strings]`](#48-strings), the terms under which the manifest's own display strings are offered, taking the same fields as a name file's `[metadata]`. [§8.3](#83-licensing-display-strings) is retitled from *Name File Licensing* and now governs both layers.
 - [`[minor_arcana]`](#46-minor_arcana), the source-layer home for the grammar joining a deck's own suit and rank names, so that a deck whose words are not English states how they join without shipping a name file, and a `name_template` on [`[suits]`](#44-suits) and on a name file's suit table for a join that varies with the suit.
 - The [two-layer rule](#72-language-resolution) for display strings: a name file is a translation catalogue and the manifest is the source layer. [`[ranks]`](#45-ranks) is new, supplying the source step a rank never had, and a canonical suit or rank the deck does not name now falls to a string the application localizes rather than to a title-cased English key.
 - [`inscription`](#432-inscriptions) on a card, a card variant and a card back design, transcribing text printed on the artwork other than its name and its number.
