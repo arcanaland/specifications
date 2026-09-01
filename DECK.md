@@ -133,9 +133,9 @@ Decks are directories with a mandatory `deck.toml` file at the root.
 
 ### 1.2 Document Conventions
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY" and "OPTIONAL" in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://www.rfc-editor.org/rfc/rfc2119), [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174)) when, and only when, they appear in all capitals. Where this document writes "should", "must" or "may" in lower case, the word carries its ordinary English sense and imposes no requirement.
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY" and "OPTIONAL" in this document are to be interpreted as described in BCP 14 ([RFC 2119](https://www.rfc-editor.org/rfc/rfc2119), [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174)) when, and only when, they appear in all capitals. Where this document writes "should", "must" or "may" in lower case, the word has its ordinary English sense and imposes no requirement.
 
-A section whose title carries the suffix (Informative) contains no requirements, and everything else in this document is normative. Whatever section they appear in, all **Notes** and all **Examples** are informative. Where an example appears to conflict with a normative rule, the rule governs and the example is in error.
+A section whose title ends with the suffix (Informative) contains no requirements, and everything else in this document is normative. Whatever section they appear in, all **Notes** and all **Examples** are informative. Where an example appears to conflict with a normative rule, the rule governs and the example is in error.
 
 This specification addresses three kinds of actors: packagers who craft a `deck.toml` and arrange files around it, applications that read a deck in order to present it to a user, and validation tools that check a deck against this specification.
 
@@ -197,7 +197,7 @@ The documents below are referenced normatively unless marked informative. A date
 | **ISO 2108** | International Standard Book Number, with the freely available [ISBN Users' Manual](https://www.isbn-international.org/content/isbn-users-manual/29) | [§4.1.4](#414-product-identifiers) |
 | **GS1 General Specifications** | [ref.gs1.org/standards/genspecs](https://ref.gs1.org/standards/genspecs/) | [§4.1.4](#414-product-identifiers) |
 | **OARS 1.1** | Open Age Ratings Service, [specification](https://github.com/hughsie/oars/blob/master/specification/oars-1.1.md) and [attribute list](https://hughsie.github.io/oars/generate.html) | [§4.1.5](#415-content-rating) |
-| **IPTC Digital Source Type** | IPTC NewsCodes [controlled vocabulary](https://cv.iptc.org/newscodes/digitalsourcetype/), also carried by [C2PA](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html) | [§4.1.7](#417-artwork-origin) |
+| **IPTC Digital Source Type** | IPTC NewsCodes [controlled vocabulary](https://cv.iptc.org/newscodes/digitalsourcetype/), also used by [C2PA](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html) | [§4.1.7](#417-artwork-origin) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§6.4](#64-ansi-art) |
 | **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§6.8.1](#681-the-surrogate-file) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§6.8.1](#681-the-surrogate-file) |
@@ -299,19 +299,19 @@ A deck container is a single zip file containing a deck directory. It is not a s
 A container:
 
 - MUST be a ZIP archive.
-- MUST carry the contents of exactly one [deck root](#13-terminology) at the root of the archive. A deck sitting inside a wrapping directory is not a container.
+- MUST contain the contents of exactly one [deck root](#13-terminology) at the root of the archive. A deck sitting inside a wrapping directory is not a container.
 - MUST contain every file the deck needs to conform, in particular every file named by [`license_files`](#82-attribution-and-notices) and every [name file](#13-terminology) in `names/`.
 - SHOULD use the file extension `.tarotdeck` and the media type `application/vnd.arcana-land.tarotdeck+zip`.
 - MUST use `/` as its entry-name separator, MUST write entry names in UTF-8 and MUST NOT contain an entry whose name is absolute, begins with `/`, names a drive, contains a `..`, `.` or empty segment or repeats the name of another entry.
 - MUST NOT contain a symbolic link, a hard link or any entry that is neither a regular file nor a directory and MUST NOT contain an encrypted entry. Compression MUST be stored or deflate.
-- SHOULD begin with an entry named `mimetype`, stored uncompressed and carrying no extra field, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
+- SHOULD begin with an entry named `mimetype`, stored uncompressed and with no extra field, whose content is the ASCII string `application/vnd.arcana-land.tarotdeck+zip` with no trailing whitespace and no line break.
 
 An application MUST accept a container that satisfies every rule above except the `mimetype` entry. An application that unpacks a container:
 
 - MUST reject the whole container where any entry breaks an entry rule above, MUST NOT repair an entry name and continue, and MUST check entry names itself rather than rely on an archive library to do so.
 - MUST bound the total uncompressed size, the number of entries, and the ratio of uncompressed to compressed size. A ratio limit of 100:1 is RECOMMENDED; card artwork ([§6.7.4](#674-the-extension-chain)) does not approach it. This specification fixes no absolute limit.
 - SHOULD unpack into a location it controls and SHOULD NOT unpack over an installed deck, so that a partly written directory is never [scanned](#222-scanning).
-- SHOULD name the unpacked deck root from the last segment of [`[deck].identifier`](#34-deck-identity), or failing that from the container's file name without its extension; MUST make that name a single path segment carrying no separator; and MUST NOT overwrite an unrelated deck that already holds it.
+- SHOULD name the unpacked deck root from the last segment of [`[deck].identifier`](#34-deck-identity), or failing that from the container's file name without its extension; MUST make that name a single path segment containing no separator; and MUST NOT overwrite an unrelated deck that already holds it.
 
 The unpacked `mimetype` file is ignored by discovery ([§6.7.1](#671-image-roots)), as any other non-asset file is.
 
@@ -368,7 +368,7 @@ A card reference with no variant suffix denotes the card's default variant. The 
 
 The suffixed form on its own is a **variant reference**. A variant is created by a file ([§6.1](#61-asset-discovery)) or by an explicit `image` path, and a variant reference is a valid key wherever a card reference is: an entry in [`[cards]`](#43-cards) supplies a variant's strings, image and content rating, and a name file's `variant` tables are keyed by it ([§7.2](#72-language-resolution)).
 
-Variants of a card are interchangeable and carry the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
+Variants of a card are interchangeable and have the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
 
 ### 3.2 Custom Names
 
@@ -429,7 +429,7 @@ A deck has three distinct properties related to identity:
 
 The three are independent. A directory name is not required to match `[deck].name` nor the last segment of `[deck].identifier`. An application MUST NOT require them to agree and a validator MUST NOT report a disagreement.
 
-An `identifier` names the deck as a whole and MUST NOT carry a fragment.
+An `identifier` names the deck as a whole and MUST NOT include a fragment.
 
 An identifier names the deck across all of its versions. A packager who reissues a deck MUST NOT change its `identifier` on account of the new `[deck].version`, and MUST mint a new identifier where the package has become a different deck rather than a new version of the same one.
 
@@ -523,7 +523,7 @@ Every table this specification defines is listed below with its fields.
 
 A key not listed here and not under `[app]` is not defined by this specification, and [§9](#92-the-app-table) reserves such names for future versions of it.
 
-A key is documented in the section that owns what it is about — identity in [§3](#3-identity-and-identifiers), assets in [§6](#6-card-assets), language in [§7](#7-internationalization), rights in [§8](#8-licensing-and-attribution) — and this section carries its row. A key whose subject no other section owns is documented here, in a subsection of the table that carries it, where it has normative rules past its row: a registry, an enumerated set of values, a rule for comparing values, or behavior on another entity. A key with none of those is documented by its row alone.
+A key is documented in the section that owns what it is about — identity in [§3](#3-identity-and-identifiers), assets in [§6](#6-card-assets), language in [§7](#7-internationalization), rights in [§8](#8-licensing-and-attribution) — and this section holds its row. A key whose subject no other section owns is documented here, in a subsection of the table that holds it, where it has normative rules past its row: a registry, an enumerated set of values, a rule for comparing values, or behavior on another entity. A key with none of those is documented by its row alone.
 
 A subsection of a table documents that table, or something written inside it. Where a value of a key needs its own rules, they are a subsection of that key. Where a facet appears on more than one entity, it is defined once, under the entity whose table it is nearest, and its section names every entity it appears on; the other entities' tables link to that definition rather than restating it.
 
@@ -547,8 +547,8 @@ A subsection of a table documents that table, or something written inside it. Wh
 | `artist` | String | No | none | Who made the deck's artwork ([§8.6](#86-roles-and-credits)). |
 | `packager` | String | No | none | Whoever assembled this package, where that is not the artist ([§8.6](#86-roles-and-credits)). |
 | `description` | String | No | none | A prose description of the deck. Not localized; written once in the deck's `metadata_language` ([§7.2](#72-language-resolution)). |
-| `license` | String | No | none | SPDX license expression governing the card assets this package carries ([§8.1](#81-license-expressions)). |
-| `license_files` | Array of String (path) | No | `[]` | Full license texts and notices carried in the deck ([§8.2](#82-attribution-and-notices)). |
+| `license` | String | No | none | SPDX license expression governing the card assets this package contains ([§8.1](#81-license-expressions)). |
+| `license_files` | Array of String (path) | No | `[]` | Full license texts and notices included in the deck ([§8.2](#82-attribution-and-notices)). |
 | `copyright` | String | No | none | Copyright notice, displayed verbatim. |
 | `attribution` | String | No | none | Credit line to display ([§8.2](#82-attribution-and-notices)). |
 | `rights_status` | String (URI) | No | none | The artwork's copyright *status*, as distinct from any license granted over it ([§8.4](#84-rights-status)). |
@@ -624,7 +624,7 @@ The registry:
 | `rel` | The target is | Recognition |
 | --- | --- | --- |
 | `pattern` | The deck whose structure and iconography this deck is patterned on ([§4.1.2.1](#4121-pattern)) | Advisory |
-| `surrogate_for` | The deck whose artwork this package describes and does not carry; a merge key ([§4.1.2.2](#4122-surrogate_for)) | **Recognized** |
+| `surrogate_for` | The deck whose artwork this package describes and does not contain; a merge key ([§4.1.2.2](#4122-surrogate_for)) | **Recognized** |
 | `expands` | The deck this package adds cards to. The package is not a standalone deck ([§4.1.2.3](#4123-expands)) | **Recognized** |
 | `companion` | A deck this one was published to be used alongside ([§4.1.2.4](#4124-companion)) | Advisory |
 
@@ -640,10 +640,10 @@ related = [
 
 Rules:
 
-- The value of `deck` MUST be a well-formed qualified identifier naming a deck: it MUST NOT carry a fragment and is neither a [card reference nor a variant reference](#312-card-references-and-the-variant-suffix).
+- The value of `deck` MUST be a well-formed qualified identifier naming a deck: it MUST NOT include a fragment and is neither a [card reference nor a variant reference](#312-card-references-and-the-variant-suffix).
 - It MUST NOT equal this deck's own `identifier`.
 - No deck may name the same target under both `pattern` and `surrogate_for`.
-- Relations are not reciprocated. The dependent package carries the pointer only.
+- Relations are not reciprocated. Only the dependent package declares the pointer.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator checks that the value is well formed and no more. A relation to a deck nobody has packaged is legal.
 
 **Recognition.** This registry is open for advisory relations ([§9](#91-open-registries)) and closed for recognized relations.
@@ -667,10 +667,10 @@ related = [
 
 > Note: this example uses `land.arcana/deck/rider-waite-smith` as the globally-unique qualified identifier of the traditional Rider-Waite-Smith patterned deck. This specification assigns no specific meaning to this string, but packagers may use it as the identifier for the traditional Rider-Waite-Smith deck.
 
-Rules, in addition to those every relation carries ([§4.1.2](#412-related-decks)):
+Rules, in addition to those every relation has ([§4.1.2](#412-related-decks)):
 
 - A deck MUST NOT declare more than one `pattern` relation. [§6.7.6](#676-when-no-asset-is-found)'s pattern condition compares a deck against one pattern and this specification defines no ordering over several.
-- `pattern` carries no merge semantics, in contrast to `rel = "surrogate_for"` ([§4.1.2.2](#4122-surrogate_for), [§6.9](#69-surrogate-decks)); an application MUST NOT treat the two decks as one.
+- `pattern` has no merge semantics, in contrast to `rel = "surrogate_for"` ([§4.1.2.2](#4122-surrogate_for), [§6.9](#69-surrogate-decks)); an application MUST NOT treat the two decks as one.
 - `pattern` is not a rights claim. It asserts solely a resemblance in structure and iconography, grants and implies no permission, and does not exempt a deck from [§8.7](#87-deck-names-and-trademarks)'s prohibition on implying endorsement. Rights are stated in [§8](#8-licensing-and-attribution).
 - The relation is not transitive for any purpose this specification defines.
 
@@ -678,7 +678,7 @@ Two printings that differ in their cards are two decks, optionally related by a 
 
 ##### 4.1.2.2 `surrogate_for`
 
-A `surrogate_for` [relation](#412-related-decks) names another deck whose artwork this package describes but does not carry. It is the one relation in the registry that asserts the two packages are the same deck. It functions as a merge key: an application holding both presents them as one deck and prefers the artwork over the surrogate ([§6.9](#69-surrogate-decks)).
+A `surrogate_for` [relation](#412-related-decks) names another deck whose artwork this package describes but does not contain. It is the one relation in the registry that asserts the two packages are the same deck. It functions as a merge key: an application holding both presents them as one deck and prefers the artwork over the surrogate ([§6.9](#69-surrogate-decks)).
 
 ```toml
 [deck]
@@ -689,7 +689,7 @@ related = [
 ]
 ```
 
-Rules, in addition to those every relation carries ([§4.1.2](#412-related-decks)):
+Rules, in addition to those every relation has ([§4.1.2](#412-related-decks)):
 
 - The value MUST be the `[deck].identifier` of the package it stands in for, so that it can serve as a merge key.
 - A deck MUST NOT declare more than one `surrogate_for` relation. A package cannot stand in for two different decks.
@@ -698,7 +698,7 @@ Rules, in addition to those every relation carries ([§4.1.2](#412-related-decks
 
 ##### 4.1.2.3 `expands`
 
-An `expands` [relation](#412-related-decks) names the deck this package adds cards to. The package is an add-on and not a deck in its own right: it carries the cards it contributes and no others.
+An `expands` [relation](#412-related-decks) names the deck this package adds cards to. The package is an add-on and not a deck in its own right: it contains the cards it contributes and no others.
 
 ```toml
 [deck]
@@ -711,11 +711,11 @@ related = [
 ]
 ```
 
-Rules, in addition to those every relation carries ([§4.1.2](#412-related-decks)):
+Rules, in addition to those every relation has ([§4.1.2](#412-related-decks)):
 
 - A deck MUST NOT declare more than one `expands` relation. A package's cards are contributed to one deck, and this specification provides no way to say which of several a given card belongs to.
-- An application MUST NOT complete the package's canonical cards from a [reference deck](#13-terminology). Every canonical slot the package does not carry is a slot it was never meant to carry, so [§6.7.6](#676-when-no-asset-is-found) bars the borrow outright rather than gating it on the conditions stated there.
-- A package declaring `expands` SHOULD NOT also declare [`[excluded_cards]`](#47-excluded_cards) for the canonical slots it does not carry. The relation already says the package is not a whole deck.
+- An application MUST NOT complete the package's canonical cards from a [reference deck](#13-terminology). Every canonical slot the package does not contain is a slot it was never meant to contain, so [§6.7.6](#676-when-no-asset-is-found) bars the borrow outright rather than gating it on the conditions stated there.
+- A package declaring `expands` SHOULD NOT also declare [`[excluded_cards]`](#47-excluded_cards) for the canonical slots it does not contain. The relation already says the package is not a whole deck.
 - This specification defines no merge semantics for the relation. Which of the two packages' `[deck]` metadata an application prefers, and where the contributed cards fall in the expanded deck's [order](#5-ordering), are the application's to decide.
 - `expands` is a [recognized relation](#412-related-decks): an application that does not implement it MUST NOT present the package as an ordinary deck.
 
@@ -732,11 +732,11 @@ related = [
 ]
 ```
 
-Rules, in addition to those every relation carries ([§4.1.2](#412-related-decks)):
+Rules, in addition to those every relation has ([§4.1.2](#412-related-decks)):
 
 - The relation is self-inverse: where it holds it holds in both directions. Relations are not reciprocated, so each package that wishes to state it declares its own.
 - A deck MAY declare any number of `companion` relations.
-- `companion` is advisory and carries no behavior. It asserts nothing about either deck's structure, artwork or rights, and an application that ignores it presents both decks correctly.
+- `companion` is advisory and has no behavior. It asserts nothing about either deck's structure, artwork or rights, and an application that ignores it presents both decks correctly.
 
 #### 4.1.3 `pips`
 
@@ -756,7 +756,7 @@ Rules:
 
 #### 4.1.4 Product Identifiers
 
-`[deck.product_ids]` records the product identifiers a published commercial deck carries. It is a table whose keys name identifier schemes and whose values are strings.
+`[deck.product_ids]` records the product identifiers a published commercial deck has. It is a table whose keys name identifier schemes and whose values are strings.
 
 ```toml
 [deck]
@@ -779,9 +779,9 @@ The registry:
 
 A product identifier does not replace the deck's own identity within Arcana Land [`[deck].identifier`](#34-deck-identity).
 
-An application MAY treat two packages that declare an equal value for the same scheme as describing the same product, and where it does, it SHOULD prefer the package carrying the artwork. Two values are equal when they are equal after the normalization their scheme's rule below defines; an application comparing values MUST apply that normalization first, and MUST NOT compare values across schemes.
+An application MAY treat two packages that declare an equal value for the same scheme as describing the same product, and where it does, it SHOULD prefer the package containing the artwork. Two values are equal when they are equal after the normalization their scheme's rule below defines; an application comparing values MUST apply that normalization first, and MUST NOT compare values across schemes.
 
-A product identifier names a printing rather than a work, so two printings of the same artwork carry different identifiers and a deck sold without one carries none. An application MUST NOT read an absent or differing identifier as a claim that two packages are unrelated.
+A product identifier names a printing rather than a work, so two printings of the same artwork have different identifiers and a deck sold without one has none. An application MUST NOT read an absent or differing identifier as a claim that two packages are unrelated.
 
 Rules:
 
@@ -823,7 +823,7 @@ An absent `[deck.content_rating]` means the packager has not declared a rating a
 
 Within a declared system subtable, an omitted descriptor is `none` for that system. For example, `[deck.content_rating."oars-1.1"]` with no descriptors communicates that this deck was reviewed and contains nothing the system describes.
 
-**Per-artwork descriptors.** A card carries the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
+**Per-artwork descriptors.** A card has the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
 
 ```toml
 [cards."major_arcana.06"]
@@ -837,11 +837,11 @@ Rules:
 
 - A descriptor declared on an [artwork](#13-terminology) MUST be written under a system the deck also declares in `[deck.content_rating]`.
 - A value declared on an artwork MUST NOT exceed the deck-level value **declared** for the same system and descriptor. For OARS, descriptor values are ordered `none` < `mild` < `moderate` < `intense`. A descriptor the deck-level subtable omits constrains nothing under `artwork_complete = true`, since it is derived from the artwork, and is `none` otherwise. The rule binds only a system whose ordering this specification defines, which is `oars-1.1` alone.
-- Where any artwork declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST carry the boolean key `artwork_complete`, which says whether the annotation covers the whole deck. It is reserved in every system subtable and is never a descriptor; a descriptor is always a string.
-  - `artwork_complete = true` states that every artwork the deck ships depicting anything the system describes carries an entry, so an artwork with no entry is `none` for that system. The deck-level value of a descriptor the subtable omits is then **the greatest value any artwork declares for it**, and this is the one case in which an omitted deck-level descriptor does not assert `none`.
+- Where any artwork declares a descriptor for a system, that system's subtable in `[deck.content_rating]` MUST contain the boolean key `artwork_complete`, which says whether the annotation covers the whole deck. It is reserved in every system subtable and is never a descriptor; a descriptor is always a string.
+  - `artwork_complete = true` states that every artwork the deck ships depicting anything the system describes has an entry, so an artwork with no entry is `none` for that system. The deck-level value of a descriptor the subtable omits is then **the greatest value any artwork declares for it**, and this is the one case in which an omitted deck-level descriptor does not assert `none`.
   - `artwork_complete = false` states that artwork was annotated where the packager saw a reason to. An artwork with no entry is unstated, an application MUST NOT read it as `none`, and where it needs a value it SHOULD use the deck-level one.
 - There is no default. A deck that annotates no artwork says nothing about coverage and SHOULD omit the key.
-- A card's value describes that card's **default artwork**, which is what a [bare card reference](#312-card-references-and-the-variant-suffix) denotes. It is not a ceiling over the card's other artwork: a card whose default artwork depicts nothing the system describes MAY carry a variant that depicts something, and each states its own value.
+- A card's value describes that card's **default artwork**, which is what a [bare card reference](#312-card-references-and-the-variant-suffix) denotes. It is not a ceiling over the card's other artwork: a card whose default artwork depicts nothing the system describes MAY have a variant that depicts something, and each states its own value.
 - A [variant](#312-card-references-and-the-variant-suffix) is rated under its own [`[cards]`](#43-cards) entry, on the same terms. A variant declaring no subtable for a system takes its card's value for that system, so a card-level descriptor covers every variant the deck does not rate separately. Within a variant's *declared* subtable an omitted descriptor is `none`, as anywhere else, so a variant that depicts nothing the system describes declares that subtable empty rather than inheriting its card's value.
 - A [card back design](#42-card_backs) is rated under its own `[card_backs.designs.<key>]` entry, on the same terms. A back belongs to no card and so inherits nothing: one that declares no subtable for a system is `none` under `artwork_complete = true` and unstated otherwise, like any other artwork.
 - `artwork_complete` needs no entry for artwork that resolves to another.
@@ -875,7 +875,7 @@ sex_nudity = "mild"
 violence_bloodshed = "mild"
 ```
 
-The other seventy-one cards are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"`. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its artwork carries.
+The other seventy-one cards are `none`, and the deck as a whole is `sex_nudity = "mild"`, `violence_fantasy = "mild"` and `violence_bloodshed = "mild"`. A deck MAY declare them at deck level as well, and one that does MUST NOT declare a value below what its artwork declares.
 
 In a different deck, one whose default Lovers artwork is clothed and which ships a nude alternate beside it, each artwork states its own value:
 
@@ -941,7 +941,7 @@ Declare the term for how the artwork principally came to exist, or, where a late
 
 An absent `origin` means the packager gave no value and an application MUST NOT read it as an assertion that the artwork is human-made.
 
-**Per-artwork origin.** A card carries the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
+**Per-artwork origin.** A card has the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
 
 ```toml
 [deck.origin]
@@ -1045,8 +1045,8 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `name` | String | No | resolved per [§7.3](#73-display-name-resolution) | Fallback display name, used where no name file supplies one. |
 | `alt_text` | String | No | none | Fallback alt text, used where no name file supplies one. |
 | `number` | String | No | see [§4.3.1](#431-card-numbers) | The number printed on the card's face. |
-| `unnumbered` | Boolean | No | `false` | The card's face carries no number, whatever its key shape implies ([§4.3.1](#431-card-numbers)). Display only and does not affect ordering ([§5](#5-ordering)). |
-| `unnamed` | Boolean | No | `false` | The card's face carries no name. Truncates display name resolution ([§7.3](#73-display-name-resolution)). |
+| `unnumbered` | Boolean | No | `false` | The card's face shows no number, whatever its key shape implies ([§4.3.1](#431-card-numbers)). Display only and does not affect ordering ([§5](#5-ordering)). |
+| `unnamed` | Boolean | No | `false` | The card's face shows no name. Truncates display name resolution ([§7.3](#73-display-name-resolution)). |
 | `inscription` | String or Array of String | No | none | Text printed on this card's artwork other than its name and its number ([§4.3.2](#432-inscriptions)). Not localized. |
 | `position` | Integer | No | see [§5](#5-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 | `content_rating` | Table | No | none | What this card depicts, keyed by rating system, on the terms in [§4.1.5](#415-content-rating). |
@@ -1054,15 +1054,15 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `image` | String (path) | No | found by discovery | An explicit path to this card's image, for a file that does not follow the naming convention or uses a format outside the extension chain ([§6.7.4](#674-the-extension-chain)). |
 | `default_variant` | String | Required where the card has variant files but no unsuffixed file | the unsuffixed file | Which variant a bare canonical ID resolves to ([§6.7.5](#675-variants)). MUST name a variant of this card ([§10.4](#104-validation-rules)). |
 
-`name` and `alt_text` are the deck's own strings. Where a deck's card names are printed on the artwork a deck SHOULD declare them here, and reserve `names/<tag>.toml` for strings addressed to a reader of a particular language ([§7.2](#72-language-resolution)). Where a deck's names are the packager's own words, a deck SHOULD carry them in a name file, where they can be localized ([§7.3](#73-display-name-resolution)).
+`name` and `alt_text` are the deck's own strings. Where a deck's card names are printed on the artwork a deck SHOULD declare them here, and reserve `names/<tag>.toml` for strings addressed to a reader of a particular language ([§7.2](#72-language-resolution)). Where a deck's names are the packager's own words, a deck SHOULD put them in a name file, where they can be localized ([§7.3](#73-display-name-resolution)).
 
 An entry for a canonical minor arcanum or for `major_arcana.00` through `major_arcana.21` is always accepted, since those slots exist for every deck. An entry for any other card, and an entry for any variant, is an error unless the deck has files for it ([§10.4](#104-validation-rules)).
 
 `position` is meaningful only for major arcana. A minor arcanum takes its place from its suit's [`ranks`](#44-suits) sequence and an application MUST ignore a `position` declared on one.
 
-**On a variant-reference key** the entry supplies that variant's strings, image and content rating. Declaring one does not create the variant; a variant is created by a file ([§6.1](#61-asset-discovery)) or by an `image` path. `number`, `unnumbered`, `unnamed`, `position` and `default_variant` belong to the card rather than to one of its artworks, and an application MUST ignore any of the five declared on a variant-reference key: a variant does not sit elsewhere in the sequence and does not carry a different printed number, because it is the same card.
+**On a variant-reference key** the entry supplies that variant's strings, image and content rating. Declaring one does not create the variant; a variant is created by a file ([§6.1](#61-asset-discovery)) or by an `image` path. `number`, `unnumbered`, `unnamed`, `position` and `default_variant` belong to the card rather than to one of its artworks, and an application MUST ignore any of the five declared on a variant-reference key: a variant does not sit elsewhere in the sequence and does not have a different printed number, because it is the same card.
 
-`inscription` is legal on a variant-reference key. A variant is a different artwork of the same card, so it may carry different ink even though it cannot carry a different number ([§4.3.2](#432-inscriptions)).
+`inscription` is legal on a variant-reference key. A variant is a different artwork of the same card, so it may have different ink even though it cannot have a different number ([§4.3.2](#432-inscriptions)).
 
 Where `default_variant` is omitted, the unsuffixed file such as `06.svg` is the default variant. A deck that provides only variant files for a card and no unsuffixed file MUST declare it.
 
@@ -1076,7 +1076,7 @@ Where `number` is absent, a card's number follows from the shape of its key:
 - A major arcanum with a custom key is considered unnumbered.
 - A minor arcanum is unnumbered.
 
-A card that declares `unnumbered = true` carries no number whatever its key shape implies, and an application MUST NOT present one for it. `number` and `unnumbered` answer the same question and a card MUST NOT declare both. **Ordering is unaffected**: a major arcanum with a two-digit key keeps the implicit `position` of [§5.1](#51-major-arcana), so a card can sit in the numbered sequence and print no number, as the Fool does in the Marseille pattern.
+A card that declares `unnumbered = true` shows no number whatever its key shape implies, and an application MUST NOT present one for it. `number` and `unnumbered` answer the same question and a card MUST NOT declare both. **Ordering is unaffected**: a major arcanum with a two-digit key keeps the implicit `position` of [§5.1](#51-major-arcana), so a card can sit in the numbered sequence and print no number, as the Fool does in the Marseille pattern.
 
 `number` and `inscription` ([§4.3.2](#432-inscriptions)) are not localized: each reproduces what is printed on the artwork, which is a property of the artwork rather than of the language an application is showing.
 
@@ -1098,7 +1098,7 @@ inscription = "Ex libris"
 - The value is a non-empty string, or a non-empty array of non-empty strings.
 - An array is ordered and applications MUST preserve the order. A packager SHOULD write the strings in the artwork's reading order. Nothing else is asserted about where on the artwork any of them sits.
 - **Transcription is verbatim.** An inscription reproduces the ink, including a restatement of the card's name where the ink restates it, and including the packager's line breaks collapsed to spaces. Applications MUST NOT case-convert it, as with every other display string ([§7.3](#73-display-name-resolution)).
-- An inscription is not a resolved display string and has no resolution chain. It is a fact about the artwork, like [`number`](#431-card-numbers); absence means the artwork carries none.
+- An inscription is not a resolved display string and has no resolution chain. It is a fact about the artwork, like [`number`](#431-card-numbers); absence means the artwork has none.
 
 An inscription is never translated. Where a deck exists in two printings whose ink differs, those are two artworks and the axis is the [card variant](#312-card-references-and-the-variant-suffix), not the name file ([§7.2](#72-language-resolution)).
 
@@ -1131,7 +1131,7 @@ Like [`[cards]`](#43-cards), `[suits]` describes rather than creates and a suit 
 
 `name_template` exists in this table in addition to [`[minor_arcana]`](#46-minor_arcana) to support per-suit composition.
 
-As with a card's `name` ([§4.3](#43-cards)), `[suits].name` is the deck's own string: a deck whose suit names are printed on its cards SHOULD declare them here and a deck whose suit names are the packager's own words SHOULD carry them in a name file, where they can be localized ([§7.2](#72-language-resolution), [§7.3](#73-display-name-resolution)). Where a deck's courts print a title and its pips print nothing, the printed title governs: those words are on the artwork, so they are the deck's own.
+As with a card's `name` ([§4.3](#43-cards)), `[suits].name` is the deck's own string: a deck whose suit names are printed on its cards SHOULD declare them here and a deck whose suit names are the packager's own words SHOULD put them in a name file, where they can be localized ([§7.2](#72-language-resolution), [§7.3](#73-display-name-resolution)). Where a deck's courts print a title and its pips print nothing, the printed title governs: those words are on the artwork, so they are the deck's own.
 
 ### 4.5 `[ranks]`
 
@@ -1269,10 +1269,10 @@ Conventionally, `h750` serves mobile applications and thumbnails, `h1200` standa
 ### 6.4 ANSI Art
 
 - ANSI card assets are discovered only under an `ansi<lines>/` root, organized by card type and suit (e.g., `ansi32/major_arcana/00.ansi`); an ANSI file anywhere else is not a card asset and is ignored ([§6.7.1](#671-image-roots)). `<lines>` is the number of terminal rows the art occupies.
-- ANSI files MAY use any extension. `.ans` is conventional for art carrying escape sequences and `.txt` for plain text.
+- ANSI files MAY use any extension. `.ans` is conventional for art containing escape sequences and `.txt` for plain text.
 - Applications MUST determine a file's kind from its content rather than its extension. Art using ANSI escape sequences necessarily contains ESC (`0x1B`) and a file with no ESC byte is plain text and MAY be written to a terminal as-is.
 - Plain text files are UTF-8.
-- Where a file carries a [SAUCE](https://www.acid.org/info/sauce/sauce.htm) record, applications SHOULD honor it.
+- Where a file contains a [SAUCE](https://www.acid.org/info/sauce/sauce.htm) record, applications SHOULD honor it.
 
 Support for ANSI art is OPTIONAL for an application.
 
@@ -1287,9 +1287,9 @@ ansi32/card_backs/classic.ans   # "classic" at 32 rows
 scalable/card_backs/classic.svg # scalable "classic"
 ```
 
-A card back directory appears in two OPTIONAL locations. At the top level of the deck root, `card_backs/` holds backs of no declared kind or size. This is the simple form and for most decks the only one needed. Inside an [image root](#671-image-roots), `card_backs/` sits beside `major_arcana/` and `minor_arcana/` and its files carry that root's kind and size.
+A card back directory appears in two OPTIONAL locations. At the top level of the deck root, `card_backs/` holds backs of no declared kind or size. This is the simple form and for most decks the only one needed. Inside an [image root](#671-image-roots), `card_backs/` sits beside `major_arcana/` and `minor_arcana/` and its files have that root's kind and size.
 
-The designs a deck has are the union of the stems found across every card back directory, together with every key declared under `[card_backs.designs]` that carries an `image` path. Further rules:
+The designs a deck has are the union of the stems found across every card back directory, together with every key declared under `[card_backs.designs]` that declares an `image` path. Further rules:
 
 - The whole stem is the design key and card backs have no notion of variants.
 - A stem that is not a well-formed [custom name](#32-custom-names) defines no design. Discovery ignores the file, which is reported as a warning rather than an error ([§10.4](#104-validation-rules)), exactly as a raster image outside an image root is ignored.
@@ -1385,7 +1385,7 @@ Where resolution yields no file for a card in any image root of any kind and the
 
 An application MUST NOT present a borrowed image as though it were the deck's own and SHOULD make the substitution visible, on the same terms as a [surrogate](#68-surrogate-assets). Where it displays attribution or rights metadata for a borrowed card, it MUST take that metadata from the reference deck, whose terms may be narrower than those of the deck it stands in for.
 
-An application MUST NOT resolve a card against a reference deck for a package that declares [`rel = "expands"`](#412-related-decks). Such a package is a set of cards added to another deck rather than a deck in its own right, so every canonical slot it does not carry is a slot it was never meant to carry, and filling them from a reference deck presents someone else's complete deck under the expansion's name.
+An application MUST NOT resolve a card against a reference deck for a package that declares [`rel = "expands"`](#412-related-decks). Such a package is a set of cards added to another deck rather than a deck in its own right, so every canonical slot it does not contain is a slot it was never meant to contain, and filling them from a reference deck presents someone else's complete deck under the expansion's name.
 
 The remaining conditions assume the two decks agree about what the card is. Each is checked against the decks' own declarations, so a deck that declares nothing fails none of them:
 
@@ -1434,9 +1434,9 @@ surrogate/
     classic.toml          # the "classic" design
 ```
 
-A deck MAY carry them instead of artwork, which makes it a [surrogate deck](#69-surrogate-decks). An application MUST NOT present a surrogate as though it were the artwork, and SHOULD make the distinction visible to the user.
+A deck MAY include them instead of artwork, which makes it a [surrogate deck](#69-surrogate-decks). An application MUST NOT present a surrogate as though it were the artwork, and SHOULD make the distinction visible to the user.
 
-A deck MAY carry surrogates alongside its artwork, where an application could render them as progressive-loading placeholders.
+A deck MAY include surrogates alongside its artwork, where an application could render them as progressive-loading placeholders.
 
 In contrast to other assets, surrogates are not associated with a reference deck.
 
@@ -1459,15 +1459,15 @@ palette_snapped = ["wheat", "darkslateblue", "sienna", "lightgray"]
 thumbhash = "1QcSHQRnh493V4dIh4eXh1h4kJUI"
 ```
 
-Every key is optional and independent. A deck MAY carry any combination and MAY carry different combinations for different cards. A file carrying none of them is a well-formed surrogate.
+Every key is optional and independent. A deck MAY use any combination and MAY use different combinations for different cards. A file with none of them is a well-formed surrogate.
 
 ### 6.9 Surrogate Decks
 
 A surrogate deck is a deck whose only card assets are surrogates. Surrogates let a deck be packaged without shipping artwork the packager has no right to redistribute.
 
-A surrogate deck SHOULD declare a correspondence to the artwork it describes: a [`surrogate_for`](#4122-surrogate_for) relation where a package of that artwork exists within Arcana Land, [`[deck.product_ids]`](#414-product-identifiers) where the artwork belongs to a commercial product that carries a published identifier, or both. Either allows applications to recognize a surrogate and a package as the same underlying deck and prefer the artwork over the surrogate.
+A surrogate deck SHOULD declare a correspondence to the artwork it describes: a [`surrogate_for`](#4122-surrogate_for) relation where a package of that artwork exists within Arcana Land, [`[deck.product_ids]`](#414-product-identifiers) where the artwork belongs to a commercial product that has a published identifier, or both. Either allows applications to recognize a surrogate and a package as the same underlying deck and prefer the artwork over the surrogate.
 
-The two differ in who assigns them: `surrogate_for` names a package, and so requires one that exists and is known, while a product identifier is printed on the product and needs no package at all. A surrogate deck for a commercial deck that no one has packaged SHOULD therefore carry `[deck.product_ids]`, and one for a deck already packaged within Arcana Land SHOULD carry a `surrogate_for` relation.
+The two differ in who assigns them: `surrogate_for` names a package, and so requires one that exists and is known, while a product identifier is printed on the product and needs no package at all. A surrogate deck for a commercial deck that no one has packaged SHOULD therefore declare `[deck.product_ids]`, and one for a deck already packaged within Arcana Land SHOULD declare a `surrogate_for` relation.
 
 A surrogate deck SHOULD NOT invent an `identifier` for a package that does not exist in order to have something for `surrogate_for` to name.
 
@@ -1499,7 +1499,7 @@ A deck has up to three languages and they are not the same question:
 
 `metadata_language` defaults to `default_language`, and to `en` where the deck declares neither, so a deck that declares neither is unchanged in meaning. It is not itself localizable.
 
-`artwork_language` is an array (multilingual card faces are common). A deck whose cards carry no text declares `zxx` (no linguistic content).
+`artwork_language` is an array (multilingual card faces are common). A deck whose cards have no text declares `zxx` (no linguistic content).
 
 ```toml
 default_language  = "fr"          # prefer names/fr.toml where the reader states no preference
@@ -1571,7 +1571,7 @@ classic = "A blue and white geometric pattern featuring roses and lilies."
 
 A name file groups strings by kind rather than by card, so a translator works down a list of one kind of string at a time.
 
-Two facets are defined, `name` and `alt_text`. Together with the reserved [`[metadata]`](#721-name-file-metadata) they are the only top-level tables a name file carries and a validator SHOULD report any other ([§10.4](#104-validation-rules)) rather than ignore it. An unrecognized facet is an error and not the silent ignoring of [§9](#9-extensibility), because it supplies no strings at all and a fully translated deck would present as an untranslated one.
+Two facets are defined, `name` and `alt_text`. Together with the reserved [`[metadata]`](#721-name-file-metadata) they are the only top-level tables a name file has and a validator SHOULD report any other ([§10.4](#104-validation-rules)) rather than ignore it. An unrecognized facet is an error and not the silent ignoring of [§9](#9-extensibility), because it supplies no strings at all and a fully translated deck would present as an untranslated one.
 
 Below the facet, the entity kinds are closed:
 
@@ -1586,7 +1586,7 @@ Below the facet, the entity kinds are closed:
 
 Each kind is written in the singular, which distinguishes it from the identically spelled plural card-set families of the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md): `[name.suit]` names a suit and that specification's `group.suits.wands` names every card of one.
 
-A localizable facet this specification adds later takes a top-level table of its own, mirroring the kinds above, and a field of the same name on the corresponding `deck.toml` entity table as the unlocalized fallback. Where a field an entity carries is deliberately not localizable, its field table in [§4](#4-decktoml-reference) says so and says why: [`description`](#42-card_backs), [`number`](#431-card-numbers) and [`inscription`](#432-inscriptions) are the three.
+A localizable facet this specification adds later takes a top-level table of its own, mirroring the kinds above, and a field of the same name on the corresponding `deck.toml` entity table as the unlocalized fallback. Where a field on an entity is deliberately not localizable, its field table in [§4](#4-decktoml-reference) says so and says why: [`description`](#42-card_backs), [`number`](#431-card-numbers) and [`inscription`](#432-inscriptions) are the three.
 
 **Name files changed shape in 2.0.** A 1.0 name file writes its name tables without naming the `name` facet; [Appendix B](#appendix-b-reserved-and-deprecated-names) records the six. An application reads `[deck].schema_version` from the manifest before it reads any name file, so which shape a file is written in is known before it is parsed. The two never mix: a deck declares one version and all of its name files are of that version's shape.
 
@@ -1610,7 +1610,7 @@ The OPTIONAL `[metadata.alt_text]` subtable takes the same keys and overrides th
 
 `source` and `attribution` are the packager's own prose about the file rather than strings addressed to its reader, so they are written in the deck's [`metadata_language`](#41-deck) like the manifest's prose fields, and not in the language the file's tag names.
 
-The `origin` field uses the same systems (IPTC) and terms as [§4.1.7](#417-artwork-origin). When choosing a term, consider `digitalCreation` for strings a human wrote, `trainedAlgorithmicMedia` for strings a model produced, and `compositeWithTrainedAlgorithmicMedia` for strings a human drafted and a model expanded. `source` carries the prose account; `origin` carries the term.
+The `origin` field uses the same systems (IPTC) and terms as [§4.1.7](#417-artwork-origin). When choosing a term, consider `digitalCreation` for strings a human wrote, `trainedAlgorithmicMedia` for strings a model produced, and `compositeWithTrainedAlgorithmicMedia` for strings a human drafted and a model expanded. `source` is the prose account; `origin` is the term.
 
 ```toml
 [metadata]
@@ -1652,7 +1652,7 @@ Each chain below is applied to name files in the order given by [Language Resolu
 
 A resolved display string is used verbatim. Applications MUST NOT apply case conversion or any other transformation to a string a deck supplies. Case transformation appears in this specification only as a fallback for keys the deck does not define a string for.
 
-Every chain has the same three steps: **the name file, then the corresponding field in the manifest, then a fallback that depends on what is being named.** Two rows depart from that shape: a minor arcanum's name is composed rather than fetched, and the major arcana chain carries two further steps that apply to the canonical keys `00` through `21` alone.
+Every chain has the same three steps: **the name file, then the corresponding field in the manifest, then a fallback that depends on what is being named.** Two rows depart from that shape: a minor arcanum's name is composed rather than fetched, and the major arcana chain has two further steps that apply to the canonical keys `00` through `21` alone.
 
 | Value | In the name file | In the manifest | Then |
 | --- | --- | --- | --- |
@@ -1670,7 +1670,7 @@ A dash means the manifest has no field for that value, a group being the one thi
 
 Canonical suit and rank keys are a closed set this specification defines, so where no name file and no manifest field supplies a string an application supplies its own, localized to the language it is displaying, exactly as it does for a group name ([§7.2.2](#722-group-names)). A **custom** key is a word the packager chose, so its title-cased form is a string in the deck's [`metadata_language`](#41-deck); an application presents it as given and MUST NOT translate it. The same rule governs the two other places a title-cased key survives: a card back design key, and a custom major arcana key.
 
-A card that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the reference-deck step and [Appendix C](#appendix-c-canonical-card-names-informative) do not apply, and where neither supplies a string the card has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it; what the flag forbids is a name being invented for a face that carries none. A card MUST NOT declare both `unnamed = true` and a `name`.
+A card that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the reference-deck step and [Appendix C](#appendix-c-canonical-card-names-informative) do not apply, and where neither supplies a string the card has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it; what the flag forbids is a name being invented for a face that shows none. A card MUST NOT declare both `unnamed = true` and a `name`.
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key the packager chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
@@ -1727,10 +1727,10 @@ Where a deck supplies no name for a minor arcanum at any level, applications MAY
 ### 7.4 Alt Text Guidelines
 
 - Alt text SHOULD describe the visual elements of the card without interpretation.
-- A deck SHOULD include at least one language file carrying alt text.
-- Every card variant SHOULD carry its own alt text.
+- A deck SHOULD include at least one language file with alt text.
+- Every card variant SHOULD have its own alt text.
 - Alt text given in `[cards]` or `[card_backs.designs]` is a fallback only, and a name file always prevails.
-- Where a card carries text on its face, put the transcription in [`inscription`](#432-inscriptions) and let the alt text describe the artwork. Alt text need not repeat the ink, and a deck that has been carrying printed epithets inside its alt text SHOULD move them: the ink is part of the artwork and is covered by the artwork's licence, while alt text is the packager's own writing and is often licensed separately ([§8.3](#83-name-file-licensing)).
+- Where a card has text on its face, put the transcription in [`inscription`](#432-inscriptions) and let the alt text describe the artwork. Alt text need not repeat the ink, and a deck that puts printed epithets inside its alt text SHOULD move them: the ink is part of the artwork and is covered by the artwork's licence, while alt text is the packager's own writing and is often licensed separately ([§8.3](#83-name-file-licensing)).
 
 ## 8. Licensing and Attribution
 
@@ -1765,7 +1765,7 @@ license_files = ["LICENSE"]
 
 | Field | Purpose |
 | --- | --- |
-| `license` | SPDX license expression governing the card assets the package carries |
+| `license` | SPDX license expression governing the card assets the package contains |
 | `license_files` | Paths, relative to the deck root, to the full license text and any notices. Empty by default; no filename is picked up by convention ([§8](#8-licensing-and-attribution)) |
 | `copyright` | The copyright notice, verbatim as the rights holder wrote it |
 | `attribution` | The credit line the license requires downstream users to display |
@@ -1812,7 +1812,7 @@ license_files = ["names/LICENSE.pt-BR"]
 attribution = "Portuguese translation by Jane Doe."
 ```
 
-Typically, the strings in a name file are the packager's choice, or a translator's. A full set of one contributor's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD carry a [`rights_status`](#84-rights-status) for them.
+Typically, the strings in a name file are the packager's choice, or a translator's. A full set of one contributor's renamings is a compilation and such a file SHOULD say where the names came from in `[metadata].source` and SHOULD declare a [`rights_status`](#84-rights-status) for them.
 
 ### 8.4 Rights Status
 
@@ -1843,7 +1843,7 @@ copyright = "© 2012 Some Artist"
 attribution = "The Example Tarot by Some Artist."
 ```
 
-`license` and `rights_status` answer different questions about, in general, different objects, and a deck MAY carry both, one, or neither. Where both are present and both are about the artwork, which is the case for any deck that carries its artwork, they MUST NOT contradict each other. A validator checks only the coarse cases [§10.4](#104-validation-rules) lists.
+`license` and `rights_status` answer different questions about, in general, different objects, and a deck MAY declare both, one, or neither. Where both are present and both are about the artwork, which is the case for any deck that contains its artwork, they MUST NOT contradict each other. A validator checks only the coarse cases [§10.4](#104-validation-rules) lists.
 
 The same field is available in a name file's `[metadata]` and `[metadata.alt_text]` tables, with the same meaning ([§8.3](#83-name-file-licensing)).
 
@@ -1911,7 +1911,7 @@ Nothing here is a legal determination and this specification does not make one.
 
 ### 9.1 Open Registries
 
-Several sections of this specification carry a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#414-product-identifiers), [rating systems](#415-content-rating), [origin vocabularies](#417-artwork-origin) and the advisory [related-deck relations](#412-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
+Several sections of this specification define a registry of names: the [type segments](#33-qualified-identifiers) of a qualified identifier, [link relations](#411-links), [product identifier schemes](#414-product-identifiers), [rating systems](#415-content-rating), [origin vocabularies](#417-artwork-origin) and the advisory [related-deck relations](#412-related-decks). Each is open on the same terms. An application MUST ignore a name it does not recognize and MUST NOT treat one as an error. A later version of this specification MAY add to any of these registries, so a packager who needs a name it does not define SHOULD prefix theirs to avoid colliding with a later addition.
 
 The prefix differs with what the name is. A [custom name](#32-custom-names) takes `x_`, as in `x_kickstarter`; a path segment takes `x-`, as in `x-collection-notes`. A custom name admits `_` and not `-`, and a path segment admits `-` and not `_` ([§3.5](#35-grammar)).
 
@@ -1941,7 +1941,7 @@ Top-level table names outside `[app]` are reserved for future versions of this s
 A conforming deck:
 
 - MUST contain a readable `deck.toml` well-formed under [§2.3](#23-file-format-and-encoding).
-- MUST contain a `[deck]` table carrying the required fields from [§4.1](#41-deck).
+- MUST contain a `[deck]` table with the required fields from [§4.1](#41-deck).
 - MUST have at least one card asset discoverable under [§6.1](#61-asset-discovery). A [surrogate](#68-surrogate-assets) is a card asset, so a [surrogate deck](#69-surrogate-decks) satisfies this rule without an exception being made for it. A deck with no assets of any kind has nothing to show and is not a deck.
 - MUST produce no errors under [§10.4](#104-validation-rules).
 
@@ -1970,7 +1970,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | --- | --- |
 | **E** | `deck.toml` exists and is valid TOML 1.0.0, and every image, license file and name file it references exist. |
 | **E** | Every key whose Required column in [§4](#4-decktoml-reference) reads **Yes** is present: `[deck].schema_version`, `name` and `version` ([§4.1](#41-deck)), `rel` and `url` on each `[deck].links` entry ([§4.1.1](#411-links)), `rel` and `deck` on each `[deck].related` entry ([§4.1.2](#412-related-decks)). A key whose Required column states a condition rather than **Yes** is reported by the rule below that states the same condition, and a key marked RECOMMENDED is not Required and is not reported at all. |
-| **E** | Every key [§4](#4-decktoml-reference) defines carries a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#9-extensibility) rather than typed. |
+| **E** | Every key [§4](#4-decktoml-reference) defines has a value of the type its field table gives. A key the deck omits is left to the rule above, and a key this specification does not define is [ignored](#9-extensibility) rather than typed. |
 | **E** | `[deck].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
 | **E** | `[deck].published_date` is a `published-date` ([§3.5](#35-grammar)) denoting a real calendar date ([§4.1.6](#416-published-date)). |
 | **E** | Every top-level table in a name file is a facet this specification defines, meaning `name` or `alt_text`, or is the reserved `[metadata]` table ([§7.2](#72-language-resolution)). |
@@ -1978,7 +1978,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every `name_template`, at any of the four sites [§7.3.1](#731-minor-arcana-name-composition) defines, is a string containing no placeholder other than `{rank}` and `{suit}`. |
 | **E** | Every name file's stem is a well-formed BCP 47 language tag and no two differ only in case. |
 | **W** | `[deck].default_language` names no name file the deck ships. The nomination selects among the deck's own files and resolution falls through to the manifest either way, so a deck missing the file it prefers is still complete ([§7.2](#72-language-resolution)). |
-| **E** | A name file carries no top-level `[inscription]` table. Inscriptions are declared as [`[cards].inscription`](#432-inscriptions), which a validator reporting this SHOULD name. |
+| **E** | A name file has no top-level `[inscription]` table. Inscriptions are declared as [`[cards].inscription`](#432-inscriptions), which a validator reporting this SHOULD name. |
 | **E** | `metadata_language`, where present, is a well-formed BCP 47 language tag, and `artwork_language`, where present, is a non-empty array of well-formed BCP 47 language tags ([§7.1](#71-language-tags)). |
 | **W** | An `artwork_language` containing `zxx` alongside any other tag. *No linguistic content* and a named language cannot both describe the same faces ([§7.1](#71-language-tags)). |
 | **W** | A deck declaring a `metadata_language` different from its `default_language`. Informational, so that a packager can see the distinction was read as intended rather than as a typo ([§7.1](#71-language-tags)). |
@@ -2034,44 +2034,44 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A deck that declares neither `license` nor `rights_status`. One of the two is how a deck says what may be done with its artwork, and a deck that says neither leaves every downstream user guessing ([§8](#8-licensing-and-attribution)). |
 | **W** | A `redistribution` or `derivation` of `full` alongside a `rights_status` asserting the artwork is in copyright with no license granted, meaning a RightsStatements.org `InC` URI or one of its refinements. The deck says both that nobody granted permission and that the packager passes it on ([§8.5](#85-redistribution-and-derivation)). One of the two fields is wrong, and a validator cannot tell which. |
 | **W** | A `redistribution` or `derivation` narrower than `full` on a deck whose `license` is a public license granting redistribution or derivation outright. The license governs and the field does not take it back ([§8.5](#85-redistribution-and-derivation)), so the field misleads a reader without binding anyone. A validator checks this only for licenses it recognizes. |
-| **W** | A [surrogate deck](#69-surrogate-decks) declaring `redistribution = "full"`. The field governs passing on the artwork and the package carries none ([§6.9](#69-surrogate-decks)). A `license` on such a deck is not reported; it covers the surrogates. |
+| **W** | A [surrogate deck](#69-surrogate-decks) declaring `redistribution = "full"`. The field governs passing on the artwork and the package contains none ([§6.9](#69-surrogate-decks)). A `license` on such a deck is not reported; it covers the surrogates. |
 | **W** | A [surrogate deck](#69-surrogate-decks) with no `license`. Its surrogates are the packager's own work and `derivation = "surrogate"` invites them to be passed on, so a reader who takes them up has no terms to go by ([§6.9](#69-surrogate-decks)). |
-| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one carrying a `surrogate_for` relation, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§8.6](#86-roles-and-credits)). Every rights assertion in the package is then unattributable. |
+| **W** | A deck that names artwork it did not produce and does not declare `packager`, meaning one declaring a `surrogate_for` relation, or one whose `rights_status` asserts the artwork is in copyright to someone else ([§8.6](#86-roles-and-credits)). Every rights assertion in the package is then unattributable. |
 | **W** | A `packager` equal to `artist`, or a `creator` equal to `artist`. Where the two are the same person the field says nothing, and where they are not one of them is wrong ([§8.6](#86-roles-and-credits)). |
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
-| **E** | On every `[deck].related` entry, `rel` is a well-formed [custom name](#32-custom-names) and `deck` is a well-formed qualified identifier carrying no fragment and not equal to this deck's own `identifier` ([§4.1.2](#412-related-decks)). Whether it names a deck that exists is not checked. That both keys are present is the required-key rule's to report. |
+| **E** | On every `[deck].related` entry, `rel` is a well-formed [custom name](#32-custom-names) and `deck` is a well-formed qualified identifier with no fragment and not equal to this deck's own `identifier` ([§4.1.2](#412-related-decks)). Whether it names a deck that exists is not checked. That both keys are present is the required-key rule's to report. |
 | **E** | A deck declares at most one `pattern` relation, at most one `surrogate_for` relation and at most one `expands` relation, and names no deck under both `pattern` and `surrogate_for` ([§4.1.2.1](#4121-pattern), [§4.1.2.2](#4122-surrogate_for), [§4.1.2.3](#4123-expands)). |
 | **W** | A `related` `rel` outside the registry of [§4.1.2](#412-related-decks) that is not prefixed (as above). |
-| **W** | A package declaring `rel = "expands"` that also declares `[excluded_cards]` covering the canonical slots it does not carry. The relation already says the package is not a whole deck ([§6.7.6](#676-when-no-asset-is-found)). |
+| **W** | A package declaring `rel = "expands"` that also declares `[excluded_cards]` covering the canonical slots it does not contain. The relation already says the package is not a whole deck ([§6.7.6](#676-when-no-asset-is-found)). |
 | **E** | `pips`, where present, is one of `scenic`, `emblematic` or `unstated` ([§4.1.3](#413-pips)). |
 | **E** | Every `product_ids` key is a well-formed [custom name](#32-custom-names) and every value is a non-empty string ([§4.1.4](#414-product-identifiers)). |
 | **W** | An `isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box copy is transcribed by hand and this catches the transcription error ([§4.1.4](#414-product-identifiers)). |
 | **W** | A `gtin` that is not eight, twelve, thirteen or fourteen digits, that contains a character other than a digit, or whose check digit does not verify ([§4.1.4](#414-product-identifiers)). |
 | **W** | A `product_ids` scheme outside the registry of [§4.1.4](#414-product-identifiers) that is not prefixed (as above). |
-| **E** | Every `content_rating` subtable key is a well-formed [custom name](#32-custom-names), in `[deck]` and on every card and card back design alike, and every descriptor key within a system subtable is a well-formed custom name carrying a non-empty string value. `artwork_complete`, where present, is a boolean and appears only at the deck level ([§4.1.5](#415-content-rating)). |
+| **E** | Every `content_rating` subtable key is a well-formed [custom name](#32-custom-names), in `[deck]` and on every card and card back design alike, and every descriptor key within a system subtable is a well-formed custom name with a non-empty string value. `artwork_complete`, where present, is a boolean and appears only at the deck level ([§4.1.5](#415-content-rating)). |
 | **E** | Within an `oars-1.1` subtable, every descriptor key is one of the twenty-three OARS 1.1 attribute ids written with underscores and every value is one of `none`, `mild`, `moderate` or `intense` ([§4.1.5](#415-content-rating)). |
 | **E** | Every rating system named on an [artwork](#13-terminology) is a system `[deck.content_rating]` also declares, and no descriptor declared on an artwork exceeds the deck-level value declared for the same system and descriptor under the ordering `none` < `mild` < `moderate` < `intense` ([§4.1.5](#415-content-rating)). A descriptor the deck-level subtable omits is `none`, and so admits no value above it on any artwork, except under `artwork_complete = true`, where it constrains nothing. |
 | **W** | A `content_rating` system outside the registry of [§4.1.5](#415-content-rating) that is not prefixed (as above). |
 | **E** | Where any [artwork](#13-terminology) declares a descriptor for a system, that system's subtable in `[deck.content_rating]` declares `artwork_complete` ([§4.1.5](#415-content-rating)). |
-| **W** | Under `artwork_complete = true`, a declared deck-level descriptor whose value exceeds every value the deck's artwork carries for it. One of the two is unfinished ([§4.1.5](#415-content-rating)). A deck-level descriptor that merely restates what the artwork already carries is not reported. |
+| **W** | Under `artwork_complete = true`, a declared deck-level descriptor whose value exceeds every value the deck's artwork declares for it. One of the two is unfinished ([§4.1.5](#415-content-rating)). A deck-level descriptor that merely restates what the artwork already declares is not reported. |
 | **W** | An `artwork_complete` on a system no artwork declares a descriptor for. The key describes an annotation that does not exist ([§4.1.5](#415-content-rating)). |
 | **E** | Every `origin` system key is a well-formed [custom name](#32-custom-names), in `[deck]`, on every card and card back design, and in every name file's `[metadata]` and `[metadata.alt_text]` alike, and every value is a non-empty string ([§4.1.7](#417-artwork-origin)). |
 | **E** | Every origin system named on an [artwork](#13-terminology) is a system `[deck.origin]` also declares ([§4.1.7](#417-artwork-origin)). |
 | **W** | A value under an `iptc-dst` key that is not a term name of the IPTC Digital Source Type vocabulary ([§4.1.7](#417-artwork-origin)). The vocabulary is not this specification's to close, so an unrecognized term is ignored rather than rejected and a misspelled term passes quietly. |
 | **W** | An `origin` system outside the registry of [§4.1.7](#417-artwork-origin) that is not prefixed (as above). |
-| **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and carries no key this specification does not define for a [surrogate file](#681-the-surrogate-file). |
+| **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and contains no key this specification does not define for a [surrogate file](#681-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§6.8.1](#681-the-surrogate-file)). |
 | **W** | A surrogate deck that declares neither a [`surrogate_for`](#4122-surrogate_for) relation nor any [`[deck.product_ids]`](#414-product-identifiers) entry. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§6.9](#69-surrogate-decks)). |
 | **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§6.9](#69-surrogate-decks)). |
-| **E** | In a [container](#24-deck-containers), the archive holds `deck.toml` at its root rather than inside a wrapping directory, and no entry name is absolute, names a drive, or carries a `..`, `.` or empty segment ([§2.4](#24-deck-containers)). |
+| **E** | In a [container](#24-deck-containers), the archive holds `deck.toml` at its root rather than inside a wrapping directory, and no entry name is absolute, names a drive, or contains a `..`, `.` or empty segment ([§2.4](#24-deck-containers)). |
 | **E** | In a container, no entry is a symbolic link, a hard link, an encrypted entry, or anything other than a regular file or a directory, and every entry is stored or deflated ([§2.4](#24-deck-containers)). |
-| **W** | A container whose first entry is not an uncompressed `mimetype` carrying the media type of [§2.4](#24-deck-containers). Applications still read it, but a desktop that recognizes files by their leading bytes presents it as a plain archive. |
+| **W** | A container whose first entry is not an uncompressed `mimetype` containing the media type of [§2.4](#24-deck-containers). Applications still read it, but a desktop that recognizes files by their leading bytes presents it as a plain archive. |
 
 ## 11. Security Considerations
 
-A deck arrives from outside the system and carries data a packager can abuse. This section describes the security concerns that can arise.
+A deck arrives from outside the system and contains data a packager can abuse. This section describes the security concerns that can arise.
 
 ### 11.1 Path Traversal
 
@@ -2079,7 +2079,7 @@ Author-supplied paths such as `icon`, `image` and `license_files` can be vectors
 
 ### 11.2 Terminal Escape Injection
 
-ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can carry OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through.
+ANSI art is a sequence of bytes an application writes to a terminal, and a hostile deck can contain OSC 52 sequences that clobber the user's clipboard, or sequences that induce the terminal to write attacker-chosen bytes to the application's standard input. An application that renders ANSI art MUST therefore restrict what it passes through.
 
 ## Appendix A. Examples (Informative)
 
@@ -2390,7 +2390,7 @@ Applications MUST ignore these names in a 2.0 deck.
 
 This appendix publishes conventional English names for the twenty-two canonical major arcana as the last fallback of display name resolution ([§7.3](#73-display-name-resolution)). Nothing in this specification treats a deck as wrong for disagreeing with this table.
 
-This table is dedicated to the public domain under CC0 1.0, along with its selection and arrangement, and is not subject to the attribution term the rest of this document carries ([§1.6](#16-licensing-of-this-specification-informative)). Copy it into an implementation freely.
+This table is dedicated to the public domain under CC0 1.0, along with its selection and arrangement, and is not subject to the attribution term that governs the rest of this document ([§1.6](#16-licensing-of-this-specification-informative)). Copy it into an implementation freely.
 
 The table stops at `21` and no future version of this specification will extend it. A major arcanum keyed `22` or above belongs to the deck that defines it and no convention names it ([§3.1.1](#311-a-canonical-id-is-a-slot)).
 
@@ -2454,20 +2454,20 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [Card image resolution](#67-card-image-resolution), covering image roots and size selection. Also promoted WebP to first-class format.
 - [Card back discovery](#65-card-back-images), so that a back can exist at several resolutions or as ANSI.
 - [File format and encoding](#23-file-format-and-encoding).
-- [Deck containers](#24-deck-containers), a single-file transfer form carrying one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
+- [Deck containers](#24-deck-containers), a single-file transfer form containing one deck directory, so that a deck can be shared as one file without the directory ceasing to be what this specification describes.
 - [Security considerations](#11-security-considerations), covering path traversal and ANSI escape codes.
 - [Appendix C](#appendix-c-canonical-card-names-informative) for fallback name-resolution chains.
-- [Rights status](#84-rights-status), [redistribution and derivation](#85-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package carries rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
+- [Rights status](#84-rights-status), [redistribution and derivation](#85-redistribution-and-derivation), for artwork that no license covers. `[deck].license` now covers the card assets a package contains rather than the artwork specifically, so that a package can license what it ships while `rights_status` describes the work behind it.
 - [Surrogates](#68-surrogate-assets) and [surrogate decks](#69-surrogate-decks), so that a deck can be described without its artwork being redistributed. A surrogate is a card asset of its own kind in the `surrogate/` image root, discovered and resolved like any other.
 - [Group names](#722-group-names), by which a name file supplies the deck's own localized strings for its arcana and its card classes.
 - [`[deck].packager`](#86-roles-and-credits), naming who assembled the package.
 - [`[deck].creator`](#86-roles-and-credits), naming who devised a deck they did not draw.
-- [`[deck].related`](#412-related-decks), one table of typed outbound references to other decks. It carries [`pattern`](#4121-pattern), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#4122-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); [`expands`](#4123-expands), by which an add-on package names the deck it adds cards to; and [`companion`](#4124-companion), by which a deck names one it was published to be used alongside. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
+- [`[deck].related`](#412-related-decks), one table of typed outbound references to other decks. It includes [`pattern`](#4121-pattern), by which a deck names the deck or tradition it is patterned on; [`surrogate_for`](#4122-surrogate_for), by which a package names the deck whose artwork it describes but does not contain (e.g., due to copyright); [`expands`](#4123-expands), by which an add-on package names the deck it adds cards to; and [`companion`](#4124-companion), by which a deck names one it was published to be used alongside. Recognized relations govern what the package is and are closed within a major version, while advisory ones are an open registry an application may ignore.
 - [`[deck].metadata_language`](#71-language-tags) and [`[deck].artwork_language`](#71-language-tags), separating the language the packager writes in and the language printed on the cards from the `default_language` that nominates a preferred name file.
 - [`[minor_arcana]`](#46-minor_arcana), the source-layer home for the grammar joining a deck's own suit and rank names, so that a deck whose words are not English states how they join without shipping a name file, and a `name_template` on [`[suits]`](#44-suits) and on a name file's suit table for a join that varies with the suit.
 - The [two-layer rule](#72-language-resolution) for display strings: a name file is a translation catalogue and the manifest is the source layer. [`[ranks]`](#45-ranks) is new, supplying the source step a rank never had, and a canonical suit or rank the deck does not name now falls to a string the application localizes rather than to a title-cased English key.
 - [`inscription`](#432-inscriptions) on a card, a card variant and a card back design, transcribing text printed on the artwork other than its name and its number.
-- [`unnumbered`](#431-card-numbers) and [`unnamed`](#73-display-name-resolution) on a card, by which a face that carries no numeral or no title says so without being unseated from the sequence.
+- [`unnumbered`](#431-card-numbers) and [`unnamed`](#73-display-name-resolution) on a card, by which a face that shows no numeral or no title says so without being unseated from the sequence.
 - [`[deck].pips`](#413-pips), by which a deck can specify whether its numbered minor cards depict scenes.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#414-product-identifiers), recording the identifiers of a commercial published deck.
