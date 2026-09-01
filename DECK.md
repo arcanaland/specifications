@@ -368,9 +368,9 @@ major_arcana.06:two_women   # a card reference with a variant suffix
 
 A card reference with no variant suffix denotes the card's default variant. The suffix selects between different artwork of the card and does not change which card is named. `major_arcana.06:two_women` and `major_arcana.06:two_men` are the same card in the same slot with different artwork.
 
-The suffixed form on its own is a **variant reference**. A variant is created by a file ([§6.1](#61-asset-discovery)) or by an explicit `image` path, and a variant reference is a valid key wherever a card reference is: an entry in [`[cards]`](#43-cards) supplies a variant's strings, image and content rating, and a name file's `variant` tables are keyed by it ([§7.2](#72-language-resolution)).
+The suffixed form on its own is a **variant reference**. A variant is created by a file ([§6.1](#61-asset-discovery)) or by an explicit `image` path, and a variant reference is a valid key wherever a card reference is: an entry in [`[cards]`](#43-cards) supplies what belongs to that artwork rather than to the card ([§4.3](#43-cards)), and a name file's `variant` tables are keyed by it ([§7.2](#72-language-resolution)).
 
-Variants of a card are interchangeable and have the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
+Variants of a card are interchangeable and have the same meaning, so consumers of interpretive data, including the [Esoterica Specification](https://github.com/arcanaland/specifications/blob/main/ESOTERICA.md), discard the variant suffix. *Interchangeable* is a claim about meaning and not about ink: two artworks of one card may print different titles, different numerals or none at all, and [§4.3](#43-cards) is where that difference is declared. Variant keys are deck-wide, so an application MAY prefer a key across the whole deck.
 
 ### 3.2 Custom Names
 
@@ -995,6 +995,7 @@ reversible = true
 | `description` | String | No | none | Prose about the design, such as its provenance, for display alongside the back in a picker or an info panel. Not localized. Written once in the deck's [`metadata_language`](#41-deck) ([§7.2](#72-language-resolution)). |
 | `alt_text` | String | No | none | Fallback alt text describing what the back looks like. A name file's `[alt_text.card_back]` takes precedence and is where a deck SHOULD put it ([§7.3](#73-display-name-resolution)). |
 | `inscription` | String or Array of String | No | none | Text printed on this design other than its name ([§4.3.2](#432-inscriptions)). Not localized. |
+| `artwork_language` | Array of String | No | the deck's | The languages of text printed on this design ([§7.1](#71-language-tags)). |
 | `content_rating` | Table | No | none | What this back design depicts, keyed by rating system, on the terms in [§4.1.5](#415-content-rating). |
 | `origin` | Table | No | the deck's | How this back design came to exist, keyed by vocabulary system, on the terms in [§4.1.7](#417-artwork-origin). |
 | `reversible` | Boolean | No | unstated | Whether the design looks the same turned 180°, so that a card lying face down does not reveal which way round it is ([§4.2.2](#422-reversible)). |
@@ -1051,6 +1052,7 @@ image = "scalable/major_arcana/06.two_women.svg"
 | `unnamed` | Boolean | No | `false` | The card's face shows no name. Truncates display name resolution ([§7.3](#73-display-name-resolution)). |
 | `supplied_name` | Table | No | none | A name the deck supplies for a card whose face shows none, taken from the booklet, the packaging or the packager ([§4.3.3](#433-supplied-names)). |
 | `inscription` | String or Array of String | No | none | Text printed on this card's artwork other than its name and its number ([§4.3.2](#432-inscriptions)). Not localized. |
+| `artwork_language` | Array of String | No | the deck's | The languages of text printed on this card's artwork ([§7.1](#71-language-tags)). |
 | `position` | Integer | No | see [§5](#5-ordering) | Where the card sits in the deck's sequence. Major arcana only. |
 | `content_rating` | Table | No | none | What this card depicts, keyed by rating system, on the terms in [§4.1.5](#415-content-rating). |
 | `origin` | Table | No | the deck's | How this card's artwork came to exist, keyed by vocabulary system, on the terms in [§4.1.7](#417-artwork-origin). |
@@ -1063,9 +1065,26 @@ An entry for a canonical minor arcanum or for `major_arcana.00` through `major_a
 
 `position` is meaningful only for major arcana. A minor arcanum takes its place from its suit's [`ranks`](#44-suits) sequence and an application MUST ignore a `position` declared on one.
 
-**On a variant-reference key** the entry supplies that variant's strings, image and content rating. Declaring one does not create the variant. A variant is created by a file ([§6.1](#61-asset-discovery)) or by an `image` path. `number`, `unnumbered`, `unnamed`, `position` and `default_variant` belong to the card rather than to one of its artworks, and an application MUST ignore any of the five declared on a variant-reference key: a variant does not sit elsewhere in the sequence and does not have a different printed number, because it is the same card.
+**On a variant-reference key** the entry supplies that variant's own strings, image and annotations. Declaring one does not create the variant. A variant is created by a file ([§6.1](#61-asset-discovery)) or by an `image` path.
 
-`inscription` is legal on a variant-reference key. A variant is a different artwork of the same card, so it may have different ink even though it cannot have a different number ([§4.3.2](#432-inscriptions)).
+A variant is a different artwork of the same card in the same slot, so the fields of this table divide in two:
+
+| Facet of | Fields | On a variant-reference key |
+| --- | --- | --- |
+| the **slot** | `position`, `default_variant` | An application MUST ignore either. A variant does not sit elsewhere in the sequence, and which of a card's artworks is its default is a fact about the card. |
+| the **artwork** | every other field of this table | Legal, and where declared it overrides the card's value for that artwork alone. |
+
+Ink is a facet of an artwork. A number is ink as a name is: a substitute card bound into the same slot may print a different numeral, a different title or neither, so `number`, `unnumbered` and `unnamed` describe the artwork they are declared on and not the slot it sits in. What a variant cannot have is a different place in the deck's sequence, because it is the same card ([§3.1.2](#312-card-references-and-the-variant-suffix)).
+
+```toml
+[cards."major_arcana.13"]
+number = "XIII"
+default_variant = "death"
+
+[cards."major_arcana.13:time"]           # a substitute card, printing no numeral
+unnumbered = true
+artwork_language = ["zxx"]
+```
 
 Where `default_variant` is omitted, the unsuffixed file such as `06.svg` is the default variant. A deck that provides only variant files for a card and no unsuffixed file MUST declare it.
 
@@ -1079,9 +1098,9 @@ Where `number` is absent, a card's number follows from the shape of its key:
 - A major arcanum with a custom key is considered unnumbered.
 - A minor arcanum is unnumbered.
 
-A card that declares `unnumbered = true` shows no number whatever its key shape implies, and an application MUST NOT present one for it. `number` and `unnumbered` answer the same question and a card MUST NOT declare both. **Ordering is unaffected**: a major arcanum with a two-digit key keeps the implicit `position` of [§5.1](#51-major-arcana), so a card can sit in the numbered sequence and print no number, as the Fool does in the Marseille pattern.
+An [artwork](#13-terminology) whose entry declares `unnumbered = true` shows no number whatever its key shape implies, and an application MUST NOT present one for it. `number` and `unnumbered` answer the same question and one entry MUST NOT declare both. Both are facets of the artwork, so a [variant](#312-card-references-and-the-variant-suffix) may declare either and thereby print a numeral its card does not, or none where its card prints one ([§4.3](#43-cards)). **Ordering is unaffected**: a major arcanum with a two-digit key keeps the implicit `position` of [§5.1](#51-major-arcana), so a card can sit in the numbered sequence and print no number, as the Fool does in the Marseille pattern.
 
-`number` and `inscription` ([§4.3.2](#432-inscriptions)) are not localized: each reproduces what is printed on the artwork, which is a property of the artwork rather than of the language an application is showing.
+`number` and `inscription` ([§4.3.2](#432-inscriptions)) are not localized: each reproduces what is printed on the artwork, which is a property of the artwork rather than of the language an application is showing. [`artwork_language`](#71-language-tags) is the field that says what language that ink is in, and it is declared on the same artwork.
 
 #### 4.3.2 Inscriptions
 
@@ -1127,7 +1146,9 @@ supplied_name = { text = "Time", lang = "en", source = "booklet" }   # a bilingu
 
 `text` is a non-empty string, reproduced verbatim. Applications MUST NOT case-convert it, as with every other display string ([§7.3](#73-display-name-resolution)).
 
-Where `lang` is absent the name is in the deck's artwork language. A supplied title takes the language of the resource rather than of whoever supplied it. That resolves to a tag only where [`artwork_language`](#71-language-tags) declares exactly one that is not `zxx`. Where the deck declares several, declares `zxx`, or declares none, the language of the name is unstated, and an application treats it as it treats any other string whose language it does not know.
+Where `lang` is absent the name is in the artwork's language. A supplied title takes the language of the resource rather than of whoever supplied it. That resolves to a tag only where the [`artwork_language`](#71-language-tags) in force for this entry — its own, or failing that the deck's ([§7.1](#71-language-tags)) — declares exactly one tag that is not `zxx`. Where it declares several, declares `zxx`, or is declared nowhere, the language of the name is unstated, and an application treats it as it treats any other string whose language it does not know.
+
+A face that prints no name often prints no text at all, so the artwork in force is frequently `zxx` and the default frequently resolves to nothing. `lang` is the field for that case, and a packager who knows the language SHOULD declare it rather than rely on the default.
 
 The `lang` field is useful particularly for the following two cases:
 1. More than one language on the art and where the supplied name is not in the language of the cards
@@ -1146,7 +1167,7 @@ Where a value would say more than the registry admits, a later version of this s
 
 `supplied_name` and `name` MUST NOT both be declared on one entry ([§10.4](#104-validation-rules)). The face either prints a name or it does not, and a deck that declares both has said both. `supplied_name` alongside `unnamed = true` is the expected combination.
 
-`supplied_name` is legal on a [variant-reference](#312-card-references-and-the-variant-suffix) key, on the same terms as [`inscription`](#432-inscriptions).
+`supplied_name` is a facet of the artwork, so it is legal on a [variant-reference](#312-card-references-and-the-variant-suffix) key ([§4.3](#43-cards)). A substitute artwork bound into a card's slot can carry a name of its own, from the same booklet that named the card.
 
 Where a supplied name was taken from a work the deck does not otherwise account for, such as a publisher's booklet, [`[strings]`](#48-strings) is where the deck states that work's terms ([§8.3](#83-licensing-display-strings)).
 
@@ -1564,6 +1585,16 @@ A deck has up to three languages and they are not the same question:
 
 `artwork_language` is an array (multilingual card faces are common). A deck whose cards have no text declares `zxx` (no linguistic content).
 
+**The deck-level value is a default, not a summary**, on the same terms as [`origin`](#417-artwork-origin). `artwork_language` is also a field of a card, of a [variant](#312-card-references-and-the-variant-suffix) and of a [card back design](#42-card_backs) ([§4.3](#43-cards)), where it describes that one [artwork](#13-terminology) and overrides the deck's. A deck with titled courts and untitled pips declares its language once and `zxx` on the faces that carry no text, rather than declaring both of the deck as a whole — which no face is. There is no coverage flag and no ordering: an application wanting every language the deck's faces carry resolves each artwork and unions the results itself.
+
+```toml
+[deck]
+artwork_language = ["fr"]                # the default for every artwork
+
+[cards."major_arcana.cest_si_bon"]
+artwork_language = ["zxx"]               # this face carries no text
+```
+
 ```toml
 default_language  = "fr"          # prefer names/fr.toml where the reader states no preference
 metadata_language = "en"          # the packager, who is writing in English
@@ -1579,7 +1610,7 @@ Which layer a string belongs in follows from what the string is, not from what l
 | The string is | It goes in | Its language is |
 | --- | --- | --- |
 | printed on the artwork | the manifest, as [`name`](#43-cards), [`number`](#431-card-numbers) or an [`inscription`](#432-inscriptions) | the artwork's ([`artwork_language`](#71-language-tags)) |
-| the deck's name for a card that prints none | the manifest, as a [`supplied_name`](#433-supplied-names) | declared on the string, or the deck's single artwork language ([§4.3.3](#433-supplied-names)) |
+| the deck's name for a card that prints none | the manifest, as a [`supplied_name`](#433-supplied-names) | declared on the string, or the artwork's single language ([§4.3.3](#433-supplied-names)) |
 | the packager's own words, or a translation of any of the above | a name file | the file's tag |
 
 A string that reproduces text printed on an artwork therefore belongs in the manifest whatever language that text is in, and a French deck packaged by an English-speaking packager does not put its card names in `names/en.toml` merely because the packager writes English.
@@ -1732,7 +1763,7 @@ Every chain has the same three steps: **the name file, then the corresponding fi
 | Major arcana name | `[name.card.major_arcana].<key>` | `[cards."major_arcana.<key>"].name`, then its [`supplied_name.text`](#433-supplied-names) | for a key `00` through `21` only, the [reference deck](#13-terminology)'s name for that ID and then [Appendix C](#appendix-c-canonical-card-names-informative) where no reference deck is configured. See below for a key that reaches the end. |
 | Minor arcana name | `[name.card.minor_arcana.<suit>].<rank>` | `[cards."minor_arcana.<suit>.<rank>"].name`, then its [`supplied_name.text`](#433-supplied-names) | [composition](#731-minor-arcana-name-composition) from the card's suit and rank names |
 | Card back design name | `[name.card_back].<key>` | `[card_backs.designs.<key>].name` | the title-cased key |
-| Card variant name | `[name.variant]."<variant-ref>"` | `[cards."<variant-ref>"].name`, then its [`supplied_name.text`](#433-supplied-names) | the name of the card itself |
+| Card variant name | `[name.variant]."<variant-ref>"` | `[cards."<variant-ref>"].name`, then its [`supplied_name.text`](#433-supplied-names) | the name of the card itself, unless the variant declares `unnamed = true` |
 | Group name | `[name.group.<family>].<member>` | — | a string the application supplies ([§7.2.2](#722-group-names)) |
 | Alt text | `[alt_text.<kind>…].<key>` | the `alt_text` field of the corresponding `[cards]` or `[card_backs.designs]` entry | none |
 | Card variant alt text | `[alt_text.variant]."<variant-ref>"` | `[cards."<variant-ref>"].alt_text` | the card's own alt text |
@@ -1743,7 +1774,9 @@ Canonical suit and rank keys are a closed set this specification defines, so whe
 
 The manifest step of a card's chain reads `name` and then [`supplied_name.text`](#433-supplied-names), which cannot both be present. A supplied name is a manifest string like any other: a name file outranks it, and nothing outranks a name file.
 
-A card that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the reference-deck step and [Appendix C](#appendix-c-canonical-card-names-informative) do not apply, and where neither supplies a string the card has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it. What the flag forbids is a name being *invented* for a face that shows none — not a name the deck actually has for it, which is what a [`supplied_name`](#433-supplied-names) carries. A card MUST NOT declare both `unnamed = true` and a `name`.
+An entry that declares `unnamed = true` resolves its name through the name file and the manifest as usual and the chain then stops: the steps after the manifest do not apply, and where neither layer supplies a string the artwork has no name. A name file may still give one and it still wins, so a packager who wants a conventional label for a picker can supply it. What the flag forbids is a name being *invented* for a face that shows none — not a name the deck actually has for it, which is what a [`supplied_name`](#433-supplied-names) carries. One entry MUST NOT declare both `unnamed = true` and a `name`.
+
+`unnamed` is a facet of the artwork ([§4.3](#43-cards)), so a [variant](#312-card-references-and-the-variant-suffix) declares it for itself. On a variant chain the step it truncates is the last one, *the name of the card itself*: a card whose face prints a title has an untitled substitute artwork exactly when the variant says so, and that variant is not then given the card's title by fallback. A variant that declares nothing inherits the card's name as before.
 
 A major arcana key that reaches the end of its chain has no name. Where that key is custom, an application uses the title-cased key, which for a key the packager chose is usually a serviceable name. Where it is an [extended major arcanum](#13-terminology) the title-cased key is the bare digits so an application SHOULD instead present the card by its [number](#431-card-numbers).
 
@@ -2066,12 +2099,12 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every name file's stem is a well-formed BCP 47 language tag and no two differ only in case. |
 | **W** | `[deck].default_language` names no name file the deck ships. The nomination selects among the deck's own files and resolution falls through to the manifest either way, so a deck missing the file it prefers is still complete ([§7.2](#72-language-resolution)). |
 | **E** | A name file has no top-level `[inscription]` table. Inscriptions are declared as [`[cards].inscription`](#432-inscriptions), which a validator reporting this SHOULD name. |
-| **E** | `metadata_language`, where present, is a well-formed BCP 47 language tag, and `artwork_language`, where present, is a non-empty array of well-formed BCP 47 language tags ([§7.1](#71-language-tags)). |
+| **E** | `metadata_language`, where present, is a well-formed BCP 47 language tag, and `artwork_language`, where present, is a non-empty array of well-formed BCP 47 language tags, in `[deck]` and on every card, card variant and card back design alike ([§7.1](#71-language-tags)). |
 | **E** | Every `supplied_name` is a table with a non-empty string `text`, and a `lang`, where present, that is a well-formed BCP 47 language tag ([§4.3.3](#433-supplied-names)). |
 | **E** | No entry declares both `name` and `supplied_name`. The face either prints a name or it does not ([§4.3.3](#433-supplied-names)). |
-| **W** | A `supplied_name` whose card does not declare `unnamed = true`, the card being the one a [variant-reference](#312-card-references-and-the-variant-suffix) key names where the entry is a variant's. Usually the face does print the name and [`name`](#43-cards) is the field; a validator reporting this SHOULD say so ([§4.3.3](#433-supplied-names)). |
+| **W** | A `supplied_name` on an entry that declares no `unnamed = true` and, where the entry is a [variant's](#312-card-references-and-the-variant-suffix), whose card declares none either. Usually the face does print the name and [`name`](#43-cards) is the field; a validator reporting this SHOULD say so ([§4.3.3](#433-supplied-names)). |
 | **W** | A deck that declares a `supplied_name` whose `source` is `booklet`, `packaging` or `publisher` and declares no [`[strings]`](#48-strings) `license` or `rights_status`. The names came from a work the package does not otherwise account for ([§8.3](#83-licensing-display-strings)). |
-| **W** | An `artwork_language` containing `zxx` alongside any other tag. *No linguistic content* and a named language cannot both describe the same faces ([§7.1](#71-language-tags)). |
+| **W** | An `artwork_language` containing `zxx` alongside any other tag, wherever it is declared. *No linguistic content* and a named language cannot both describe the same [artwork](#13-terminology). A deck whose faces differ in this respect declares the difference per artwork rather than at deck level ([§7.1](#71-language-tags)), so the rule does not fire on it. |
 | **W** | A deck declaring a `metadata_language` different from its `default_language`. Informational, so that a packager can see the distinction was read as intended rather than as a typo ([§7.1](#71-language-tags)). |
 | **W** | A deck that declares an `artwork_language`, none of whose tags has the primary subtag `en`, and that declares no [`[minor_arcana].name_template`](#46-minor_arcana). The built-in template would set English grammar over the deck's own words ([§7.3.1](#731-minor-arcana-name-composition)). |
 | **E** | Every `[ranks.<key>]` table key is a well-formed [custom name](#32-custom-names) or a canonical rank ([§4.5](#45-ranks)). |
@@ -2097,14 +2130,14 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Where a card has variant files but no unsuffixed file, `default_variant` is declared on that card, and where it is declared it names a variant that card has ([§4.3](#43-cards)). A card with no files at all is a [resolution failure](#676-when-no-asset-is-found), not a violation of this rule. |
 | **E** | `number`, where present, is a non-empty string. A card is made unnumbered by the shape of its key or by `unnumbered` ([§4.3.1](#431-card-numbers)). |
 | **E** | `unnumbered` and `unnamed`, where present, are booleans ([§4.3](#43-cards)). |
-| **E** | No card declares both `number` and `unnumbered = true` ([§4.3.1](#431-card-numbers)). |
-| **E** | No card declares both `name` and `unnamed = true` ([§7.3](#73-display-name-resolution)). |
+| **E** | No entry declares both `number` and `unnumbered = true`, a card's entry and a variant's alike ([§4.3.1](#431-card-numbers)). |
+| **E** | No entry declares both `name` and `unnamed = true`, a card's entry and a variant's alike ([§7.3](#73-display-name-resolution)). |
 | **W** | `unnumbered = true` on a minor arcanum or on a custom-keyed major arcanum, both of which the key shape already makes unnumbered ([§4.3.1](#431-card-numbers)). The declaration says nothing. |
 | **W** | `unnumbered = true` on an [extended major arcanum](#13-terminology) that no name file names. [§7.3](#73-display-name-resolution) presents such a card by its number, so the combination leaves an application with nothing to show. |
 | **E** | Every `inscription`, on a card, on a variant and on a card back design alike, is a non-empty string or a non-empty array of non-empty strings ([§4.3.2](#432-inscriptions)). |
 | **W** | A card's `inscription` equal to its resolved `number` or to its resolved name. The definition excludes both, so the string will be rendered twice ([§4.3.2](#432-inscriptions)). |
 | **W** | A `position` declared on a minor arcanum, which an application ignores ([§4.3](#43-cards)). |
-| **W** | A `number`, `unnumbered`, `unnamed`, `position` or `default_variant` declared on a variant-reference key, all five of which an application ignores ([§4.3](#43-cards)). An `inscription` on such a key is not reported: it belongs to the artwork and is legal there ([§4.3.2](#432-inscriptions)). |
+| **W** | A `position` or `default_variant` declared on a variant-reference key, both of which an application ignores. They are facets of the slot; every other field of [`[cards]`](#43-cards) is a facet of the artwork and is legal there ([§4.3](#43-cards)). |
 | **W** | A deck whose major arcana seating departs from [Appendix C](#appendix-c-canonical-card-names-informative) and which supplies no name for a departing key, so that an application borrows a name for a card the deck did not put in that slot ([§7.3](#73-display-name-resolution)). |
 | **W** | An [extended major arcanum](#13-terminology) no name file names. Nothing else can name it ([§7.3](#73-display-name-resolution)), so it is shown to the user as a bare number. |
 | **E** | No custom major arcana key is a two-digit string, and no custom rank or suit key shadows a canonical one. |
@@ -2392,6 +2425,22 @@ A deck needs a `[cards]` entry for a variant only to choose a non-default defaul
 default_variant = "two_women"
 ```
 
+A variant is a different artwork of the same card, so it may print different ink. Here a deck ships a substitute for Death that carries neither the numeral nor the title its default artwork does, and takes its name from the booklet instead:
+
+```toml
+[cards."major_arcana.13"]
+number = "XIII"
+default_variant = "death"
+
+[cards."major_arcana.13:time"]
+unnumbered = true
+unnamed = true
+supplied_name = { text = "Time", lang = "en", source = "booklet" }
+artwork_language = ["zxx"]
+```
+
+`number`, `unnumbered`, `unnamed` and `artwork_language` are facets of the artwork and so are read on the variant ([§4.3](#43-cards)); `position` and `default_variant` are facets of the slot and would be ignored there. Because the variant declares `unnamed`, its name chain stops at the manifest and it is not given its card's title by fallback ([§7.3](#73-display-name-resolution)) — it is named `Time`, from the `supplied_name`, while `major_arcana.13` keeps its own name and its place in the sequence.
+
 ### A.6 A Surrogate Deck
 
 A surrogate deck can be created for commercial decks with non-redistributable artwork by providing surrogate assets.
@@ -2560,7 +2609,8 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - [`[minor_arcana]`](#46-minor_arcana), the source-layer home for the grammar joining a deck's own suit and rank names, so that a deck whose words are not English states how they join without shipping a name file, and a `name_template` on [`[suits]`](#44-suits) and on a name file's suit table for a join that varies with the suit.
 - The [two-layer rule](#72-language-resolution) for display strings: a name file is a translation catalogue and the manifest is the source layer. [`[ranks]`](#45-ranks) is new, supplying the source step a rank never had, and a canonical suit or rank the deck does not name now falls to a string the application localizes rather than to a title-cased English key.
 - [`inscription`](#432-inscriptions) on a card, a card variant and a card back design, transcribing text printed on the artwork other than its name and its number.
-- [`unnumbered`](#431-card-numbers) and [`unnamed`](#73-display-name-resolution) on a card, by which a face that shows no numeral or no title says so without being unseated from the sequence.
+- [`unnumbered`](#431-card-numbers) and [`unnamed`](#73-display-name-resolution) on an artwork, by which a face that shows no numeral or no title says so without being unseated from the sequence.
+- [`artwork_language`](#71-language-tags) on a card, a card variant and a card back design, saying what language the ink on that one artwork is in. The deck-level value is a default it overrides rather than a summary of the deck, so a deck with titled courts and untitled pips can state both without asserting either of every face.
 - [`[deck].pips`](#413-pips), by which a deck can specify whether its numbered minor cards depict scenes.
 - [`[deck].links`](#411-links), replacing `[deck].website` with typed links that say what they point at.
 - [`[deck.product_ids]`](#414-product-identifiers), recording the identifiers of a commercial published deck.
@@ -2574,7 +2624,7 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Restructured the document as a specification, adopting BCP 14 keywords explicitly, replacing the regex identifier forms with one consolidated [ABNF grammar](#35-grammar) and lifting fields out of TOML comments into [normative field tables](#4-decktoml-reference).
 - Added [qualified identifiers](#33-qualified-identifiers) and formalized custom names and display name resolution.
 - Made every card discoverable from the directory structure.
-- Added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own.
+- Added [card variants](#312-card-references-and-the-variant-suffix), which are entries in [`[cards]`](#43-cards) keyed by a variant reference rather than a table of their own. A [`[cards]`](#43-cards) field is a facet either of the slot or of the artwork filling it: `position` and `default_variant` are the slot's and are ignored on a variant key, and every other field, `number`, `unnumbered` and `unnamed` included, is the artwork's and may be declared there.
 - Allowed custom `ranks` for canonical suits and added `name_template` composition.
 - Specified name file language tags as BCP 47 and added `default_language`, which in 2.0 nominates a preferred name file rather than terminating resolution: name file lookup ends at the name files and falls through to the manifest, which is the terminal fallback, and no file is required to exist for the tag.
 - Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§6.6](#66-aspect-ratio)).
