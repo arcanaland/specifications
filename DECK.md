@@ -43,6 +43,7 @@
     - [4.1.5 Content Rating](#415-content-rating)
     - [4.1.6 Published Date](#416-published-date)
     - [4.1.7 Artwork Origin](#417-artwork-origin)
+    - [4.1.8 Tags](#418-tags)
   - [4.2 `[card_backs]`](#42-card_backs)
     - [4.2.1 The Default Design](#421-the-default-design)
     - [4.2.2 `reversible`](#422-reversible)
@@ -569,7 +570,7 @@ A subsection of a table documents that table, or something written inside it. Wh
 | `content_rating` | Table | No | none | What the deck's artwork depicts, keyed by rating system ([§4.1.5](#415-content-rating)). |
 | `origin` | Table | No | none | How the deck's artwork came to exist (e.g., AI generated), keyed by vocabulary system ([§4.1.7](#417-artwork-origin)). |
 | `links` | Array of Table | No | `[]` | The deck's web addresses, each saying what it points at ([§4.1.1](#411-links)). |
-| `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. No registry, no behavior. |
+| `tags` | Array of String | No | `[]` | Short labels for facts about the deck ([§4.1.8](#418-tags)). |
 
 ```toml
 [deck]
@@ -582,7 +583,7 @@ icon = "deck-icon.png"
 license = "LicenseRef-PublicDomain AND CC0-1.0"
 license_files = ["LICENSE"]
 published_date = "1909-12"
-tags = ["traditional", "classic"]
+tags = ["golden-dawn", "art-nouveau"]
 schema_version = "2.0"
 ```
 
@@ -982,6 +983,21 @@ Rules:
 - A deck whose artwork did not all come to exist the same way SHOULD annotate the exceptions.
 
 Unlike a [content rating](#415-content-rating), there is no coverage flag and no ordering.
+
+#### 4.1.8 Tags
+
+`[deck].tags` holds short labels for facts about the deck that cannot be expressed in other fields. The vocabulary is free and this specification defines no registry of tag values.
+
+```toml
+[deck]
+tags = ["restored", "marseille-type-ii", "18th-century"]
+```
+
+Rules:
+
+- A tag SHOULD be lowercase, with its words separated by hyphens without whitespace. A reader sees `Restored` and `restored` as one tag, but an application comparing them sees two. A screen reader reads a run-together tag as a single word, and it reads a hyphen as a break between words.
+- Tags are written in the deck's [`metadata_language`](#71-language-tags).
+- A tag SHOULD NOT repeat what another field says.
 
 ### 4.2 `[card_backs]`
 
@@ -2282,7 +2298,7 @@ derivation = "full"
 
 default_language = "en"
 published_date = "1909-12"
-tags = ["traditional", "classic", "beginner-friendly"]
+tags = ["golden-dawn", "art-nouveau"]
 links = [
   { rel = "homepage", url = "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot" },
 ]
@@ -2505,7 +2521,7 @@ attribution = "The Example Tarot by Some Artist, published by Example Press."
 redistribution = "none"
 derivation = "surrogate"
 
-tags = ["indie", "modern"]
+tags = ["collage", "botanical"]
 links = [
   { rel = "buy", url = "https://example.com/shop/the-example-tarot", title = "Buy from Example Press" },
   { rel = "artist", url = "https://example.com/artist" },
@@ -2654,5 +2670,6 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Added [`[deck].card_size_mm`](#41-deck) as informative metadata about a physical printing, distinct from the `aspect_ratio` that rendering uses ([§6.6](#66-aspect-ratio)).
 - Specified `license` as SPDX, added `license_files` and `copyright`, and added the `[metadata]` table to name files.
 - Added `rights_status`, `redistribution` and `derivation` for artwork SPDX cannot describe.
+- Clarified the intention of  [`[deck].tags`](#418-tags).
 - Defined what [`[app]`](#92-the-app-table) is for and reserved top-level table names outside it.
 - Lifted deck [ordering](#5-ordering) out of the `[cards]` field reference into a section of its own, beside the other two resolution algorithms ([§6.7](#67-card-image-resolution), [§7.3](#73-display-name-resolution)). The rules are unchanged.
