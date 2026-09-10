@@ -30,6 +30,7 @@
     - [4.1.1 Source Type](#411-source-type)
     - [4.1.2 Citation](#412-citation)
     - [4.1.3 Published Date](#413-published-date)
+    - [4.1.4 The Work Behind a Source](#414-the-work-behind-a-source)
   - [4.2 Targets](#42-targets)
   - [4.3 Slots](#43-slots)
   - [4.4 Builtin Groups](#44-builtin-groups)
@@ -345,7 +346,7 @@ A source document has exactly four top-level tables: `[meta]`, `[card]`, `[group
 
 ### 4.1 `[meta]`
 
-`[meta]` describes the source: what it is, under what terms, and by what name. It says nothing about any card.
+`[meta]` describes the source: what it is, under what terms, and by what name. It says nothing about any card. The work a source draws on is described in its own subtable, [`[meta.work]`](#414-the-work-behind-a-source).
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -355,18 +356,14 @@ A source document has exactly four top-level tables: `[meta]`, `[card]`, `[group
 | `license` | String | **Yes** | n/a | SPDX license expression governing the text this document carries ([§8.1](#81-license-expressions)). |
 | `type` | String | No | none | What kind of source this is, from the registry in [§4.1.1](#411-source-type). |
 | `version` | String | No | none | The source document's own free-form version ([§1.4](#14-versioning-and-compatibility)). |
-| `author` | String | No | none | Who wrote the text. Absent where no one person did ([§4.1.1](#411-source-type)). |
-| `publisher` | String | No | none | The work's publisher. |
-| `published_date` | String | No | none | When the work this document draws on was published, at the precision the author has ([§4.1.3](#413-published-date)). |
-| `isbn` | String | No | none | The work's ISBN, as printed, hyphens and all ([ISO 2108](#15-references)). |
-| `url` | String (URI) | No | none | Where the work can be found. An absolute URL with a scheme of `http` or `https`. |
+| `author` | String | No | none | Who wrote the text this document carries. Absent where no one person did ([§4.1.1](#411-source-type)). |
+| `relation` | String | No | none | How this document stands to the work behind it ([§4.1.4](#414-the-work-behind-a-source)). |
 | `citation` | String | No | none | A display citation for provenance no other field captures ([§4.1.2](#412-citation)). |
 | `description` | String | No | none | A prose description of the source, written once in `default_language`. |
 | `default_language` | String | No | `"en"` | BCP 47 tag of the language this document's passages are written in ([§7.2](#72-language-resolution)). |
 | `translates` | String | No | none | The qualified identifier of the source this document is a translation of ([§7.1](#71-overlay-files)). |
 | `copyright` | String | No | none | Copyright notice, displayed verbatim. |
 | `attribution` | String | No | none | Credit line to display ([§8.4](#84-attribution-in-presentation)). |
-| `rights_status` | String (URI) | No | none | The copyright *status* of the work this document draws on, as distinct from any license granted over this document ([§8.2](#82-rights-status)). |
 | `redistribution` | String | No | `"unstated"` | Whether the author passes on this document's text for republication ([§8.3](#83-redistribution-and-derivation)). |
 | `derivation` | String | No | `"unstated"` | Whether the author passes on this document's text for making derived works, including translations ([§8.3](#83-redistribution-and-derivation)). |
 | `tags` | Array of String | No | `[]` | Free-vocabulary categorization tags. This specification defines no registry of tag values and attaches no behavior to any of them. |
@@ -415,7 +412,7 @@ This is [Dublin Core](#15-references)'s `bibliographicCitation` under a shorter 
 
 #### 4.1.3 Published Date
 
-`[meta].published_date` states when the **work** this document draws on was published. It does not describe the document: when this file was assembled and last revised is `[meta].version`'s business.
+`[meta.work].published_date` states when the **work** this document draws on was published ([§4.1.4](#414-the-work-behind-a-source)). It does not describe the document: when this file was assembled and last revised is `[meta].version`'s business, and the two are routinely decades apart.
 
 Its syntax is the `published-date` production of deck specification §3.5, which is a year, optionally a month, optionally a day:
 
@@ -425,7 +422,69 @@ A source MUST NOT assert a precision its author does not have. A book whose copy
 
 The value is a TOML **string**. A bare `2014-09-30` is a TOML local date and a bare `2014` is a TOML integer; neither is this field, and [§11.4](#114-validation-rules) reports both.
 
-A tradition usually has no publication date, and omitting the field is the right answer rather than a gap to be filled.
+A tradition usually has no publication date, and omitting the field — along with the whole of `[meta.work]` — is the right answer rather than a gap to be filled.
+
+#### 4.1.4 The Work Behind a Source
+
+A source document and the work it draws on are two different things ([§8](#8-licensing-and-attribution)), and a document that transcribes a book, abridges one or takes notes on one has to describe both. `[meta]` describes the document: its name, its author, its terms. **`[meta.work]` describes the work**, and everything a source says about a publisher, a publication date, an ISBN, a URL or a copyright status is said there, because all five are facts about the work and none is a fact about the file.
+
+The two need telling apart most sharply where they are easiest to confuse. A book's title is not the title of a set of notes on it, and the person who wrote the book is not the person who wrote the notes.
+
+**`[meta.work]` is the work.** It is an OPTIONAL subtable of `[meta]`, and it is a subtable rather than a fifth top-level table so that [§4](#4-document-reference)'s count of four and [§10](#10-extensibility)'s reservation of every other top-level name both stand.
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | String | No | none | The work's title. |
+| `author` | String | No | none | Who wrote the work. |
+| `type` | String | No | none | What kind of work it is, from the registry in [§4.1.1](#411-source-type). |
+| `publisher` | String | No | none | The work's publisher. |
+| `published_date` | String | No | none | When the work was published, at the precision the author has ([§4.1.3](#413-published-date)). |
+| `isbn` | String | No | none | The work's ISBN, as printed, hyphens and all ([ISO 2108](#15-references)). |
+| `url` | String (URI) | No | none | Where the work can be found. An absolute URL with a scheme of `http` or `https`. |
+| `rights_status` | String (URI) | No | none | The copyright *status* of the work, as distinct from any license granted over this document ([§8.2](#82-rights-status)). |
+
+**`[meta].relation` is how this document stands to it.** Its value comes from the registry below.
+
+| Value | The document |
+| --- | --- |
+| `transcribes` | Carries the work's text |
+| `abridges` | Carries a condensed form of the work's text |
+| `annotates` | Is notes, commentary or analysis **about** the work, and does not carry its text |
+
+The registry is open on the terms of [§4.1.1](#411-source-type). An application MUST ignore a `relation` it does not recognize and MUST NOT treat one as an error. An author naming a relation no version of this specification defines SHOULD prefix the value, as in `x_responds_to`, and a validator warns about an unprefixed value outside the registry.
+
+**What `relation` is for, and why it is not inferable.** It tells a consumer whether [`[meta].author`](#41-meta) wrote the words it is about to put on screen. Under `transcribes` and `abridges` the displayed text is the work author's; under `annotates` it is this document author's writing *about* the work author's book, and an attribution line that credits the wrong one of those is wrong in the way [§8.4](#84-attribution-in-presentation) exists to prevent. No other field carries this and none of them can be made to.
+
+Three consequences are stated because a reader would otherwise have to guess:
+
+- **A source with no work behind it writes neither field.** A tradition, or an author's own writing, is not *about* anything in this sense. That is the majority case and it stays as short as it is today.
+- **Under `transcribes` and `abridges`, `[meta].author` and `[meta.work].author` name the same person**, and a source SHOULD write only the former. Under `annotates` they are different people and a source writes both.
+- **`[meta.work]` is not a fallback.** A key absent from it is unstated about the work and does not borrow `[meta]`'s value. This is [§9.1](#91-sources-do-not-merge)'s refusal to merge, applied to metadata.
+
+`relation` and [`translates`](#71-overlay-files) are different axes and a document MAY carry both. `translates` names another **source document** inside this specification's world, by qualified identifier. `relation` and `[meta.work]` describe a **work outside it**, which no identifier here names, which nothing resolves, and which may well have been published before any of this existed.
+
+```toml
+[meta]
+schema_version = "1.0"
+identifier = "id.example/esoterica/notes/example-tarot-book"
+name = "Notes on Example Tarot Book"
+type = "manuscript"
+author = "Jane Doe"
+license = "CC-BY-SA-4.0"
+relation = "annotates"
+description = "My reading notes. No quoted text."
+
+[meta.work]
+name = "Example Tarot Book"
+author = "A. Writer"
+type = "book"
+isbn = "978-0-00-000000-0"
+published_date = "2019"
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+
+[card."major_arcana.02".passages.symbols]
+pillars = "The black-and-white pair is read as duality throughout."
+```
 
 ### 4.2 Targets
 
@@ -722,7 +781,8 @@ An application that presents a passage from an overlay MUST attribute it to the 
 A source document and the work it draws on are two different things with, frequently, two different sets of terms.
 
 - `[meta].license` covers **the text in this document**. For a source whose author wrote the text, it says what may be done with their writing. For a source transcribing a published book, it says what may be done with this transcription, which is usually nothing.
-- `[meta].rights_status` covers **the work behind it** ([§8.2](#82-rights-status)).
+- `[meta.work]` names **the work behind it**, and `[meta].relation` says how this document stands to that work ([§4.1.4](#414-the-work-behind-a-source)).
+- `[meta.work].rights_status` covers the work's copyright status ([§8.2](#82-rights-status)).
 - `[meta].redistribution` and `[meta].derivation` say what the author passes on ([§8.3](#83-redistribution-and-derivation)).
 
 ### 8.1 License Expressions
@@ -739,9 +799,12 @@ name = "Some Book"
 type = "book"
 author = "A. Writer"
 license = "LicenseRef-AllRightsReserved"
-rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+relation = "transcribes"
 redistribution = "none"
 derivation = "none"
+
+[meta.work]
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 ```
 
 `license` is required rather than optional because a source is text, and text with no stated terms is text nobody downstream can use. Where no license is granted at all, saying so with a `LicenseRef-` value and a `rights_status` is the answer; leaving the field out is not.
@@ -750,16 +813,16 @@ derivation = "none"
 
 ### 8.2 Rights Status
 
-`[meta].rights_status` records the copyright status of the **work** the document draws on, as distinct from any license granted over the document.
+`[meta.work].rights_status` records the copyright status of the **work** the document draws on, as distinct from any license granted over the document.
 
-For a source whose author wrote the text, the two coincide. For a transcription, an abridgement or a set of notes on someone else's book they do not, and `rights_status` is how the document says the underlying work is in copyright to somebody.
+For a source whose author wrote the text, the two coincide. For a transcription, an abridgement or a set of notes on someone else's book they do not, and `rights_status` is how the document says the underlying work is in copyright to somebody. Which of those three a document is, it says in [`[meta].relation`](#414-the-work-behind-a-source).
 
 `rights_status` SHOULD be one of:
 
 - a [RightsStatements.org](https://rightsstatements.org/) URI; or
 - a [Creative Commons](https://creativecommons.org/) URI.
 
-`license` and `rights_status` answer different questions about, in general, different objects, and a source MAY carry both or only `license`. Where both are present and both describe the same text, they MUST NOT contradict each other; a validator cannot check this in general and does not try, beyond the coarse cases [§11.4](#114-validation-rules) lists.
+`license` and `rights_status` answer different questions about, in general, different objects — and since 1.0 they are written in different tables for that reason — and a source MAY carry both or only `license`. Where both are present and both describe the same text, they MUST NOT contradict each other; a validator cannot check this in general and does not try, beyond the coarse cases [§11.4](#114-validation-rules) lists.
 
 ### 8.3 Redistribution and Derivation
 
@@ -782,6 +845,8 @@ An application that shows a passage or a correspondence to a user MUST make its 
 This is not politeness. Two sources routinely say incompatible things about one card, this specification deliberately provides no way to reconcile them ([§9.1](#91-sources-do-not-merge)), and an unattributed sentence is therefore a sentence a reader cannot evaluate. It is also the condition most licenses attach to reuse.
 
 Where a passage came from an [overlay](#71-overlay-files), both the overlay and the base source are identified.
+
+Where a source declares `relation = "annotates"` ([§4.1.4](#414-the-work-behind-a-source)), the words it carries are its own author's and not the work author's. An application MUST NOT present such a passage as the work's, and MUST NOT compose an attribution line crediting it to `[meta.work].author`. A document of notes on a book is not the book, and this is the one case where showing the source's name without qualification says something false.
 
 ## 9. Presenting a Source
 
@@ -856,14 +921,20 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | The file is valid TOML 1.0.0 encoded as UTF-8 and carries a `[meta]` table ([§2.3](#23-file-format-and-encoding)). |
 | **E** | `[meta]` carries `schema_version`, `identifier`, `name` and `license` ([§4.1](#41-meta)). |
 | **E** | Every key [§4.1](#41-meta) defines carries a value of the type its field table gives. A key this specification does not define is [ignored](#10-extensibility) rather than typed. |
+| **E** | Every key [§4.1.4](#414-the-work-behind-a-source) defines under `[meta.work]` carries a value of the type its field table gives. A key this specification does not define is [ignored](#10-extensibility) rather than typed. |
+| **W** | A `[meta].relation` outside the registry of [§4.1.4](#414-the-work-behind-a-source) that is not prefixed `x_`. Applications ignore it, and a later version of this specification may claim the name. |
+| **W** | `[meta].relation` present with no `[meta.work]` table. The document says how it stands to a work it does not name ([§4.1.4](#414-the-work-behind-a-source)). |
+| **W** | A `[meta.work]` table present with no `[meta].relation`. An application cannot tell whether `[meta].author` wrote the text it is about to display ([§8.4](#84-attribution-in-presentation)). |
+| **W** | `[meta].relation` is `annotates` or `abridges` and `[meta].name` equals `[meta.work].name`. The document is offered under the title of a work it is not, and every passage it carries will be attributed to that work ([§8.4](#84-attribution-in-presentation)). |
+| **W** | A `publisher`, `published_date`, `isbn`, `url` or `rights_status` key directly under `[meta]`. All five describe the work rather than the document and are `[meta.work]` keys since 1.0 ([Appendix B](#appendix-b-reserved-and-deprecated-names)). |
 | **E** | `[meta].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
 | **E** | `[meta].identifier` is a well-formed qualified identifier carrying no fragment ([§3.1](#31-source-identity)). |
 | **W** | `[meta].identifier`'s first path segment is `esoterica` ([§3.1](#31-source-identity)). |
 | **E** | Where a validator can see a whole library, no two sources within one root declare the same `[meta].identifier` ([§2.2.2](#222-shadowing)). |
 | **W** | Where a validator can see a whole library, no two visible sources declare the same `[meta].identifier`. Two sources that do may be a legitimate arrangement, such as two versions installed side by side, and the earlier root wins ([§2.2.2](#222-shadowing)). |
-| **E** | `[meta].published_date`, where present, is a `published-date` denoting a real calendar date in the proleptic Gregorian calendar ([§4.1.3](#413-published-date)). It is a string, so a bare `2014-09-30`, which TOML reads as a local date, violates the type rule above, and so does a bare `2014`, which TOML reads as an integer. |
-| **W** | An `isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box and copyright-page text is transcribed by hand and this catches the transcription error ([§4.1](#41-meta)). |
-| **E** | `[meta].url`, where present, is absolute with an `http` or `https` scheme ([§4.1](#41-meta)). |
+| **E** | `[meta.work].published_date`, where present, is a `published-date` denoting a real calendar date in the proleptic Gregorian calendar ([§4.1.3](#413-published-date)). It is a string, so a bare `2014-09-30`, which TOML reads as a local date, violates the type rule above, and so does a bare `2014`, which TOML reads as an integer. |
+| **W** | A `[meta.work].isbn` that is not ten or thirteen characters once hyphens and spaces are removed, or whose check digit does not verify. Box and copyright-page text is transcribed by hand and this catches the transcription error ([§4.1.4](#414-the-work-behind-a-source)). |
+| **E** | `[meta.work].url`, where present, is absolute with an `http` or `https` scheme ([§4.1.4](#414-the-work-behind-a-source)). |
 | **E** | `[meta].default_language`, where present, is a well-formed BCP 47 language tag ([§7.2](#72-language-resolution)). |
 | **W** | A `[meta].type` outside the registry of [§4.1.1](#411-source-type) that is not prefixed `x_`. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | Every top-level table is `meta`, `card`, `group` or `app` ([§4](#4-document-reference)). |
@@ -883,9 +954,9 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | Two overlays of one source declaring the same `default_language`, where a validator can see both ([§7.2](#72-language-resolution)). |
 | **E** | `redistribution` and `derivation`, where present, are one of `full`, `none` or `unstated` ([§8.3](#83-redistribution-and-derivation)). |
 | **W** | A `license` that is not a well-formed SPDX license expression. A source that fails this check MUST NOT be rejected ([§8.1](#81-license-expressions)). |
-| **W** | A `rights_status` that is not a RightsStatements.org or Creative Commons URI. As with `license`, a source that fails this check MUST NOT be rejected ([§8.2](#82-rights-status)). |
-| **W** | A `redistribution` or `derivation` of `full` alongside a `rights_status` asserting the underlying work is in copyright with no license granted, meaning a RightsStatements.org `InC` URI or one of its refinements. The source says both that nobody granted permission and that the author passes it on ([§8.3](#83-redistribution-and-derivation)). One of the two fields is wrong, and a validator cannot tell which. |
-| **W** | A source whose `rights_status` asserts the underlying work is in copyright to someone else and that declares no `author`. Every rights assertion in the document is then unattributable ([§8.2](#82-rights-status)). |
+| **W** | A `[meta.work].rights_status` that is not a RightsStatements.org or Creative Commons URI. As with `license`, a source that fails this check MUST NOT be rejected ([§8.2](#82-rights-status)). |
+| **W** | A `redistribution` or `derivation` of `full` alongside a `[meta.work].rights_status` asserting the underlying work is in copyright with no license granted, meaning a RightsStatements.org `InC` URI or one of its refinements. The source says both that nobody granted permission and that the author passes it on ([§8.3](#83-redistribution-and-derivation)). One of the two fields is wrong, and a validator cannot tell which. |
+| **W** | A source whose `[meta.work].rights_status` asserts the underlying work is in copyright to someone else and that declares no `[meta.work].author`. Every rights assertion in the document is then unattributable ([§8.2](#82-rights-status)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more, which is what distinguishes `[app."land.arcana"]` from an unquoted `[app.land.arcana]` ([§10](#10-extensibility)). The contents of such a subtable are the owning application's to define and are not validated. |
 | **W** | A top-level `passages` table, or a `[meta].id` key. Both are version 0.1 spellings that a 1.0 reader would otherwise pass over in silence ([Appendix B](#appendix-b-reserved-and-deprecated-names)). |
 
@@ -927,13 +998,16 @@ identifier = "id.example.shelf/esoterica/references/books/a-guide-to-card-meanin
 name = "A Guide to Tarot Card Meanings"
 type = "book"
 author = "A. Writer"
-publisher = "Example Press"
-published_date = "2014"
-isbn = "978-0-00-000000-0"
 license = "LicenseRef-ExampleUncopyright"
+relation = "transcribes"
 default_language = "en"
 description = "A complete treatment of all seventy-eight cards, uniform in structure."
 tags = ["reference", "beginner"]
+
+[meta.work]
+publisher = "Example Press"
+published_date = "2014"
+isbn = "978-0-00-000000-0"
 
 [card."major_arcana.00".passages]
 text = """
@@ -1028,13 +1102,16 @@ identifier = "id.example.shelf/esoterica/references/books/example-tarot-book"
 name = "Example Tarot Book"
 type = "book"
 author = "Jane Doe"
-published_date = "2021"
-isbn = "978-0-592-24593-9"
 license = "LicenseRef-AllRightsReserved"
-rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+relation = "transcribes"
 redistribution = "none"
 derivation = "none"
 copyright = "© 2021 J. Doe"
+
+[meta.work]
+published_date = "2021"
+isbn = "978-0-592-24593-9"
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 
 [card."major_arcana.00".passages]
 text = "One long essay per card."
@@ -1089,18 +1166,52 @@ work = "Franchis la limite au lieu d'en faire le tour."
 theme = "L'intention, l'action, et la direction que prend une chose."
 ```
 
+### A.7 Reading notes on someone else's book
+
+The case [§4.1.4](#414-the-work-behind-a-source) exists for, and the one Appendix A did not have: the text is the document author's, the book is someone else's, and the two are told apart. Note that `[meta].name` is not the work's title — the notes are not the book.
+
+```toml
+[meta]
+schema_version = "1.0"
+identifier = "id.example/esoterica/notes/example-tarot-book"
+name = "Notes on Example Tarot Book"
+type = "manuscript"
+author = "Jane Doe"
+license = "CC-BY-SA-4.0"
+relation = "annotates"
+description = "My notes from a first reading. Paraphrase throughout; no quoted text."
+
+[meta.work]
+name = "Example Tarot Book"
+author = "A. Writer"
+type = "book"
+isbn = "978-0-00-000000-0"
+published_date = "2019"
+rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
+
+[card."major_arcana.02".passages.symbols]
+pillars = "The black-and-white pair is read as duality, and the reading is the author's own."
+
+[group.custom.dynamic_movement]
+cards = ["major_arcana.00", "major_arcana.21"]
+
+[group.custom.dynamic_movement.passages]
+text = "The only two majors the author reads as showing movement; the rest stand still."
+```
+
 ## Appendix B. Reserved and Deprecated Names
 
-The names below were defined by version 0.1 of this specification and are no longer defined by this one. A future version MUST NOT reuse any of them with a new meaning.
+The names below were defined by version 0.1 of this specification, or by a draft of this one, and are no longer defined by it. A future version MUST NOT reuse any of them with a new meaning.
 
 Applications MUST ignore these names in a 1.0 source.
 
 | Name | Was | Status |
 | --- | --- | --- |
+| `[meta].publisher`, `[meta].published_date`, `[meta].isbn`, `[meta].url`, `[meta].rights_status` | Facts about the **work** a document draws on, written into the table that describes the **document** | Moved in 1.0 to [`[meta.work]`](#414-the-work-behind-a-source), whose fields keep their names, types and definitions unchanged. Each was already defined as being about the work; nothing about them is redefined, only re-based. There is no fallback: a 1.0 reader finding one of these directly under `[meta]` reports it ([§11.4](#114-validation-rules)) and does not read it as the work's |
 | `[meta].id` | The source's identifier in 0.1, a bare handle such as `tarot-for-change-book` | Removed in 1.0. Identity is [`[meta].identifier`](#31-source-identity), a qualified identifier. A 0.1 `id` is not one, so it is not accepted as a fallback |
 | `[meta].type` values of the form `facet.*` | The layer's facet namespace in 0.1, such as `facet.context.love`, which also derived the file's path on disk | Redefined in 1.0. [`type`](#411-source-type) says what kind of source this is, and nothing derives a path from it ([§2.2.1](#221-scanning)) |
-| `[meta].isbn13` | A thirteen-digit ISBN | Renamed to [`isbn`](#41-meta) in 1.0, which is the ISBN as written without a length claim in the key name |
-| `[meta].publication_year` | An integer year | Replaced in 1.0 by [`published_date`](#413-published-date), a string admitting a year, a month or a day |
+| `[meta].isbn13` | A thirteen-digit ISBN | Renamed to [`isbn`](#414-the-work-behind-a-source) in 1.0, which is the ISBN as written without a length claim in the key name, and carried under `[meta.work]` |
+| `[meta].publication_year` | An integer year | Replaced in 1.0 by [`published_date`](#413-published-date), a string admitting a year, a month or a day, and carried under `[meta.work]` |
 | `[passages.*]` at the top level | Where the only 0.1-era source in existence stored its content, though no version of this specification ever defined it | Not defined by any version. Content is attached to a [target](#42-targets) under `[card]` or `[group]`. A validator reports a top-level `passages` table ([§11.4](#114-validation-rules)) |
 | `[global]` | Properties applying to all cards | Replaced in 1.0 by [`group.all`](#44-builtin-groups), so that "applies to everything" is a group rather than a mechanism |
 | `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]` | Arcana- and suit-level properties | Replaced in 1.0 by [`group.arcana.<major\|minor>`](#44-builtin-groups) and `group.suits.<suit>` |
@@ -1145,5 +1256,6 @@ Version 1.0 is a rewrite. Version 0.1 was a draft that no file in the world ever
 - [Localization by overlay file](#71-overlay-files), replacing a scheme that did not parse.
 - [Discovery](#22-the-esoterica-library) by recursive scan, with a source's identifier and its location on disk deliberately independent of each other.
 - [Licensing and attribution](#8-licensing-and-attribution), including the split between the terms of this document and the [rights status](#82-rights-status) of the work it draws on, which is the ordinary case for a transcription.
+- [`[meta.work]` and `[meta].relation`](#414-the-work-behind-a-source), which carry that same split through the rest of the bibliographic fields: the work gets a table of its own with a title and an author, and the document says whether it transcribes, abridges or annotates it. Five keys move out of `[meta]` ([Appendix B](#appendix-b-reserved-and-deprecated-names)).
 - [Presentation rules](#9-presenting-a-source): sources do not merge, group content does not inherit, and what is shown is attributed.
 - [Conformance and validation](#11-conformance-and-validation), with an enumerated rule set, and [security considerations](#12-security-considerations).
