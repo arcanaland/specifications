@@ -681,16 +681,29 @@ The keys are registered because a source that carries them cannot otherwise be r
 
 ### 5.4 Symbols
 
-A **symbol** is an element of a card's imagery that a source discusses (e.g.,the dog in The Fool's heel or the pillars of The High Priestess, etc.). It is non-empty, and an application MUST preserve the author's paragraphs |
-| `label` | OPTIONAL | String | The source's own heading for the element, as printed, errors included. Non-empty |
+A **symbol** is an element of a card's imagery that a source discusses (e.g., the dog in The Fool's heel or the pillars of The High Priestess, etc.). It is written beneath the `symbols` slot, keyed by a **symbol key**, and its value is a table.
+
+```toml
+[card."major_arcana.00".symbols.the_animal_familiar]
+label = "The Animal Familiar"
+text = "The dog at the Fool's heel is instinct, and it is keeping up."
+
+[card."major_arcana.00".symbols.cliff]
+text = "The edge is where the picture ends, not where the world does."
+```
+
+| Field | Required | Type | Meaning |
+| --- | --- | --- | --- |
+| `text` | REQUIRED | String or Array of String | What the source says about the element. The value rule is a passage's ([§5.1](#51-passage-keys-and-values)): it is non-empty, and an application MUST preserve the author's paragraphs |
+| `label` | OPTIONAL | String | The source's own heading for the element, as printed, errors included, less any punctuation that only separates it from the text. Non-empty |
 
 **The symbol key is the author's and is one segment.** It is a [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names), there is no registry of symbol keys and no `x_` prefix is asked of one, because two sources naming the same dog differently is the ordinary case rather than a portability problem. A symbol key is never dotted: in `[card."major_arcana.00".symbols.cliff.edge]`, `edge` is a field of the symbol `cliff`, not a symbol of its own.
 
-**`label` is for display.** An application showing a symbol with no `label` MAY derive a heading from its key. A source transcribing a book SHOULD carry the book's heading in `label`, because a key cannot hold the punctuation and capitalization a heading has, and the heading cannot be recovered from the key.
+**`label` is for display.** An application showing a symbol with no `label` MAY derive a heading from its key. A source transcribing a book SHOULD carry the book's heading in `label`, because a key cannot hold the punctuation and capitalization a heading has, and the heading cannot be recovered from the key. A heading printed **run-in**, with the text following it on the same line, is recorded without the punctuation that only separates it from the text: *The Jester. In the royal court…* is `label = "The Jester"`. Punctuation that belongs to the heading stays, so a heading that asks a question keeps its `?`.
 
 **Further fields.** A field beneath a symbol other than `text` and `label` is not defined by this version, and an application ignores it ([§11.3](#113-conforming-applications-and-validators)). A later minor version may define fields here.
 
-**What is not a symbol.** A symbol is something a reader could point to in a picture. Discussion of a picture as a whole, of a composition, or of another tradition's picture of the same card is a passage, under a key of its own ([§5.1](#51-passage-keys-and-values)).
+**What is not a symbol.** A symbol is something a reader could point to in a picture. Discussion of a picture as a whole, of a composition, or of another tradition's picture of the same card is a passage, under a key of its own ([§5.1](#51-passage-keys-and-values)). That a symbol is drawn in only some decks does not stop it being a symbol: a source writing about one tradition's imagery says so in its text, as [§3.2](#32-card-references) asks of a source that means the card rather than the slot.
 
 A symbol MAY appear on a group target, where it is about an element shared by the group's cards. It carries no divinatory mark ([§5.3](#53-divinatory-passages)).
 
@@ -962,13 +975,13 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | The segment in a target's slot position is `passages`, `symbols`, `correspondences` or `cards` ([§4.3](#43-slots)). |
 | **E** | A `cards` slot appears only on a `group.custom.<name>` target, and its value is a non-empty array of strings, each a well-formed canonical ID with no variant suffix, with no duplicates ([§4.5](#45-author-defined-groups)). |
 | **W** | A `group.custom.<name>` target with no `cards` slot. It names no cards and nothing it carries can be attached to anything ([§4.5](#45-author-defined-groups)). |
-| **E** | Every entry key part beneath `passages` or `correspondences` is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) ([§3.4](#34-grammar)). |
-| **E** | Every leaf beneath `passages` is a non-empty string or a non-empty array of non-empty strings ([§5.1](#51-passage-keys-and-values)). |
+| **E** | Every entry key part beneath `passages` or `correspondences`, other than in an entry [Appendix B](#appendix-b-reserved-and-deprecated-names) reserves, is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) ([§3.4](#34-grammar)). |
+| **E** | Every leaf beneath `passages`, other than an entry [Appendix B](#appendix-b-reserved-and-deprecated-names) reserves, is a non-empty string or a non-empty array of non-empty strings ([§5.1](#51-passage-keys-and-values)). |
 | **E** | Every key beneath `symbols` is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) whose value is a table carrying `text`. `text` is a non-empty string or a non-empty array of non-empty strings, and `label`, where present, is a non-empty string ([§5.4](#54-symbols)). |
 | **W** | A key beneath a symbol other than `text` and `label`. An application ignores it ([§5.4](#54-symbols)). |
-| **W** | A passage whose entry key begins `symbols.`. It is the draft spelling of a [symbol](#54-symbols), and an application ignores it rather than reading it as either a passage or a symbol ([Appendix B](#appendix-b-reserved-and-deprecated-names)). |
+| **W** | A passage whose entry key begins `symbols.`. It is the draft spelling of a [symbol](#54-symbols), and an application ignores it rather than reading it as either a passage or a symbol ([Appendix B](#appendix-b-reserved-and-deprecated-names)). This is the only rule that applies to such an entry: what an application ignores, a validator does not otherwise check. |
 | **E** | Every leaf beneath `correspondences` is a string, integer, float or boolean, or a non-empty array of those ([§6.1](#61-correspondence-values)). |
-| **W** | A passage or correspondence key outside the registries of [§5.2](#52-the-passage-registry) and [§6.2](#62-the-correspondence-registry) that is not prefixed `x_`. It is preserved either way, and a later version of this specification may claim the name. |
+| **W** | A passage or correspondence key, other than one [Appendix B](#appendix-b-reserved-and-deprecated-names) reserves, outside the registries of [§5.2](#52-the-passage-registry) and [§6.2](#62-the-correspondence-registry) that is not prefixed `x_`. It is preserved either way, and a later version of this specification may claim the name. |
 | **W** | A source declaring no `card` and no `group` target. The document says nothing ([§11.1](#111-conforming-source)). |
 | **E** | `[meta].translates`, where present, is a well-formed qualified identifier carrying no fragment and is not equal to this source's own `identifier` ([§7.1](#71-overlay-files)). |
 | **W** | An [overlay](#71-overlay-files) carrying a `correspondences` or `cards` slot, both of which an application ignores ([§7.1](#71-overlay-files)). |
