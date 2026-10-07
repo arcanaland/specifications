@@ -40,6 +40,7 @@
   - [5.1 Passage Keys and Values](#51-passage-keys-and-values)
   - [5.2 The Passage Registry](#52-the-passage-registry)
   - [5.3 Divinatory Passages](#53-divinatory-passages)
+  - [5.4 Symbols](#54-symbols)
 - [6. Correspondences](#6-correspondences)
   - [6.1 Correspondence Values](#61-correspondence-values)
   - [6.2 The Correspondence Registry](#62-the-correspondence-registry)
@@ -115,7 +116,8 @@ An author is whoever assembled the document. They may be the writer of the text 
 | **passage** | Text a source attaches to a target for a reader to read ([§5](#5-passages)). |
 | **pip** | A minor arcanum whose rank is `ace` through `ten`. |
 | **qualified identifier** | An identifier naming an Arcana Land entity unambiguously across authors, defined by the [deck specification](#15-references) §3.3. |
-| **slot** | One of `passages`, `correspondences` and `cards`: the segment directly beneath a target that says which kind of content follows ([§4.3](#43-slots)). |
+| **slot** | One of `passages`, `symbols`, `correspondences` and `cards`: the segment directly beneath a target that says which kind of content follows ([§4.3](#43-slots)). |
+| **symbol** | An element of a card's imagery that a source discusses, carried as a table with a `text` and an optional `label` ([§5.4](#54-symbols)). |
 | **source** | A work, a body of practice, or any other single origin of esoteric content carrying one attribution and one license. One source is one file ([§2.1](#21-one-source-one-file)). |
 | **source library** | An ordered list of **library roots**, each a directory searched for source documents ([§2.2](#22-the-esoterica-library)). |
 | **target** | The thing a source is talking about: a card or a group. Targets are the first-class noun of this specification ([§4.2](#42-targets)). |
@@ -299,13 +301,15 @@ group-name      = custom-name
 
 ; ---- Slots and entry keys ---------------------------------------------
 
-slot            = %s"passages" / %s"correspondences" / %s"cards"
+slot            = %s"passages" / %s"symbols" / %s"correspondences" / %s"cards"
 
 entry-key       = key-part *( "." key-part )
 key-part        = custom-name
+
+symbol-key      = custom-name
 ```
 
-A fully written passage or correspondence is a `target`, then a `.`, then a `slot`, then a `.`, then an `entry-key`. The `cards` slot takes no `entry-key` ([§4.3](#43-slots)).
+A fully written passage or correspondence is a `target`, then a `.`, then a `slot`, then a `.`, then an `entry-key`. A symbol is a `target`, then `.symbols.`, then a `symbol-key`, which is one segment and never dotted; its fields are beneath it. The `cards` slot takes no `entry-key` ([§4.3](#43-slots)).
 
 Four constraints are not expressible in the grammar and are stated normatively:
 
@@ -334,7 +338,7 @@ Writing a card target as one key is what fixes the slot's position structurally.
   -> {"card": {"major_arcana.passages": {"passages": { … }}}}
 ```
 
-A deck that mints a custom card named `passages` therefore reads correctly, and `passages`, `correspondences` and `cards` carry no privilege outside their fixed position. They are ordinary key names everywhere else, including as [entry keys](#43-slots).
+A deck that mints a custom card named `passages` therefore reads correctly, and `passages`, `symbols`, `correspondences` and `cards` carry no privilege outside their fixed position. They are ordinary key names everywhere else, including as [entry keys](#43-slots).
 
 The same discipline governs everywhere: **a rule may depend on the key structure that survives parsing, and never on the quotation marks that produced it.**
 
@@ -482,8 +486,8 @@ isbn = "978-0-00-000000-0"
 published_date = "2019"
 rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 
-[card."major_arcana.02".passages.symbols]
-pillars = "The black-and-white pair is read as duality throughout."
+[card."major_arcana.02".symbols.pillars]
+text = "The black-and-white pair is read as duality throughout."
 ```
 
 ### 4.2 Targets
@@ -517,17 +521,18 @@ A source MAY declare a target it says nothing about, and such a target carries n
 
 ### 4.3 Slots
 
-The segment directly beneath a target is a **slot**, and there are three.
+The segment directly beneath a target is a **slot**.
 
 | Slot | Holds | Beneath it |
 | --- | --- | --- |
 | `passages` | Text for a reader to read ([§5](#5-passages)) | An [entry key](#13-terminology), which MAY be dotted |
+| `symbols` | Elements of a card's imagery the source discusses ([§5.4](#54-symbols)) | A symbol key, one segment, whose value is a table |
 | `correspondences` | Values drawn from a system outside this specification ([§6](#6-correspondences)) | An entry key, which MAY be dotted |
 | `cards` | The members of an author-defined group ([§4.5](#45-author-defined-groups)) | Nothing. Its value is an array |
 
 **A target occupies a fixed number of segments and the segment after it is the slot.** Under `card` the target is one segment. Under `group` it is one segment for `all` and for a qualified identifier, and two for a builtin family member. There is no lookahead, no greedy matching and no reserved vocabulary: the boundary is positional.
 
-A slot key appearing anywhere other than that fixed position is an ordinary key. `advice.text` is a passage named `advice.text`, and `[card."major_arcana.00".passages.cards]` is a passage named `cards`.
+A slot key appearing anywhere other than that fixed position is an ordinary key. `advice.text` is a passage named `advice.text`, `[card."major_arcana.00".passages.cards]` is a passage named `cards`, and `[card."major_arcana.00".symbols.passages]` is a symbol named `passages`.
 
 ### 4.4 Builtin Groups
 
@@ -616,7 +621,7 @@ A **passage** is text a source attaches to a target for a reader to read.
 
 ### 5.1 Passage Keys and Values
 
-A passage's name is the full [entry key](#13-terminology) beneath the `passages` slot. Entry keys MAY nest, and the dotted path is the name: `advice.work` and `symbols.jester` are single passages whose names contain a dot.
+A passage's name is the full [entry key](#13-terminology) beneath the `passages` slot. Entry keys MAY nest, and the dotted path is the name: `advice.work` is a single passage whose name contains a dot.
 
 **A passage's value is a non-empty string, or a non-empty array of non-empty strings.** Nothing else. A key beneath `passages` whose value is a table is a nesting step and not a passage.
 
@@ -631,14 +636,11 @@ keywords = ["freedom", "faith", "inexperience"]
 [card."major_arcana.00".passages.advice]
 work = "Leap over the limit rather than round it."
 relationships = "Say the thing before you have worked out how to say it."
-
-[card."major_arcana.00".passages.symbols]
-jester = "In the royal court the jester's wit bought an indulgence nobody else had."
 ```
 
 **`text` is the default passage.** An application that can show only one passage for a target shows `text`. A source whose content is one essay per card writes it there and needs no other key.
 
-**Registered and unregistered keys.** [§5.2](#52-the-passage-registry) publishes a core registry. An unregistered key is legal, and an application MUST preserve it and MAY render it; it is simply not portable, because no other implementation knows what it means. An author using a key this specification does not define SHOULD prefix it `x_`, and a validator warns about an unprefixed one, because a later version of this specification may claim the bare name.
+**Registered and unregistered keys.** [§5.2](#52-the-passage-registry) publishes a core registry. An unregistered key is legal, and an application MUST preserve it and MAY render it, unless [Appendix B](#appendix-b-reserved-and-deprecated-names) reserves it; it is simply not portable, because no other implementation knows what it means. An author using a key this specification does not define SHOULD prefix it `x_`, and a validator warns about an unprefixed one, because a later version of this specification may claim the bare name.
 
 This is the middle path between admitting anything, which produces a specification that cannot describe its own documents, and closing the set, which cannot accept the second book.
 
@@ -658,7 +660,6 @@ This is the middle path between admitting anything, which produces a specificati
 | `story` | String | A narrative, myth or anecdote the source tells about the target |
 | `personality` | String | The character a court card or a rank is read as having |
 | `approach` | String | How a rank or class goes about things |
-| `symbols.<name>` | String | What one pictured element means. `<name>` is the author's, and is the one open subkey in this registry |
 | `advice.relationships` | String | What the source advises in a reading about relationships |
 | `advice.work` | String | What the source advises in a reading about work |
 | `advice.spirituality` | String | What the source advises in a reading about spiritual life |
@@ -677,6 +678,21 @@ Two registered keys are marked **divinatory**: `advice.fortune_telling` and `adv
 An application MAY offer to hide divinatory passages, and one that does SHOULD hide them by category rather than by guessing from the text.
 
 The keys are registered because a source that carries them cannot otherwise be represented, and this specification's job is to transport what a source says. Transporting a sentence about timing is not performing a divination. **The draw remains excluded** ([§1.1](#11-scope-and-design-goals)): nothing here shuffles, randomizes, or selects a card, and no value in a document under this specification is an input to anything that does.
+
+### 5.4 Symbols
+
+A **symbol** is an element of a card's imagery that a source discusses (e.g.,the dog in The Fool's heel or the pillars of The High Priestess, etc.). It is non-empty, and an application MUST preserve the author's paragraphs |
+| `label` | OPTIONAL | String | The source's own heading for the element, as printed, errors included. Non-empty |
+
+**The symbol key is the author's and is one segment.** It is a [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names), there is no registry of symbol keys and no `x_` prefix is asked of one, because two sources naming the same dog differently is the ordinary case rather than a portability problem. A symbol key is never dotted: in `[card."major_arcana.00".symbols.cliff.edge]`, `edge` is a field of the symbol `cliff`, not a symbol of its own.
+
+**`label` is for display.** An application showing a symbol with no `label` MAY derive a heading from its key. A source transcribing a book SHOULD carry the book's heading in `label`, because a key cannot hold the punctuation and capitalization a heading has, and the heading cannot be recovered from the key.
+
+**Further fields.** A field beneath a symbol other than `text` and `label` is not defined by this version, and an application ignores it ([§11.3](#113-conforming-applications-and-validators)). A later minor version may define fields here.
+
+**What is not a symbol.** A symbol is something a reader could point to in a picture. Discussion of a picture as a whole, of a composition, or of another tradition's picture of the same card is a passage, under a key of its own ([§5.1](#51-passage-keys-and-values)).
+
+A symbol MAY appear on a group target, where it is about an element shared by the group's cards. It carries no divinatory mark ([§5.3](#53-divinatory-passages)).
 
 ## 6. Correspondences
 
@@ -754,7 +770,7 @@ An overlay mirrors whatever subset of the base source's targets and entry keys i
 
 - `translates` MUST be a well-formed qualified identifier with no fragment, and MUST NOT equal the overlay's own `identifier`.
 - An overlay is a source in every other respect: it declares its own `identifier`, `name` and `license`, because a translation is a work with its own author and its own terms.
-- **An overlay carries `passages` only.** A `correspondences` or `cards` slot in an overlay is ignored, and a validator warns about it. Correspondence values are vocabulary terms rather than display strings ([§6.1](#61-correspondence-values)), and membership is not a property of a language.
+- **An overlay carries `passages` and `symbols` only.** A `correspondences` or `cards` slot in an overlay is ignored, and a validator warns about it. Correspondence values are vocabulary terms rather than display strings ([§6.1](#61-correspondence-values)), and membership is not a property of a language.
 - Chains are not defined. An overlay whose `translates` names another overlay is conforming and an application MAY follow the chain, but this specification requires nothing of it.
 - An overlay of a source the application does not have carries nothing to attach to, and the application ignores it.
 
@@ -769,6 +785,8 @@ Given a requested tag, an application resolves a passage using the Lookup scheme
 1. Among the overlays of the source, prefer the one whose `default_language` matches the requested tag, then progressively shorter forms of it. A request for `pt-BR` therefore prefers a `pt-BR` overlay, then a `pt` overlay.
 2. Where the chosen overlay carries the passage, use it.
 3. Otherwise fall back to the base source's own text.
+
+Each field of a [symbol](#54-symbols) resolves the same way, as if it were a passage of its own, so an overlay that translates a symbol's `text` and not its `label` falls back to the base source for the `label`.
 
 Applications MUST compare language tags case-insensitively. Tags SHOULD be canonical, using the shortest available ISO 639 subtag (`en`, not `eng`), lowercase language, titlecase script and uppercase region.
 
@@ -840,7 +858,7 @@ These fields describe what the author passes on. They do not enlarge what the au
 
 ### 8.4 Attribution in Presentation
 
-An application that shows a passage or a correspondence to a user MUST make its source identifiable — by name at minimum, and by `attribution` where the source declares one.
+An application that shows a passage, a symbol or a correspondence to a user MUST make its source identifiable — by name at minimum, and by `attribution` where the source declares one.
 
 This is not politeness. Two sources routinely say incompatible things about one card, this specification deliberately provides no way to reconcile them ([§9.1](#91-sources-do-not-merge)), and an unattributed sentence is therefore a sentence a reader cannot evaluate. It is also the condition most licenses attach to reuse.
 
@@ -852,7 +870,7 @@ Where a source declares `relation = "annotates"` ([§4.1.4](#414-the-work-behind
 
 ### 9.1 Sources Do Not Merge
 
-An application holding two sources that both say something about `major_arcana.00` presents both, attributed. It MUST NOT combine their text for one entry key into one value, and this specification defines no precedence between sources, no override rule and no accumulation.
+An application holding two sources that both say something about `major_arcana.00` presents both, attributed. It MUST NOT combine their text for one entry key or one symbol into one value, and this specification defines no precedence between sources, no override rule and no accumulation.
 
 An application MAY let a user order or disable sources, and MAY present one first. That is a preference the user expressed, not a resolution this specification performed.
 
@@ -903,7 +921,7 @@ A conforming application:
 
 - MUST implement scanning ([§2.2.1](#221-scanning)) and shadowing ([§2.2.2](#222-shadowing)) over whatever roots it uses.
 - MUST resolve targets and slots by the positional rule of [§4.3](#43-slots).
-- MUST preserve every passage and correspondence it reads, including keys this specification does not define ([§5.1](#51-passage-keys-and-values)).
+- MUST preserve every passage, symbol and correspondence it reads, including keys this specification does not define ([§5.1](#51-passage-keys-and-values)).
 - MUST attribute what it presents ([§8.4](#84-attribution-in-presentation)) and MUST NOT merge sources ([§9.1](#91-sources-do-not-merge)).
 - MUST ignore `[app]` subtables it does not own ([§10](#10-extensibility)), and every table, key and value this specification does not define.
 - MUST NOT reject a source for warnings ([§11.2](#112-errors-and-warnings)).
@@ -941,11 +959,14 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every key under `card` is a well-formed canonical ID written as a single TOML key, carrying no variant suffix ([§3.2](#32-card-references), [§3.5](#35-identifiers-in-toml)). A document writing `[card.major_arcana.00]` has declared a table named `major_arcana` rather than the card `major_arcana.00`. |
 | **E** | Every key directly under `group` either contains a `/` and is a well-formed qualified identifier, or contains no `/` and is one of the six builtin family names ([§3.3](#33-group-identifiers), [§4.4](#44-builtin-groups)). |
 | **E** | Under a builtin family other than `all`, exactly one member segment follows, and it is a value that family admits: `major` or `minor` under `arcana`, `pip` or `court` under `classes`, a well-formed suit key under `suits`, a well-formed rank key under `ranks`, a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) under `custom` ([§4.4](#44-builtin-groups)). |
-| **E** | The segment in a target's slot position is `passages`, `correspondences` or `cards` ([§4.3](#43-slots)). |
+| **E** | The segment in a target's slot position is `passages`, `symbols`, `correspondences` or `cards` ([§4.3](#43-slots)). |
 | **E** | A `cards` slot appears only on a `group.custom.<name>` target, and its value is a non-empty array of strings, each a well-formed canonical ID with no variant suffix, with no duplicates ([§4.5](#45-author-defined-groups)). |
 | **W** | A `group.custom.<name>` target with no `cards` slot. It names no cards and nothing it carries can be attached to anything ([§4.5](#45-author-defined-groups)). |
 | **E** | Every entry key part beneath `passages` or `correspondences` is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) ([§3.4](#34-grammar)). |
 | **E** | Every leaf beneath `passages` is a non-empty string or a non-empty array of non-empty strings ([§5.1](#51-passage-keys-and-values)). |
+| **E** | Every key beneath `symbols` is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) whose value is a table carrying `text`. `text` is a non-empty string or a non-empty array of non-empty strings, and `label`, where present, is a non-empty string ([§5.4](#54-symbols)). |
+| **W** | A key beneath a symbol other than `text` and `label`. An application ignores it ([§5.4](#54-symbols)). |
+| **W** | A passage whose entry key begins `symbols.`. It is the draft spelling of a [symbol](#54-symbols), and an application ignores it rather than reading it as either a passage or a symbol ([Appendix B](#appendix-b-reserved-and-deprecated-names)). |
 | **E** | Every leaf beneath `correspondences` is a string, integer, float or boolean, or a non-empty array of those ([§6.1](#61-correspondence-values)). |
 | **W** | A passage or correspondence key outside the registries of [§5.2](#52-the-passage-registry) and [§6.2](#62-the-correspondence-registry) that is not prefixed `x_`. It is preserved either way, and a later version of this specification may claim the name. |
 | **W** | A source declaring no `card` and no `group` target. The document says nothing ([§11.1](#111-conforming-source)). |
@@ -1031,9 +1052,12 @@ personal_growth = "Begin badly. Begin anyway."
 fortune_telling = "Watch for a new undertaking arriving from outside the plan."
 timing = "Unexpectedly, if at all."
 
-[card."major_arcana.00".passages.symbols]
-jester = "In the royal court the jester's wit bought an indulgence nobody else had."
-cliff = "The edge is where the picture ends, not where the world does."
+[card."major_arcana.00".symbols.jester]
+label = "The Jester"
+text = "In the royal court the jester's wit bought an indulgence nobody else had."
+
+[card."major_arcana.00".symbols.cliff]
+text = "The edge is where the picture ends, not where the world does."
 
 [card."major_arcana.00".correspondences]
 archetype = "the divine madman"
@@ -1162,6 +1186,10 @@ keywords = ["liberté", "foi", "inexpérience", "innocence"]
 [card."major_arcana.00".passages.advice]
 work = "Franchis la limite au lieu d'en faire le tour."
 
+[card."major_arcana.00".symbols.jester]
+label = "Le bouffon"
+text = "À la cour, l'esprit du bouffon lui valait une indulgence que nul autre n'avait."
+
 [group.suits.wands.passages]
 theme = "L'intention, l'action, et la direction que prend une chose."
 ```
@@ -1189,8 +1217,8 @@ isbn = "978-0-00-000000-0"
 published_date = "2019"
 rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 
-[card."major_arcana.02".passages.symbols]
-pillars = "The black-and-white pair is read as duality, and the reading is the author's own."
+[card."major_arcana.02".symbols.pillars]
+text = "The black-and-white pair is read as duality, and the reading is the author's own."
 
 [group.custom.dynamic_movement]
 cards = ["major_arcana.00", "major_arcana.21"]
@@ -1213,6 +1241,7 @@ Applications MUST ignore these names in a 1.0 source.
 | `[meta].isbn13` | A thirteen-digit ISBN | Renamed to [`isbn`](#414-the-work-behind-a-source) in 1.0, which is the ISBN as written without a length claim in the key name, and carried under `[meta.work]` |
 | `[meta].publication_year` | An integer year | Replaced in 1.0 by [`published_date`](#413-published-date), a string admitting a year, a month or a day, and carried under `[meta.work]` |
 | `[passages.*]` at the top level | Where the only 0.1-era source in existence stored its content, though no version of this specification ever defined it | Not defined by any version. Content is attached to a [target](#42-targets) under `[card]` or `[group]`. A validator reports a top-level `passages` table ([§11.4](#114-validation-rules)) |
+| `passages.symbols.<name>` | What one pictured element means, written as a passage whose name contains a dot, in a draft of 1.0 and in the first source published against it | Replaced in 1.0 by the [`symbols` slot](#54-symbols), where a symbol is a table with a `text` and a `label`, because a passage has room for one string and a book prints two. There is no fallback: a 1.0 reader does not read it as a symbol and does not present it as a passage, and a validator reports it ([§11.4](#114-validation-rules)). The prefix `symbols.` is reserved beneath `passages` |
 | `[global]` | Properties applying to all cards | Replaced in 1.0 by [`group.all`](#44-builtin-groups), so that "applies to everything" is a group rather than a mechanism |
 | `[major_arcana]`, `[minor_arcana]`, `[minor_arcana.<suit>]` | Arcana- and suit-level properties | Replaced in 1.0 by [`group.arcana.<major\|minor>`](#44-builtin-groups) and `group.suits.<suit>` |
 | `[court_cards]`, `[non_court_cards]` | Court and non-court properties | Replaced in 1.0 by [`group.classes.court`](#44-builtin-groups) and `group.classes.pip` |
@@ -1246,8 +1275,9 @@ Version 1.0 is a rewrite. Version 0.1 was a draft that no file in the world ever
 **Newly specified.**
 
 - [Sources](#21-one-source-one-file), the unit of the file: one work, one attribution, one license, whether it is a book or a body of practice with no author at all.
-- [Targets and slots](#42-targets), one shape used everywhere: a target, then `passages`, `correspondences` or `cards`, then a key. Everything a source says about one card is contiguous.
+- [Targets and slots](#42-targets), one shape used everywhere: a target, then `passages`, `symbols`, `correspondences` or `cards`, then a key. Everything a source says about one card is contiguous.
 - The [positional slot rule](#43-slots), which makes the target/key boundary structural rather than a matter of reserved vocabulary, so that a deck may mint a custom card named `passages`.
+- [Symbols](#54-symbols), the elements of a card's imagery a source discusses, each a table carrying the source's text and its own printed heading.
 - [Builtin groups](#44-builtin-groups) with [defined membership](#441-group-membership), replacing the hardcoded cascade with six reserved names inside an open group namespace.
 - [Author-defined groups](#45-author-defined-groups) and the `cards` slot, for a grouping the builtin families do not name.
 - [Qualified identifiers under `group`](#33-group-identifiers), by which a source attaches meaning to a position in a published spread.

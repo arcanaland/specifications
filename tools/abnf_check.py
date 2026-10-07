@@ -6,8 +6,7 @@
 #
 # SPDX-FileCopyrightText: 2026 Adam Fidel
 # SPDX-License-Identifier: MIT
-"""Check the ABNF grammar embedded in DECK.md against a corpus of cases.
-"""
+"""Check the ABNF grammars embedded in DECK.md and ESOTERICA.md against a corpus of cases."""
 
 import re
 import sys
@@ -17,7 +16,7 @@ from pathlib import Path
 warnings.filterwarnings("ignore")  # DIGIT redefines the core rule
 from abnf.parser import Rule  # noqa: E402
 
-DOC = Path(__file__).resolve().parent.parent / "DECK.md"
+ROOT = Path(__file__).resolve().parent.parent
 
 """
 A case is (rule, string, expected). `expected` is one of:
@@ -28,7 +27,7 @@ A case is (rule, string, expected). `expected` is one of:
           would reject the string
 """
 ACCEPT, REJECT, LOOSE = "ACCEPT", "REJECT", "LOOSE"
-CASES = [
+DECK_CASES = [
     # ---- canonical IDs -------------------------------------------------
     ("canonical-id", "major_arcana.00", ACCEPT),
     ("canonical-id", "major_arcana.21", ACCEPT),
@@ -173,19 +172,110 @@ CASES = [
     ("published-date", "1909-02-29", LOOSE),   # 1909 was not a leap year
 ]
 
+ESOTERICA_CASES = [
+    # ---- card targets --------------------------------------------------
+    ("target", "card.major_arcana.00", ACCEPT),
+    ("target", "card.minor_arcana.wands.ace", ACCEPT),
+    ("target", "card.major_arcana.happy_squirrel", ACCEPT),
+    ("target", "card.major_arcana.06:two_women", REJECT),   # no variant suffix
+    ("target", "card.major_arcana", REJECT),
+    ("target", "Card.major_arcana.00", REJECT),
+    ("target", "deck.major_arcana.00", REJECT),
 
-def load_grammar():
-    text = DOC.read_text(encoding="utf-8")
+    # ---- group targets -------------------------------------------------
+    ("target", "group.all", ACCEPT),
+    ("target", "group.arcana.major", ACCEPT),
+    ("target", "group.arcana.minor", ACCEPT),
+    ("target", "group.classes.pip", ACCEPT),
+    ("target", "group.classes.court", ACCEPT),
+    ("target", "group.suits.wands", ACCEPT),
+    ("target", "group.suits.stars", ACCEPT),               # a custom suit
+    ("target", "group.ranks.king", ACCEPT),
+    ("target", "group.custom.dynamic_movement", ACCEPT),
+    ("target", "group.land.arcana/spread/celtic-cross", ACCEPT),
+    ("target", "group.land.arcana/spread/celtic-cross#position-1", ACCEPT),
+    ("target", "group.arcana.trumps", REJECT),
+    ("target", "group.classes.ace", REJECT),
+    ("target", "group.custom", REJECT),                    # family needs a member
+    ("target", "group.custom.Dynamic", REJECT),
+    ("target", "group.all.major", REJECT),
+    ("target", "group.suits", REJECT),
+    ("target", "group.", REJECT),
+
+    ("arcana-key", "major", ACCEPT),
+    ("arcana-key", "Major", REJECT),
+    ("class-key", "court", ACCEPT),
+    ("class-key", "courts", REJECT),
+
+    # ---- slots ---------------------------------------------------------
+    ("slot", "passages", ACCEPT),
+    ("slot", "symbols", ACCEPT),
+    ("slot", "correspondences", ACCEPT),
+    ("slot", "cards", ACCEPT),
+    ("slot", "Passages", REJECT),
+    ("slot", "symbol", REJECT),
+    ("slot", "labels", REJECT),
+    ("slot", "", REJECT),
+
+    # ---- entry keys ----------------------------------------------------
+    ("entry-key", "text", ACCEPT),
+    ("entry-key", "advice.work", ACCEPT),
+    ("entry-key", "advice.personal_growth", ACCEPT),
+    ("entry-key", "x_upright", ACCEPT),
+    ("entry-key", "advice..work", REJECT),
+    ("entry-key", "advice.", REJECT),
+    ("entry-key", ".work", REJECT),
+    ("entry-key", "Advice", REJECT),
+    ("entry-key", "advice.1st", REJECT),
+    ("entry-key", "light-side", REJECT),
+
+    # Appendix B reserves the prefix beneath `passages`
+    ("entry-key", "symbols.the_jester", LOOSE),
+
+    # ---- symbol keys ---------------------------------------------------
+    ("symbol-key", "the_animal_familiar", ACCEPT),
+    ("symbol-key", "cliff", ACCEPT),
+    ("symbol-key", "passages", ACCEPT),                    # slot keywords are fine
+    ("symbol-key", "cliff.edge", REJECT),                  # one segment only
+    ("symbol-key", "The_Jester", REJECT),
+    ("symbol-key", "whats-behind-the-curtain", REJECT),
+    ("symbol-key", "", REJECT),
+]
+
+DOCS = [
+    ("DECK.md", [], DECK_CASES),
+    ("ESOTERICA.md", ["DECK.md"], ESOTERICA_CASES),
+]
+
+
+def fence(name):
+    """The single ```abnf fence in `name`."""
+    text = (ROOT / name).read_text(encoding="utf-8")
     fences = re.findall(r"```abnf\n(.*?)```", text, re.S)
     if len(fences) != 1:
-        sys.exit(f"expected exactly one ```abnf fence in {DOC.name}, found {len(fences)}")
+        sys.exit(f"expected exactly one ```abnf fence in {name}, found {len(fences)}")
+    return fences[0]
+
+
+def rule_names(rulelist):
+    return {m.group(1) for m in re.finditer(r"^([A-Za-z][A-Za-z0-9-]*)\s*=", rulelist, re.M)}
+
+
+def load_grammar(name, imports):
+    """Load `name`'s grammar on top of the grammars it imports."""
+    own = fence(name)
+    imported = [fence(i) for i in imports]
+    for i, rulelist in zip(imports, imported):
+        clash = rule_names(own) & rule_names(rulelist)
+        if clash:
+            sys.exit(f"{name} redefines {i}'s {sorted(clash)}; it must import them unchanged")
 
     class Grammar(Rule):
         pass
 
     # RFC 5234 rulelists are CRLF-delimited.
-    Grammar.load_grammar(fences[0].replace("\n", "\r\n"))
-    return Grammar
+    Grammar.load_grammar("\n".join(imported + [own]).replace("\n", "\r\n"))
+    return Grammar, rule_names(own)
 
 
 def matches(grammar, rule, text):
@@ -197,12 +287,12 @@ def matches(grammar, rule, text):
     return consumed == len(text)
 
 
-def main():
-    grammar = load_grammar()
+def check(name, imports, cases):
+    grammar, own = load_grammar(name, imports)
     defined = {r.name for r in grammar.rules()}
 
-    failures, notes = [], []
-    for rule, text, expected in CASES:
+    failures = []
+    for rule, text, expected in cases:
         if rule not in defined:
             failures.append(f"  no such rule {rule!r} (grammar defines {sorted(defined)})")
             continue
@@ -212,15 +302,20 @@ def main():
         elif expected is REJECT and got:
             failures.append(f"  {rule:14} {text!r} parsed, should not have")
         elif expected is LOOSE and not got:
-            notes.append(f"  {rule:14} {text!r} parses but has further reqs")
+            failures.append(f"  {rule:14} {text!r} should parse (spec rejects it elsewhere), did not")
 
-    print(f"{len(CASES)} cases over {len(defined)} rules")
-    if notes:
-        print("\nnotes:")
-        print("\n".join(notes))
+    print(f"{name}: {len(cases)} cases over {len(own)} rules")
     if failures:
         print(f"\n{len(failures)} FAILED:")
         print("\n".join(failures))
+    return failures
+
+
+def main():
+    failures = []
+    for name, imports, cases in DOCS:
+        failures += check(name, imports, cases)
+    if failures:
         return 1
     print("ok")
     return 0
