@@ -31,6 +31,7 @@
     - [4.1.2 Citation](#412-citation)
     - [4.1.3 Published Date](#413-published-date)
     - [4.1.4 The Work Behind a Source](#414-the-work-behind-a-source)
+    - [4.1.5 Relations](#415-relations)
   - [4.2 Targets](#42-targets)
   - [4.3 Slots](#43-slots)
   - [4.4 Builtin Groups](#44-builtin-groups)
@@ -55,6 +56,7 @@
 - [9. Presenting a Source](#9-presenting-a-source)
   - [9.1 Sources Do Not Merge](#91-sources-do-not-merge)
   - [9.2 Group Content](#92-group-content)
+  - [9.3 Seating](#93-seating)
 - [10. Extensibility](#10-extensibility)
 - [11. Conformance and Validation](#11-conformance-and-validation)
   - [11.1 Conforming Source](#111-conforming-source)
@@ -184,11 +186,9 @@ See [LICENSING.md](https://github.com/arcanaland/specifications/blob/main/LICENS
 
 A **source** is a work, a body of practice, or any other single origin of esoteric content carrying one attribution and one license. One source is one file.
 
-A book is one kind of source and is not the privileged one. A chapter, an article, a web page, an unpublished manuscript and a tradition with no single work behind it are all sources, and [§4.1.1](#411-source-type) names them. What makes something a source is that one `[meta]` table can describe it: this text, under these terms, credited this way.
+A book is one kind of source. A chapter, an article, a web page, an unpublished manuscript and a tradition with no single work behind it are all sources, and [§4.1.1](#411-source-type) names them. What makes something a source is that one `[meta]` table can describe it: this text, under these terms, credited this way.
 
-A source is **not** a facet. "Astrology" is not a source, it is a [correspondence key](#62-the-correspondence-registry); "relationships" is not a source, it is a [passage key](#52-the-passage-registry). A document that split one book across eight files by subject would repeat its attribution eight times and force a consumer to rejoin them to render one card.
-
-A source is **not** scoped to a deck. Both bodies of published material this specification was derived from describe the cards rather than any particular deck's artwork, and this version provides no way for a source to say it applies to one deck alone.
+A source is not scoped to a specific deck. A source MAY say what it is written about, one deck included, with an [`about` relation](#415-relations). That is a statement of the source's subject, not of its scope: nothing in it says the source applies to that deck alone, and an application that chooses to present such a source only alongside that deck is exercising a preference ([§9.1](#91-sources-do-not-merge)), not obeying the source.
 
 ### 2.2 The Esoterica Library
 
@@ -253,7 +253,7 @@ minor_arcana.wands.ace
 minor_arcana.stars.ace
 ```
 
-A canonical ID denotes a **slot** rather than a particular card of tradition. `major_arcana.08` is the major arcanum numbered eight, which is Strength in a Waite-Smith-descended deck and Justice in a Marseille-descended one. A source that means the card rather than the slot says so in its text; this specification provides no way to say it structurally, and an author writing for one tradition SHOULD say which in `[meta].description`.
+A canonical ID denotes a **slot** rather than a particular card of tradition. `major_arcana.08` is the major arcanum numbered eight, which is Strength in a Waite-Smith-descended deck and Justice in a Marseille-descended one. A source that writes text under `major_arcana.08` has committed to one of the two, and says which with a [`pattern` relation](#415-relations), naming the pattern whose [seating](https://github.com/arcanaland/specifications/blob/main/DECK.md#13-terminology) its canonical IDs assume. An author writing for one tradition SHOULD declare one. What an application does when a source and a deck declare different patterns is [§9.3](#93-seating).
 
 **A card reference in a source document MUST NOT carry a variant suffix.** Card variants are alternative artwork for the same card and denote the same meaning, so deck specification §3.1.2 requires consumers of interpretive data to discard the suffix. There is nothing for a source to attach to a variant that it would not attach to the card.
 
@@ -362,6 +362,7 @@ A source document has exactly four top-level tables: `[meta]`, `[card]`, `[group
 | `version` | String | No | none | The source document's own free-form version ([§1.4](#14-versioning-and-compatibility)). |
 | `author` | String | No | none | Who wrote the text this document carries. Absent where no one person did ([§4.1.1](#411-source-type)). |
 | `relation` | String | No | none | How this document stands to the work behind it ([§4.1.4](#414-the-work-behind-a-source)). |
+| `related` | Array of Table | No | `[]` | The pattern this source's canonical IDs assume, and the decks or patterns it is written about ([§4.1.5](#415-relations)). |
 | `citation` | String | No | none | A display citation for provenance no other field captures ([§4.1.2](#412-citation)). |
 | `description` | String | No | none | A prose description of the source, written once in `default_language`. |
 | `default_language` | String | No | `"en"` | BCP 47 tag of the language this document's passages are written in ([§7.2](#72-language-resolution)). |
@@ -489,6 +490,56 @@ rights_status = "https://rightsstatements.org/vocab/InC/1.0/"
 [card."major_arcana.02".symbols.pillars]
 text = "The black-and-white pair is read as duality throughout."
 ```
+
+#### 4.1.5 Relations
+
+`[meta].related` contains this source's outbound references to items specified by the deck specification: the pattern its canonical IDs assume, and the decks or patterns it is written about. It has the shape of the [deck specification](#15-references)'s [§4.1.2](https://github.com/arcanaland/specifications/blob/main/DECK.md#412-relations), an array of tables, each saying what its target is:
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `rel` | String | **Yes** | n/a | What the target is, from the registry below. MUST be a [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names). |
+| `target` | String | **Yes** | n/a | The [qualified identifier](#13-terminology) of what this source is related to. |
+| `title` | String | No | none | A label, in the source's `default_language`. |
+
+The registry:
+
+| `rel` | The target is |
+| --- | --- |
+| `pattern` | The pattern whose **seating** this source's canonical IDs assume |
+| `about` | A deck or a pattern this source is written about |
+
+```toml
+[meta]
+schema_version = "1.0"
+identifier = "id.example/esoterica/example-tarot-companion"
+name = "The Example Tarot: A Companion"
+license = "CC-BY-4.0"
+related = [
+  { rel = "pattern", target = "land.arcana/pattern/rider-waite-smith" },
+  { rel = "about", target = "com.example/deck/example-tarot", title = "The Example Tarot" },
+]
+```
+
+The registry is open on the terms of [§4.1.1](#411-source-type). An application MUST ignore a `rel` it does not recognize and MUST NOT treat one as an error. An author naming a relation no version of this specification defines SHOULD prefix the value, as in `x_responds_to`, and a validator warns about an unprefixed value outside the registry. Unlike the deck specification's, this registry has no Recognition column: there, recognition decides whether an application may present a package as an ordinary deck, and nothing about a source turns on a relation in that way.
+
+Rules:
+
+- `target` MUST be a well-formed qualified identifier carrying no fragment, and MUST NOT be a card reference or a variant reference.
+- Relations are not reciprocated. Only the source declares the pointer, and a deck never names a source.
+- Nothing resolves a `target` ([§3.3](#33-group-identifiers)).
+
+`related` and [`relation`](#414-the-work-behind-a-source) are different axes despite the names. `relation` says how this document stands to a work outside this specification's world, which no identifier names. `related` names things inside it, by qualified identifier.
+
+**`pattern`** names the pattern whose seating this source's canonical IDs assume ([§3.2](#32-card-references)). It is the deck specification's [`pattern` relation](https://github.com/arcanaland/specifications/blob/main/DECK.md#4121-pattern), the same claim under the same name.
+
+- The `target`'s type segment MUST be `pattern`.
+- A source MUST NOT declare more than one `pattern` relation. A document whose references assume two seatings is not expressible, and this specification defines no ordering over several.
+- **`pattern` is a declaration, not a filter.** An application MUST NOT withhold a source's content from a deck because the two declare different patterns. What it does instead is [§9.3](#93-seating)'s business.
+- The claim is the author's and nothing checks it, as with [`redistribution`](#83-redistribution-and-derivation). A source that declares no pattern makes no claim and is exactly as conforming.
+
+**`about`** names a deck or a pattern this source is written about: the deck a guidebook was published with, or the pattern whose iconography a book describes. Its `target`'s type segment is `deck` or `pattern`, and a source MAY declare any number. It is a statement of the source's **subject** and not of its scope ([§2.1](#21-one-source-one-file)): it makes no claim about addressing, carries no merge semantics, and a source declaring it remains readable against every deck.
+
+The two relations make different claims, and a source may need both. A deck can realize the Rider-Waite-Smith pattern, seating Strength at `08` and the High Priestess at `02`, and still draw a High Priestess with no pillars. Declaring `pattern` therefore says which card a source's `major_arcana.02` is; it does **not** say that the source's description of that card's picture, its [symbols](#54-symbols) above all, holds for a given deck's picture. Where the source is describing particular artwork, `about` says whose.
 
 ### 4.2 Targets
 
@@ -703,7 +754,7 @@ text = "The edge is where the picture ends, not where the world does."
 
 **Further fields.** A field beneath a symbol other than `text` and `label` is not defined by this version, and an application ignores it ([§11.3](#113-conforming-applications-and-validators)). A later minor version may define fields here.
 
-**What is not a symbol.** A symbol is something a reader could point to in a picture. Discussion of a picture as a whole, of a composition, or of another tradition's picture of the same card is a passage, under a key of its own ([§5.1](#51-passage-keys-and-values)). That a symbol is drawn in only some decks does not stop it being a symbol: a source writing about one tradition's imagery says so in its text, as [§3.2](#32-card-references) asks of a source that means the card rather than the slot.
+**What is not a symbol.** A symbol is something a reader could point to in a picture. Discussion of a picture as a whole, of a composition, or of another tradition's picture of the same card is a passage, under a key of its own ([§5.1](#51-passage-keys-and-values)). That a symbol is drawn in only some decks does not stop it being a symbol: a source writing about one deck's or one tradition's imagery says whose with an [`about` relation](#415-relations), and in its text.
 
 A symbol MAY appear on a group target, where it is about an element shared by the group's cards. It carries no divinatory mark ([§5.3](#53-divinatory-passages)).
 
@@ -784,6 +835,7 @@ An overlay mirrors whatever subset of the base source's targets and entry keys i
 - `translates` MUST be a well-formed qualified identifier with no fragment, and MUST NOT equal the overlay's own `identifier`.
 - An overlay is a source in every other respect: it declares its own `identifier`, `name` and `license`, because a translation is a work with its own author and its own terms.
 - **An overlay carries `passages` and `symbols` only.** A `correspondences` or `cards` slot in an overlay is ignored, and a validator warns about it. Correspondence values are vocabulary terms rather than display strings ([§6.1](#61-correspondence-values)), and membership is not a property of a language.
+- **An overlay's [`related`](#415-relations) is ignored**, and a validator warns about it. An overlay's canonical IDs are its base source's, and so is its subject; an application reads both relations from the base source.
 - Chains are not defined. An overlay whose `translates` names another overlay is conforming and an application MAY follow the chain, but this specification requires nothing of it.
 - An overlay of a source the application does not have carries nothing to attach to, and the application ignores it.
 
@@ -887,6 +939,8 @@ An application holding two sources that both say something about `major_arcana.0
 
 An application MAY let a user order or disable sources, and MAY present one first. That is a preference the user expressed, not a resolution this specification performed.
 
+An application MAY likewise present a source that is [`about`](#415-relations) a deck only alongside that deck, or first alongside it. That is a presentation the application chose and not a scope the source declared ([§2.1](#21-one-source-one-file)), and an `about` naming a pattern gives no such licence, since a pattern is not one deck's artwork.
+
 This is a capability earlier drafts of this specification claimed and did not have. Conflict-resolution rules for merging overlapping properties across layers were specified, implemented by nothing, and would have produced a composite paragraph attributable to no one. A reader who wants *the* meaning of the Fool is, by design, not served here; a reader who wants to know what two writers said is.
 
 ### 9.2 Group Content
@@ -896,6 +950,16 @@ A group's content is about the group. An application MAY present it alongside a 
 Group content does not inherit, override or accumulate. A source that says wands are fire and that the Four of Wands is celebration has said two things, not one thing refined by another, and an application showing both shows two labelled statements.
 
 Where a card is a member of several groups a source has content for — its suit, its rank, its class, `all` — the application decides which to show and in what order. This specification imposes no order and no limit.
+
+### 9.3 Seating
+
+Where an application joins a source's content to a deck's card and both declare a `pattern` relation — the source in [§4.1.5](#415-relations), the deck in the deck specification's [§4.1.2.1](https://github.com/arcanaland/specifications/blob/main/DECK.md#4121-pattern) — it compares the two targets by string equality. Where they differ, the two documents disagree about which card some canonical IDs denote, and the application SHOULD make the divergence visible rather than suppress the content. The reader is the one who can tell which card was meant.
+
+An application that knows how both patterns seat a card MAY present the source's content at the canonical ID where the deck seats the card the source meant, rather than at the ID the source wrote. Between Rider-Waite-Smith and Tarot de Marseille, for example, that exchanges `major_arcana.08` and `major_arcana.11`. Where it does, it MUST say so at the site, naming the ID the source wrote. Moving content to the card it was written about is not withholding it ([§4.1.5](#415-relations)).
+
+This specification defines no table of seatings and no correspondence between patterns. Which pairs an application can re-seat between is its own knowledge, and where it has none, the SHOULD above is the whole of what it does.
+
+Where either document declares no pattern there is no finding. **Where both declare the same pattern, the application holds two assertions that agree, not a verification**: either may be false, nothing in either specification can tell, and a matching pair SHOULD NOT be presented to a user as a guarantee that the two documents mean the same card.
 
 ## 10. Extensibility
 
@@ -957,6 +1021,12 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | `[meta].relation` present with no `[meta.work]` table. The document says how it stands to a work it does not name ([§4.1.4](#414-the-work-behind-a-source)). |
 | **W** | A `[meta.work]` table present with no `[meta].relation`. An application cannot tell whether `[meta].author` wrote the text it is about to display ([§8.4](#84-attribution-in-presentation)). |
 | **W** | `[meta].relation` is `annotates` or `abridges` and `[meta].name` equals `[meta.work].name`. The document is offered under the title of a work it is not, and every passage it carries will be attributed to that work ([§8.4](#84-attribution-in-presentation)). |
+| **E** | Every `[meta].related` entry is a table carrying `rel` and `target`, both strings, and `rel` is a well-formed [custom name](https://github.com/arcanaland/specifications/blob/main/DECK.md#32-custom-names) ([§4.1.5](#415-relations)). |
+| **E** | Every `[meta].related` `target` is a well-formed qualified identifier carrying no fragment, and is neither a card reference nor a variant reference ([§4.1.5](#415-relations)). |
+| **E** | A `rel = "pattern"` entry's `target` has the type segment `pattern` ([§4.1.5](#415-relations)). |
+| **E** | `[meta].related` carries at most one `rel = "pattern"` entry ([§4.1.5](#415-relations)). |
+| **W** | A `[meta].related` `rel` outside the registry of [§4.1.5](#415-relations) that is not prefixed `x_`. Applications ignore it, and a later version of this specification may claim the name. |
+| **W** | A `rel = "about"` entry whose `target`'s type segment is neither `deck` nor `pattern` ([§4.1.5](#415-relations)). |
 | **W** | A `publisher`, `published_date`, `isbn`, `url` or `rights_status` key directly under `[meta]`. All five describe the work rather than the document and are `[meta.work]` keys since 1.0 ([Appendix B](#appendix-b-reserved-and-deprecated-names)). |
 | **E** | `[meta].schema_version` has the form [§1.4](#14-versioning-and-compatibility) requires. |
 | **E** | `[meta].identifier` is a well-formed qualified identifier carrying no fragment ([§3.1](#31-source-identity)). |
@@ -985,6 +1055,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **W** | A source declaring no `card` and no `group` target. The document says nothing ([§11.1](#111-conforming-source)). |
 | **E** | `[meta].translates`, where present, is a well-formed qualified identifier carrying no fragment and is not equal to this source's own `identifier` ([§7.1](#71-overlay-files)). |
 | **W** | An [overlay](#71-overlay-files) carrying a `correspondences` or `cards` slot, both of which an application ignores ([§7.1](#71-overlay-files)). |
+| **W** | An [overlay](#71-overlay-files) carrying a non-empty `[meta].related`, which an application ignores in favour of the base source's ([§7.1](#71-overlay-files)). |
 | **W** | Two overlays of one source declaring the same `default_language`, where a validator can see both ([§7.2](#72-language-resolution)). |
 | **E** | `redistribution` and `derivation`, where present, are one of `full`, `none` or `unstated` ([§8.3](#83-redistribution-and-derivation)). |
 | **W** | A `license` that is not a well-formed SPDX license expression. A source that fails this check MUST NOT be rejected ([§8.1](#81-license-expressions)). |
@@ -1211,6 +1282,8 @@ theme = "L'intention, l'action, et la direction que prend une chose."
 
 The case [§4.1.4](#414-the-work-behind-a-source) exists for, and the one Appendix A did not have: the text is the document author's, the book is someone else's, and the two are told apart. Note that `[meta].name` is not the work's title — the notes are not the book.
 
+The two [relations](#415-relations) say different things. `pattern` says the notes' `major_arcana.02` is the card Rider-Waite-Smith seats there. `about` says the pillars they discuss are the ones in that deck's picture, which a deck realizing the same pattern need not draw.
+
 ```toml
 [meta]
 schema_version = "1.0"
@@ -1221,6 +1294,10 @@ author = "Jane Doe"
 license = "CC-BY-SA-4.0"
 relation = "annotates"
 description = "My notes from a first reading. Paraphrase throughout; no quoted text."
+related = [
+  { rel = "pattern", target = "land.arcana/pattern/rider-waite-smith" },
+  { rel = "about", target = "land.arcana/deck/rider-waite-smith" },
+]
 
 [meta.work]
 name = "Example Tarot Book"
@@ -1300,5 +1377,6 @@ Version 1.0 is a rewrite. Version 0.1 was a draft that no file in the world ever
 - [Discovery](#22-the-esoterica-library) by recursive scan, with a source's identifier and its location on disk deliberately independent of each other.
 - [Licensing and attribution](#8-licensing-and-attribution), including the split between the terms of this document and the [rights status](#82-rights-status) of the work it draws on, which is the ordinary case for a transcription.
 - [`[meta.work]` and `[meta].relation`](#414-the-work-behind-a-source), which carry that same split through the rest of the bibliographic fields: the work gets a table of its own with a title and an author, and the document says whether it transcribes, abridges or annotates it. Five keys move out of `[meta]` ([Appendix B](#appendix-b-reserved-and-deprecated-names)).
+- [`[meta].related`](#415-relations), by which a source declares the pattern whose seating its canonical IDs assume — the deck specification's `pattern` relation, under the same name — and the decks or patterns it is written about, together with what an application does when a source and a deck [disagree about seating](#93-seating).
 - [Presentation rules](#9-presenting-a-source): sources do not merge, group content does not inherit, and what is shown is attributed.
 - [Conformance and validation](#11-conformance-and-validation), with an enumerated rule set, and [security considerations](#12-security-considerations).
