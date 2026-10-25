@@ -22,18 +22,19 @@ TEMPLATE = ROOT / "tools" / "spec.typ"
 BUILD_DIR = ROOT / "build"
 
 DOCS = {
-    "DECK.md": ("Tarot Deck Specification", "Version 2.0 (Draft)"),
-    "ESOTERICA.md": ("Tarot Esoterica Specification", "Version 1.0 (Draft)"),
+    "DECK.md": "Tarot Deck Specification",
+    "ESOTERICA.md": "Tarot Esoterica Specification",
 }
 
 READER = "gfm"
 
 LEADING_H1 = re.compile(r"\A\s*#\s+\S[^\n]*\n")
 
+VERSION_LINE = re.compile(r"^>\s*Version:\s*(\S[^\n]*?)\s*$", re.MULTILINE)
+
 
 def provenance() -> str:
-    """A short 'branch @ commit' string, marked when the tree is dirty.
-    """
+    """A short 'branch @ commit' string, marked when the tree is dirty."""
 
     def git(*args: str) -> str | None:
         try:
@@ -47,7 +48,8 @@ def provenance() -> str:
             return None
         return out.stdout.strip()
 
-    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    branch = (git("describe", "--tags", "--exact-match", "HEAD")
+              or git("rev-parse", "--abbrev-ref", "HEAD"))
     commit = git("rev-parse", "--short", "HEAD")
     if not branch or not commit:
         return "no git metadata"
@@ -58,10 +60,17 @@ def provenance() -> str:
 
 
 def build(doc: Path, out_dir: Path, *, watermark: bool, prov: str) -> bool:
-    title, subtitle = DOCS[doc.name]
+    title = DOCS[doc.name]
     out = out_dir / f"{doc.stem.lower()}.pdf"
 
-    source = LEADING_H1.sub("", doc.read_text(encoding="utf-8"), count=1)
+    text = doc.read_text(encoding="utf-8")
+    version = VERSION_LINE.search(text)
+    if not version:
+        sys.stderr.write(f"FAIL {doc.name}: no '> Version:' line\n")
+        return False
+    subtitle = f"Version {version.group(1)}"
+
+    source = LEADING_H1.sub("", text, count=1)
 
     cmd = [
         "pandoc",
