@@ -151,6 +151,7 @@ Where this document says a deck "declares" or "says" something, the [packager](#
 | **artwork** | Any image within a deck such as a card's default artwork, a [card variant](#312-card-references-and-the-variant-suffix), or a [card back design](#42-card_backs). |
 | **base** | The part of a card asset's file stem before the first dot. In `06.two_women.png` the stem is `06.two_women` and the base is `06` ([§6.7.2](#672-extensions-stems-and-bases)). |
 | **canonical ID** | The identifier by which a card is uniquely addressed: `major_arcana.<key>` or `minor_arcana.<suit>.<rank>` ([§3.1](#31-canonical-ids)). It attaches no meaning. |
+| **card** | What a canonical ID denotes in a deck. When decks are compared for **seating**, two cards are the same card where they portray the same member of the tarot tradition (as specified in the **pattern**).|
 | **card back design** | One of the card back images inside a deck, named by a design key ([§4.2](#42-card_backs)). |
 | **card number** | The number printed on a card's face as a display string ([§4.3.1](#431-card-numbers)). Distinct from **position**, which orders cards relative to each other. |
 | **card reference** | A canonical ID, optionally followed by a **variant suffix** (`:` and a variant key). `major_arcana.06` and `major_arcana.06:two_women` are both card references. The suffixed form is also called a **variant reference**. |
@@ -654,7 +655,6 @@ Rules:
 
 - The value of `target` MUST be a well-formed qualified identifier: it MUST NOT include a fragment and is neither a [card reference nor a variant reference](#312-card-references-and-the-variant-suffix). Its type segment is `deck` for every relation but [`pattern`](#4121-pattern), whose target's type segment is `pattern` ([§3.3](#33-qualified-identifiers)).
 - It MUST NOT equal this deck's own `identifier`.
-- No deck may name the same target under both `pattern` and `surrogate_for`.
 - Relations are not reciprocated. Only the dependent package declares the pointer.
 - Nothing resolves a qualified identifier ([§3.3](#33-qualified-identifiers)), so a validator checks that the value is well formed and no more. A relation to a deck nobody has packaged is legal.
 
@@ -2201,7 +2201,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | On every `[deck].links` entry, `rel` is a well-formed [custom name](#32-custom-names) and `url` is absolute with an `http` or `https` scheme ([§4.1.1](#411-links)). That both are present is the required-key rule's to report. |
 | **W** | A `links` `rel` outside the registry of [§4.1.1](#411-links) that is not prefixed. Applications ignore it, and a later version of this specification may claim the name. |
 | **E** | On every `[deck].related` entry, `rel` is a well-formed [custom name](#32-custom-names) and `target` is a well-formed qualified identifier with no fragment and not equal to this deck's own `identifier` ([§4.1.2](#412-relations)). Whether it names a deck that exists is not checked. That both keys are present is the required-key rule's to report. |
-| **E** | A deck declares at most one `pattern` relation, at most one `surrogate_for` relation and at most one `expands` relation, and names no deck under both `pattern` and `surrogate_for` ([§4.1.2.1](#4121-pattern), [§4.1.2.2](#4122-surrogate_for), [§4.1.2.3](#4123-expands)). |
+| **E** | A deck declares at most one `pattern` relation, at most one `surrogate_for` relation and at most one `expands` relation ([§4.1.2.1](#4121-pattern), [§4.1.2.2](#4122-surrogate_for), [§4.1.2.3](#4123-expands)). |
 | **W** | A `related` `rel` outside the registry of [§4.1.2](#412-relations) that is not prefixed (as above). |
 | **W** | A `pattern` relation whose target's type segment is not `pattern` ([§3.3](#33-qualified-identifiers), [§4.1.2.1](#4121-pattern)). A pattern is not a deck, and a target in the `deck` segment names a package that in all likelihood does not exist. |
 | **W** | A package declaring `rel = "expands"` that also declares `[excluded_cards]` covering the canonical slots it does not contain. The relation already says the package is not a whole deck ([§6.7.6](#676-when-no-asset-is-found)). |
