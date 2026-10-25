@@ -1,0 +1,16 @@
+name: PDF check
+
+on:
+  pull_request:
+  push:
+    branches: [main, deck-v2]
+
+jobs:
+  pdf-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: pandoc/actions/setup@v1
+      - uses: typst-community/setup-typst@v4
+      - run: ./tools/build_pdf.py --check

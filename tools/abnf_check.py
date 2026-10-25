@@ -1,0 +1,323 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["abnf>=2.2"]
+# ///
+#
+# SPDX-FileCopyrightText: 2026 Adam Fidel
+# SPDX-License-Identifier: MIT
+"""Check the ABNF grammars embedded in DECK.md and ESOTERICA.md against a corpus of cases."""
+
+import re
+import sys
+from pathlib import Path
+
+from abnf.parser import Rule  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+
+"""
+A case is (rule, string, expected). `expected` is one of:
+
+  ACCEPT  the grammar matches the whole string and the spec agrees
+  REJECT  the grammar does not match and the spec agrees
+  LOOSE   the grammar matches, but a normative rule outside the grammar
+          would reject the string
+"""
+ACCEPT, REJECT, LOOSE = "ACCEPT", "REJECT", "LOOSE"
+DECK_CASES = [
+    # ---- canonical IDs -------------------------------------------------
+    ("canonical-id", "major_arcana.00", ACCEPT),
+    ("canonical-id", "major_arcana.21", ACCEPT),
+    ("canonical-id", "minor_arcana.wands.ace", ACCEPT),
+    ("canonical-id", "minor_arcana.pentacles.king", ACCEPT),
+    ("canonical-id", "major_arcana.happy_squirrel", ACCEPT),
+    ("canonical-id", "minor_arcana.stars.ace", ACCEPT),
+    ("canonical-id", "major_arcana.22", ACCEPT),
+    ("canonical-id", "major_arcana.99", ACCEPT),
+
+    # case sensitivity
+    ("canonical-id", "MAJOR_ARCANA.00", REJECT),
+    ("canonical-id", "minor_arcana.WANDS.ace", REJECT),
+    ("canonical-id", "minor_arcana.wands.ACE", REJECT),
+
+    # structure
+    ("canonical-id", "major_arcana", REJECT),
+    ("canonical-id", "major_arcana.", REJECT),
+    ("canonical-id", "minor_arcana.wands", REJECT),
+    ("canonical-id", "major_arcana.0", REJECT),
+    ("canonical-id", "major_arcana.000", REJECT),
+    ("canonical-id", "major_arcana.6", REJECT),
+
+    # a custom name must not be a reserved canonical key
+    ("canonical-id", "minor_arcana.stars.page", LOOSE),
+
+    # ---- card references -----------------------------------------------
+    # the suffix is optional: a bare canonical ID is a card-ref
+    ("card-ref", "major_arcana.06", ACCEPT),
+    ("card-ref", "major_arcana.06:two_women", ACCEPT),
+    ("card-ref", "minor_arcana.cups.ace:alt", ACCEPT),
+    ("card-ref", "major_arcana.happy_squirrel:dark", ACCEPT),
+    ("card-ref", "major_arcana.06:", REJECT),
+    ("card-ref", "major_arcana.06:two.women", REJECT),
+    ("card-ref", "major_arcana.06:Two_Women", REJECT),
+
+    # ---- variant references --------------------------------------------
+    # the form name files key [card_variants] by; the suffix is mandatory
+    ("variant-ref", "major_arcana.06:two_women", ACCEPT),
+    ("variant-ref", "minor_arcana.cups.ace:alt", ACCEPT),
+    ("variant-ref", "major_arcana.06", REJECT),
+    ("variant-ref", "major_arcana.06:", REJECT),
+    ("variant-ref", "major_arcana.06:two.women", REJECT),
+
+    ("variant-suffix", ":two_women", ACCEPT),
+    ("variant-suffix", ":alt", ACCEPT),
+    ("variant-suffix", ":", REJECT),
+    ("variant-suffix", "two_women", REJECT),
+    ("variant-suffix", ":two_women:more", REJECT),
+
+    # ---- custom names --------------------------------------------------
+    ("custom-name", "happy_squirrel", ACCEPT),
+    ("custom-name", "two_women", ACCEPT),
+    ("custom-name", "_leading", ACCEPT),
+    ("custom-name", "a1", ACCEPT),
+    ("custom-name", "1a", REJECT),      # must not start with a digit
+    ("custom-name", "22", REJECT),
+    ("custom-name", "Happy", REJECT),
+    ("custom-name", "has-hyphen", REJECT),
+    ("custom-name", "has.dot", REJECT),
+    ("custom-name", "", REJECT),
+    ("custom-name", "page", LOOSE),     # reserved canonical key
+    ("custom-name", "wands", LOOSE),
+
+    # ---- realms --------------------------------------------------------
+    ("realm", "land.arcana", ACCEPT),
+    ("realm", "my.personal.domain", ACCEPT),
+    ("realm", "land.arcana.cartomancer", ACCEPT),
+    ("realm", "example.xn--bcher-kva", ACCEPT),
+    ("realm", "a.b", ACCEPT),
+    ("realm", "x1-2.example", ACCEPT),
+    ("realm", "land", REJECT),          # single label: catches [app.land.arcana]
+    ("realm", "LAND.ARCANA", REJECT),
+    ("realm", "land.arcana.TarotCanvas", REJECT),
+    ("realm", "land.arcana.", REJECT),
+    ("realm", ".land.arcana", REJECT),
+    ("realm", "land..arcana", REJECT),
+    ("realm", "-land.arcana", REJECT),
+    ("realm", "land-.arcana", REJECT),
+    ("realm", "1and.arcana", REJECT),   # RFC 1035: labels start with a letter
+    ("realm", "land.arcana/deck/x", REJECT),
+    ("realm", "a" * 64 + ".example", REJECT),  # 63-octet label cap
+    ("realm", "a" * 63 + ".example", ACCEPT),
+
+    # ---- qualified identifiers -----------------------------------------
+    ("qualified-id", "land.arcana/deck/rider-waite-smith", ACCEPT),
+    ("qualified-id", "land.arcana/spread/celtic-cross", ACCEPT),
+    ("qualified-id", "my.personal.domain/deck/modern-witch-tarot", ACCEPT),
+    ("qualified-id", "land.arcana/deck/rws#major_arcana.00", ACCEPT),
+    ("qualified-id", "land.arcana/deck/rws#major_arcana.06:two_women", ACCEPT),
+    ("qualified-id", "land.arcana/deck", ACCEPT),
+    ("qualified-id", "land.arcana/", REJECT),
+    ("qualified-id", "land.arcana", REJECT),
+    ("qualified-id", "/deck/rws", REJECT),
+    ("qualified-id", "land.arcana/deck/rider_waite", REJECT),  # no _ in segments
+    ("qualified-id", "land.arcana/deck/RWS", REJECT),
+    ("qualified-id", "https://land.arcana/deck/rws", REJECT),
+    ("qualified-id", "land.arcana/deck/rws#", REJECT),
+    ("qualified-id", "land.arcana/deck/rws#not-a-card", LOOSE),
+    ("qualified-id", "id.fidel.shelf/deck/example-tarot", ACCEPT),
+    ("qualified-id", "id.example/esoterica/references/books/example-book", ACCEPT),
+
+    # requires a deck's type segment to be `deck`
+    ("qualified-id", "land.arcana/deck-archive/foo", LOOSE),
+
+    # ---- path segments -------------------------------------------------
+    ("segment", "deck", ACCEPT),
+    ("segment", "rider-waite-smith", ACCEPT),
+    ("segment", "x-collection-notes", ACCEPT),
+    ("segment", "a", ACCEPT),
+    ("segment", "2024", ACCEPT),          # unlike a label, a segment may lead with a digit
+    ("segment", "-deck", REJECT),
+    ("segment", "deck-", REJECT),
+    ("segment", "-", REJECT),
+    ("segment", "de--ck", ACCEPT),
+    ("segment", "deck_two", REJECT),
+    ("segment", "Deck", REJECT),
+    ("segment", "deck/x", REJECT),
+
+    # ---- published dates -----------------------------------------------
+    # the three permitted precisions
+    ("published-date", "1909", ACCEPT),
+    ("published-date", "1909-12", ACCEPT),
+    ("published-date", "1909-12-01", ACCEPT),
+    ("published-date", "2018-10-16", ACCEPT),
+
+    # precision is all-or-nothing at each step
+    ("published-date", "1909-", REJECT),
+    ("published-date", "1909-12-", REJECT),
+    ("published-date", "909", REJECT),
+    ("published-date", "19090", REJECT),
+    ("published-date", "1909-1", REJECT),
+    ("published-date", "1909-12-1", REJECT),
+    ("published-date", "1909-12-01T00:00:00Z", REJECT),
+    ("published-date", "1909/12/01", REJECT),
+    ("published-date", "", REJECT),
+
+    # the grammar counts digits; §3.5 requires a real calendar date
+    ("published-date", "1909-13", LOOSE),
+    ("published-date", "1909-00", LOOSE),
+    ("published-date", "1909-12-32", LOOSE),
+    ("published-date", "1909-02-29", LOOSE),   # 1909 was not a leap year
+]
+
+ESOTERICA_CASES = [
+    # ---- card targets --------------------------------------------------
+    ("target", "card.major_arcana.00", ACCEPT),
+    ("target", "card.minor_arcana.wands.ace", ACCEPT),
+    ("target", "card.major_arcana.happy_squirrel", ACCEPT),
+    ("target", "card.major_arcana.06:two_women", REJECT),   # no variant suffix
+    ("target", "card.major_arcana", REJECT),
+    ("target", "Card.major_arcana.00", REJECT),
+    ("target", "deck.major_arcana.00", REJECT),
+
+    # ---- group targets -------------------------------------------------
+    ("target", "group.all", ACCEPT),
+    ("target", "group.arcana.major", ACCEPT),
+    ("target", "group.arcana.minor", ACCEPT),
+    ("target", "group.classes.pip", ACCEPT),
+    ("target", "group.classes.court", ACCEPT),
+    ("target", "group.suits.wands", ACCEPT),
+    ("target", "group.suits.stars", ACCEPT),               # a custom suit
+    ("target", "group.ranks.king", ACCEPT),
+    ("target", "group.custom.dynamic_movement", ACCEPT),
+    ("target", "group.land.arcana/spread/celtic-cross", ACCEPT),
+    ("target", "group.land.arcana/spread/celtic-cross#position-1", ACCEPT),
+    ("target", "group.arcana.trumps", REJECT),
+    ("target", "group.classes.ace", REJECT),
+    ("target", "group.custom", REJECT),                    # family needs a member
+    ("target", "group.custom.Dynamic", REJECT),
+    ("target", "group.all.major", REJECT),
+    ("target", "group.suits", REJECT),
+    ("target", "group.", REJECT),
+
+    ("arcana-key", "major", ACCEPT),
+    ("arcana-key", "Major", REJECT),
+    ("class-key", "court", ACCEPT),
+    ("class-key", "courts", REJECT),
+
+    # ---- slots ---------------------------------------------------------
+    ("slot", "passages", ACCEPT),
+    ("slot", "symbols", ACCEPT),
+    ("slot", "correspondences", ACCEPT),
+    ("slot", "cards", ACCEPT),
+    ("slot", "Passages", REJECT),
+    ("slot", "symbol", REJECT),
+    ("slot", "labels", REJECT),
+    ("slot", "", REJECT),
+
+    # ---- entry keys ----------------------------------------------------
+    ("entry-key", "text", ACCEPT),
+    ("entry-key", "advice.work", ACCEPT),
+    ("entry-key", "advice.personal_growth", ACCEPT),
+    ("entry-key", "x_upright", ACCEPT),
+    ("entry-key", "advice..work", REJECT),
+    ("entry-key", "advice.", REJECT),
+    ("entry-key", ".work", REJECT),
+    ("entry-key", "Advice", REJECT),
+    ("entry-key", "advice.1st", REJECT),
+    ("entry-key", "light-side", REJECT),
+
+    # Appendix B reserves the prefix beneath `passages`
+    ("entry-key", "symbols.the_jester", LOOSE),
+
+    # ---- symbol keys ---------------------------------------------------
+    ("symbol-key", "the_animal_familiar", ACCEPT),
+    ("symbol-key", "cliff", ACCEPT),
+    ("symbol-key", "passages", ACCEPT),                    # slot keywords are fine
+    ("symbol-key", "cliff.edge", REJECT),                  # one segment only
+    ("symbol-key", "The_Jester", REJECT),
+    ("symbol-key", "whats-behind-the-curtain", REJECT),
+    ("symbol-key", "", REJECT),
+]
+
+DOCS = [
+    ("DECK.md", [], DECK_CASES),
+    ("ESOTERICA.md", ["DECK.md"], ESOTERICA_CASES),
+]
+
+
+def fence(name):
+    """The single ```abnf fence in `name`."""
+    text = (ROOT / name).read_text(encoding="utf-8")
+    fences = re.findall(r"```abnf\n(.*?)```", text, re.S)
+    if len(fences) != 1:
+        sys.exit(f"expected exactly one ```abnf fence in {name}, found {len(fences)}")
+    return fences[0]
+
+
+def rule_names(rulelist):
+    return {m.group(1) for m in re.finditer(r"^([A-Za-z][A-Za-z0-9-]*)\s*=", rulelist, re.M)}
+
+
+def load_grammar(name, imports):
+    """Load `name`'s grammar on top of the grammars it imports."""
+    own = fence(name)
+    imported = [fence(i) for i in imports]
+    for i, rulelist in zip(imports, imported):
+        clash = rule_names(own) & rule_names(rulelist)
+        if clash:
+            sys.exit(f"{name} redefines {i}'s {sorted(clash)}; it must import them unchanged")
+
+    class Grammar(Rule):
+        pass
+
+    # RFC 5234 rulelists are CRLF-delimited.
+    Grammar.load_grammar("\n".join(imported + [own]).replace("\n", "\r\n"))
+    return Grammar, rule_names(own)
+
+
+def matches(grammar, rule, text):
+    """True when `rule` matches the whole of `text`."""
+    try:
+        _, consumed = grammar(rule).parse(text, 0)
+    except Exception:
+        return False
+    return consumed == len(text)
+
+
+def check(name, imports, cases):
+    grammar, own = load_grammar(name, imports)
+    defined = {r.name for r in grammar.rules()}
+
+    failures = []
+    for rule, text, expected in cases:
+        if rule not in defined:
+            failures.append(f"  no such rule {rule!r} (grammar defines {sorted(defined)})")
+            continue
+        got = matches(grammar, rule, text)
+        if expected is ACCEPT and not got:
+            failures.append(f"  {rule:14} {text!r} should parse, did not")
+        elif expected is REJECT and got:
+            failures.append(f"  {rule:14} {text!r} parsed, should not have")
+        elif expected is LOOSE and not got:
+            failures.append(f"  {rule:14} {text!r} should parse (spec rejects it elsewhere), did not")
+
+    print(f"{name}: {len(cases)} cases over {len(own)} rules")
+    if failures:
+        print(f"\n{len(failures)} FAILED:")
+        print("\n".join(failures))
+    return failures
+
+
+def main():
+    failures = []
+    for name, imports, cases in DOCS:
+        failures += check(name, imports, cases)
+    if failures:
+        return 1
+    print("ok")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
