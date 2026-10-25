@@ -10,10 +10,8 @@
 
 import re
 import sys
-import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore")  # DIGIT redefines the core rule
 from abnf.parser import Rule  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent

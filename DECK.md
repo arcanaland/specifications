@@ -504,7 +504,6 @@ day             = 2DIGIT
 ; ---- Terminals --------------------------------------------------------
 
 lcalpha         = %x61-7A               ; a-z
-DIGIT           = %x30-39               ; 0-9, from RFC 5234 Appendix B.1
 ```
 
 Three constraints are not expressible in the grammar and are stated normatively:
