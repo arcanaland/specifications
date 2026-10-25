@@ -1,0 +1,41 @@
+name: Release PDF
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach, e.g. deck/v2.0-rc.1"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release-pdf:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - uses: pandoc/actions/setup@v1
+      - uses: typst-community/setup-typst@v4
+      - name: Build and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          spec="${TAG%%/*}"
+          case "$spec" in
+            deck)      doc=DECK.md ;;
+            esoterica) doc=ESOTERICA.md ;;
+            *) echo "tag $TAG names no specification" >&2; exit 1 ;;
+          esac
+          ./tools/build_pdf.py --final "$doc"
+          asset="$spec-${TAG#*/}.pdf"
+          mv "build/$spec.pdf" "$asset"
+          gh release upload "$TAG" "$asset" --clobber

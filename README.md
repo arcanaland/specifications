@@ -41,9 +41,10 @@ Major versions may change or remove existing requirements. A conforming artifact
 
 Released versions are tagged in this repo.
 
-| Tag | Specification | Released |
-| --- | --- | --- |
-| [`deck/v1.0`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv1.0) | Tarot Deck 1.0 | 2025-04-30 |
+| Tag | Specification | Released | PDF |
+| --- | --- | --- | --- |
+| [`deck/v2.0-rc.1`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv2.0-rc.1) | Tarot Deck 2.0 (Release Candidate 1) | 2026-10-25 | [PDF](https://github.com/arcanaland/specifications/releases/download/deck%2Fv2.0-rc.1/deck-v2.0-rc.1.pdf) |
+| [`deck/v1.0`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv1.0) | Tarot Deck 1.0 | 2025-04-30 | |
 
 ## Contributing
 
