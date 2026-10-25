@@ -2,7 +2,7 @@
 
 > Maintained By: [Arcana Land](https://github.com/arcanaland)
 >
-> Version: 2.0 (draft)
+> Version: 2.0 (Release Candidate 1)
 
 ## Table of Contents
 
@@ -117,6 +117,7 @@
 - [Appendix C. Canonical Card Names (Informative)](#appendix-c-canonical-card-names-informative)
 - [Appendix D. Platform Conventions (Informative)](#appendix-d-platform-conventions-informative)
 - [Appendix E. Changelog](#appendix-e-changelog)
+- [Appendix F. Features at Risk](#appendix-f-features-at-risk)
   - [Version 2.0](#version-20)
 
 ## 1. Introduction
@@ -736,6 +737,7 @@ Rules, in addition to those every relation has ([§4.1.2](#412-relations)):
 - A deck MUST NOT declare more than one `expands` relation. A package's cards are contributed to one deck, and this specification provides no way to say which of several a given card belongs to.
 - An application MUST NOT complete the package's canonical cards from a [reference deck](#13-terminology). Every canonical slot the package does not contain is a slot it was never meant to contain, so [§6.7.6](#676-when-no-asset-is-found) bars the borrow outright rather than gating it on the conditions stated there.
 - A package declaring `expands` SHOULD NOT also declare [`[excluded_cards]`](#47-excluded_cards) for the canonical slots it does not contain. The relation already says the package is not a whole deck.
+- A package declaring `expands` SHOULD NOT define a card that the deck it expands already defines. Where it does, the two packages hold two artworks for one card, and which one an application shows is the application's to decide. This version provides no way for a package to mark its card as another artwork of a card in the expanded deck.
 - This specification defines no merge semantics for the relation. Which of the two packages' `[deck]` metadata an application prefers, and where the contributed cards fall in the expanded deck's [order](#5-ordering), are the application's to decide.
 - `expands` is a [recognized relation](#412-relations): an application that does not implement it MUST NOT present the package as an ordinary deck.
 
@@ -2673,3 +2675,11 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Clarified the intention of  [`[deck].tags`](#418-tags).
 - Defined what [`[app]`](#92-the-app-table) is for and reserved top-level table names outside it.
 - Lifted deck [ordering](#5-ordering) out of the `[cards]` field reference into a section of its own, beside the other two resolution algorithms ([§6.7](#67-card-image-resolution), [§7.3](#73-display-name-resolution)). The rules are unchanged.
+
+## Appendix F. Features at Risk
+
+The following have few or no decks using them and are not well tested:
+
+- Custom suit and rank keys, and a suit's own `ranks` sequence ([§4.4](#44-suits), [§4.5](#45-ranks)).
+- The [`expands`](#4123-expands) and [`companion`](#4124-companion) relations.
+- [`surrogate_for`](#4122-surrogate_for), [surrogate assets](#68-surrogate-assets) and [surrogate decks](#69-surrogate-decks).
