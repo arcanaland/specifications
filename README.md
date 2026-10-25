@@ -12,11 +12,13 @@ Open standards for digital tarot decks and esoterica.
 
 ### Tarot Decks
 
-The [Tarot Deck Specification](./DECK.md) describes how a deck is laid out on disk: its directory structure, its `deck.toml` manifest, canonical card identifiers, image formats and internationalization.
+The [Tarot Deck Specification](./DECK.md) describes canonical card identifiers, how a deck is structured as a directory, its TOML manifest,  image formats and internationalization.
 
 ### Esoterica
 
-The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. Version 1.0 is a draft rewrite and is not implemented anywhere yet.
+The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere currently.
+
+Esoterica packs are now being built at [arcanaland/esoterica](https://github.com/arcanaland/esoterica) and can be read in Tarot Canvas.
 
 ## Canonical Identifiers
 
@@ -35,7 +37,17 @@ Each specification carries a version of the form `MAJOR.MINOR`.
 
 Major versions may change or remove existing requirements. A conforming artifact valid under one major version is not guaranteed to be valid under the next.
 
-A substantial revision of the deck specification is in development on the [`deck-v2`](https://github.com/arcanaland/specifications/tree/deck-v2) branch.
+## Releases
+
+Released versions are tagged in this repo.
+
+| Tag | Specification | Released |
+| --- | --- | --- |
+| [`deck/v1.0`](https://github.com/arcanaland/specifications/releases/tag/deck%2Fv1.0) | Tarot Deck 1.0 | 2025-04-30 |
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Licensing
 
