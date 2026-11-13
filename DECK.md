@@ -1,8 +1,9 @@
-# Tarot Deck Specification
+# Arcana Land Tarot Deck Specification
 
-> Maintained By: [Arcana Land](https://github.com/arcanaland)
->
-> Version: 2.0 (Release Candidate 1)
+**Author**
+- Adam Fidel <adam@arcana.land>
+
+**Publication Date**: 2026-10-25, **Version**: 2.0 (RC 1)
 
 ## Table of Contents
 

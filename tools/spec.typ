@@ -30,7 +30,7 @@ $endif$
       columns: (1fr, auto, 1fr),
       align: (left + horizon, center + horizon, right + horizon),
 $if(provenance)$
-      [$provenance$],
+      [Built $built$ from $provenance$],
 $else$
       [],
 $endif$
@@ -42,7 +42,11 @@ $endif$
 
 #set document(
   title: "$title$",
+$if(author-names)$
+  author: "$author-names$",
+$else$
   author: "Arcana Land",
+$endif$
 )
 
 // --- text --------------------------------------------------------------------
@@ -121,9 +125,14 @@ $if(subtitle)$
 $endif$
   #v(0.9em, weak: true)
   #line(length: 100%, stroke: rule-thin)
-$if(date)$
   #v(0.4em, weak: true)
-  #text(size: 9pt, fill: faint)[Built $date$$if(provenance)$ from $provenance$$endif$]
+  #set text(size: 9.5pt, fill: faint)
+$if(author)$
+  #text(weight: "bold")[$author-label$:] $for(author)$$author$$sep$, $endfor$
+  #linebreak()
+$endif$
+$if(pubdate)$
+  #text(weight: "bold")[Published:] $pubdate$
 $endif$
 ]
 
