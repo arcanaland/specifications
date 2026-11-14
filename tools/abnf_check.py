@@ -6,7 +6,7 @@
 #
 # SPDX-FileCopyrightText: 2026 Adam Fidel
 # SPDX-License-Identifier: MIT
-"""Check the ABNF grammars embedded in DECK.md and ESOTERICA.md against a corpus of cases."""
+"""Check the ABNF grammars embedded in DECK.md, ESOTERICA.md and SPREAD.md against a corpus of cases."""
 
 import re
 import sys
@@ -240,9 +240,53 @@ ESOTERICA_CASES = [
     ("symbol-key", "", REJECT),
 ]
 
+SPREAD_CASES = [
+    # ---- spread identifiers --------------------------------------------
+    ("spread-id", "land.arcana/spread/celtic-cross", ACCEPT),
+    ("spread-id", "org.example/spread/the-lantern", ACCEPT),
+    ("spread-id", "id.example.shelf/spread/books/a-book/the-hinge", ACCEPT),
+    ("spread-id", "land.arcana/spread", REJECT),               # names no spread
+    ("spread-id", "land.arcana/spread/", REJECT),
+    ("spread-id", "land.arcana/deck/celtic-cross", REJECT),    # wrong type segment
+    ("spread-id", "land.arcana/spreads/celtic-cross", REJECT),
+    ("spread-id", "land.arcana/Spread/celtic-cross", REJECT),
+    ("spread-id", "land.arcana/spread/celtic-cross#challenge", REJECT),
+    ("spread-id", "arcana/spread/celtic-cross", REJECT),       # one-label realm
+
+    # ---- position identifiers ------------------------------------------
+    ("position-id", "challenge", ACCEPT),
+    ("position-id", "p1", ACCEPT),
+    ("position-id", "near.ground", ACCEPT),
+    ("position-id", "the_past", ACCEPT),
+    ("position-id", "house-12", ACCEPT),
+    ("position-id", "a:b", ACCEPT),
+    ("position-id", "7", ACCEPT),
+    ("position-id", "Challenge", REJECT),
+    ("position-id", "the past", REJECT),
+    ("position-id", "p#1", REJECT),
+    ("position-id", "", REJECT),
+
+    ("position-ref", "land.arcana/spread/celtic-cross#challenge", ACCEPT),
+    ("position-ref", "org.example/spread/the-lantern#shadow", ACCEPT),
+    ("position-ref", "land.arcana/spread/celtic-cross", REJECT),
+    ("position-ref", "land.arcana/spread/celtic-cross#", REJECT),
+    ("position-ref", "land.arcana/deck/rider-waite-smith#major_arcana.00", REJECT),
+
+    # ---- took values ---------------------------------------------------
+    ("took-value", "positions", ACCEPT),
+    ("took-value", "layout", ACCEPT),
+    ("took-value", "words", ACCEPT),
+    ("took-value", "x_purposes", ACCEPT),
+    ("took-value", "Words", REJECT),
+    ("took-value", "x-purposes", REJECT),
+    # outside the registry and unprefixed: legal, warned about
+    ("took-value", "drawing", LOOSE),
+]
+
 DOCS = [
     ("DECK.md", [], DECK_CASES),
     ("ESOTERICA.md", ["DECK.md"], ESOTERICA_CASES),
+    ("SPREAD.md", ["DECK.md"], SPREAD_CASES),
 ]
 
 

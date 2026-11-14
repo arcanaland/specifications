@@ -33,6 +33,7 @@ jobs:
           case "$spec" in
             deck)      doc=DECK.md ;;
             esoterica) doc=ESOTERICA.md ;;
+            spread)    doc=SPREAD.md ;;
             *) echo "tag $TAG names no specification" >&2; exit 1 ;;
           esac
           ./tools/build_pdf.py --final "$doc"
