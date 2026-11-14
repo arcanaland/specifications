@@ -6,9 +6,9 @@ Open standards for digital tarot decks and esoterica.
 
 | Specification | Version | Status | Implementations |
 | --- | --- | --- | --- |
-| [Tarot Deck](./DECK.md) | 2.0 | Release Candidate 1 | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (reading), [libarcana](https://github.com/arcanaland/libarcana) (in progress) |
-| [Tarot Deck](https://github.com/arcanaland/specifications/blob/deck/v1.0/DECK.md) | 1.0 | Stable | [libarcana](https://github.com/arcanaland/libarcana) (full), [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial) |
-| [Esoterica](./ESOTERICA.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (reading) |
+| [Tarot Deck](./DECK.md) | 2.0 | Release Candidate 1 | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial), [libarcana](https://github.com/arcanaland/libarcana) (in progress) |
+| [Esoterica](./ESOTERICA.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial) |
+| [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) | 1.0 | Draft | - |
 
 ### Tarot Decks
 
@@ -19,6 +19,11 @@ The [Tarot Deck Specification](./DECK.md) describes canonical card identifiers, 
 The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere currently.
 
 Esoterica packs are now being built at [arcanaland/esoterica](https://github.com/arcanaland/esoterica) and can be read in Tarot Canvas.
+
+
+### Tarot Spreads
+
+The [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) specification describes geometry and layouts for spreads. It is in the process of being implemented in [Tarot Canvas](https://github.com/arcanaland/tarot-canvas).
 
 ## Canonical Identifiers
 
