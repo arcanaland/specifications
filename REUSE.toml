@@ -17,6 +17,7 @@ SPDX-License-Identifier = "CC0-1.0"
 path = [
   "DECK.md",
   "ESOTERICA.md",
+  "SPREAD.md",
   "README.md",
   "CONTRIBUTING.md",
   "LICENSE",

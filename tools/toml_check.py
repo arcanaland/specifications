@@ -24,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-DOCS = [ROOT / "DECK.md", ROOT / "ESOTERICA.md"]
+DOCS = [ROOT / "DECK.md", ROOT / "ESOTERICA.md", ROOT / "SPREAD.md"]
 
 FENCE = re.compile(r"^```(\w*)[^\n]*\n(.*?)^```", re.S | re.M)
 INVALID_MARKER = re.compile(r"<!--\s*toml-check:\s*invalid\s*-->\s*\Z")

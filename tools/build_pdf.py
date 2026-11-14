@@ -25,6 +25,7 @@ DOCS = {
     # Fallback titles, for a document whose header has no H1.
     "DECK.md": "Tarot Deck Specification",
     "ESOTERICA.md": "Tarot Esoterica Specification",
+    "SPREAD.md": "Tarot Spread Specification",
 }
 
 READER = "gfm"
