@@ -8,7 +8,7 @@ Open standards for digital tarot decks and esoterica.
 | --- | --- | --- | --- |
 | [Tarot Deck](./DECK.md) | 2.0 | Release Candidate 1 | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial), [libarcana](https://github.com/arcanaland/libarcana) (in progress) |
 | [Esoterica](./ESOTERICA.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial) |
-| [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) | 1.0 | Draft | - |
+| [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (in progress) |
 
 ### Tarot Decks
 
@@ -16,18 +16,15 @@ The [Tarot Deck Specification](./DECK.md) describes canonical card identifiers, 
 
 ### Esoterica
 
-The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. It is an early draft and is not implemented anywhere currently.
-
-Esoterica packs are now being built at [arcanaland/esoterica](https://github.com/arcanaland/esoterica) and can be read in Tarot Canvas.
-
+The [Esoterica Specification](./ESOTERICA.md) describes meanings, correspondences and other interpretive material for the cards. Esoterica packs are built at [arcanaland/esoterica](https://github.com/arcanaland/esoterica) and can be read in Tarot Canvas.
 
 ### Tarot Spreads
 
-The [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) specification describes geometry and layouts for spreads. It is in the process of being implemented in [Tarot Canvas](https://github.com/arcanaland/tarot-canvas).
+The [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) specification describes geometry and layouts for spreads. 
 
 ## Canonical Identifiers
 
-Both specifications address tarot objects by the same identifiers, which any project is free to adopt:
+Our specifications address tarot objects by the same identifiers, which any project is free to adopt:
 
 ```
 major_arcana.00                 # The Fool
@@ -35,12 +32,6 @@ major_arcana.21                 # The World
 minor_arcana.wands.ace          # Ace of Wands
 minor_arcana.pentacles.king     # King of Pentacles
 ```
-
-## Versioning and Stability
-
-Each specification carries a version of the form `MAJOR.MINOR`.
-
-Major versions may change or remove existing requirements. A conforming artifact valid under one major version is not guaranteed to be valid under the next.
 
 ## Releases
 
