@@ -6,7 +6,7 @@ Open standards for digital tarot decks and esoterica.
 
 | Specification | Version | Status | Implementations |
 | --- | --- | --- | --- |
-| [Tarot Deck](./DECK.md) | 2.0 | Release Candidate 1 | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial), [libarcana](https://github.com/arcanaland/libarcana) (in progress) |
+| [Tarot Deck](./DECK.md) | 2.0 | Release Candidate 1 | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (full), [libarcana](https://github.com/arcanaland/libarcana) (full) |
 | [Esoterica](./ESOTERICA.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (partial) |
 | [Tarot Spread](https://github.com/arcanaland/specifications/blob/spread/SPREAD.md) | 1.0 | Draft | [Tarot Canvas](https://github.com/arcanaland/tarot-canvas) (in progress) |
 
