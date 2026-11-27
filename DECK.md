@@ -1588,27 +1588,20 @@ How a palette is extracted from artwork is not specified, and neither is its len
 
 #### 6.8.2 Snapping
 
-Entries of `palette_snapped` are positional: entry *i* is the snap of entry *i* of `palette`. Two entries MAY snap to the same name.
+Entries of `palette_snapped` are positional. That is, entry *i* is the snapped value of entry *i* in `palette`. Two entries MAY snap to the same name.
 
 Every producer MUST compute the snap of an sRGB hex triplet as follows:
 
 1. **Candidates.** CSS Color 4 gives 148 names to 139 colors. Where two names share one value, only the name that sorts first by Unicode code point is a candidate, leaving 139. The nine names that are not candidates are `cyan`, `darkgrey`, `darkslategrey`, `dimgrey`, `grey`, `lightgrey`, `lightslategrey`, `magenta` and `slategrey`.
 2. **Conversion.** The triplet and every candidate's value are converted to Oklab. Each channel $`v`$, an integer from 0 to 255, becomes $`c = v / 255`$ and is linearized by the sRGB transfer function:
 
-   ```math
-   c_{\text{lin}} =
-   \begin{cases}
-     c / 12.92 & \text{if } c \le 0.04045 \\
-     \left( (c + 0.055) / 1.055 \right)^{2.4} & \text{otherwise}
-   \end{cases}
-   ```
+   - $`c_{\text{lin}} = c / 12.92`$ where $`c \le 0.04045`$, and
+   - $`c_{\text{lin}} = \left( (c + 0.055) / 1.055 \right)^{2.4}`$ otherwise.
 
    The linear $`(r, g, b)`$ becomes $`(L, a, b)`$ by the two matrices below, taking the real cube root of each of $`l`$, $`m`$ and $`s`$ between them.
 3. **Distance.** The distance between two colors is the Euclidean distance between their Oklab coordinates, which CSS Color 4 calls $`\Delta E_{\text{OK}}`$:
 
-   ```math
-   \Delta E_{\text{OK}} = \sqrt{(L_1 - L_2)^2 + (a_1 - a_2)^2 + (b_1 - b_2)^2}
-   ```
+   $`\Delta E_{\text{OK}} = \sqrt{(L_1 - L_2)^2 + (a_1 - a_2)^2 + (b_1 - b_2)^2}`$
 4. **Selection.** The snap is the candidate at the least distance. Where two candidates are at the same least distance, the snap is the one whose name sorts first by Unicode code point.
 
 The arithmetic is IEEE 754 binary64. The matrices are Oklab's, as updated 2021-01-25:
@@ -1626,8 +1619,6 @@ where l' = ∛l, m' = ∛m, s' = ∛s
 ```
 
 For example, `#2b4a6f` snaps to `darkslategray` at $`\Delta E_{\text{OK}}`$ 0.062, ahead of `darkslateblue` at 0.075, and `#808080` snaps to `gray` and never to `grey`.
-
-> **Note:** $`\Delta E_{\text{OK}}`$ is chosen for agreement, not for perceptual accuracy. CSS Color 4 defines it beside the named colors this section adopts, and it is the simplest of the differences that document offers. Euclidean distance in sRGB, which most color-naming libraries use, pulls the creams and muted greens of printed cards toward the grays. CIEDE2000 is published only to five significant figures. The procedure is stated here in full because CSS Color 4 marks its conversion code and its color-difference formulae as not normative.
 
 ### 6.9 Surrogate Decks
 
