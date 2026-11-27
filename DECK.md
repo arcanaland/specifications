@@ -79,6 +79,7 @@
     - [6.7.8 Resolution Summary](#678-resolution-summary)
   - [6.8 Surrogate Assets](#68-surrogate-assets)
     - [6.8.1 The Surrogate File](#681-the-surrogate-file)
+    - [6.8.2 Snapping](#682-snapping)
   - [6.9 Surrogate Decks](#69-surrogate-decks)
 - [7. Internationalization](#7-internationalization)
   - [7.1 Language Tags](#71-language-tags)
@@ -118,8 +119,8 @@
 - [Appendix C. Canonical Card Names (Informative)](#appendix-c-canonical-card-names-informative)
 - [Appendix D. Platform Conventions (Informative)](#appendix-d-platform-conventions-informative)
 - [Appendix E. Changelog](#appendix-e-changelog)
-- [Appendix F. Features at Risk](#appendix-f-features-at-risk)
   - [Version 2.0](#version-20)
+- [Appendix F. Features at Risk](#appendix-f-features-at-risk)
 
 ## 1. Introduction
 
@@ -206,7 +207,10 @@ The documents below are referenced normatively unless marked informative. A date
 | **OARS 1.1** | Open Age Ratings Service, [specification](https://github.com/hughsie/oars/blob/master/specification/oars-1.1.md) and [attribute list](https://hughsie.github.io/oars/generate.html) | [§4.1.5](#415-content-rating) |
 | **IPTC Digital Source Type** | IPTC NewsCodes [controlled vocabulary](https://cv.iptc.org/newscodes/digitalsourcetype/), also used by [C2PA](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html) | [§4.1.7](#417-artwork-origin) |
 | **SAUCE** (informative) | [Standard Architecture for Universal Comment Extensions](https://www.acid.org/info/sauce/sauce.htm) | [§6.4](#64-ansi-art) |
-| **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§6.8.1](#681-the-surrogate-file) |
+| **CSS Color 4** | [Named colors](https://www.w3.org/TR/css-color-4/#named-colors) | [§6.8.1](#681-the-surrogate-file), [§6.8.2](#682-snapping) |
+| **IEC 61966-2-1** | The sRGB color space and its transfer function | [§6.8.2](#682-snapping) |
+| **Oklab** | Björn Ottosson, [A perceptual color space for image processing](https://bottosson.github.io/posts/oklab/), matrices as updated 2021-01-25 | [§6.8.2](#682-snapping) |
+| **IEEE 754** | Floating-point arithmetic, binary64 | [§6.8.2](#682-snapping) |
 | **ThumbHash** (informative) | [evanw.github.io/thumbhash](https://evanw.github.io/thumbhash/) | [§6.8.1](#681-the-surrogate-file) |
 | **BCP 47** | Tags for Identifying Languages ([RFC 5646](https://www.rfc-editor.org/rfc/rfc5646)) | [§7.1](#71-language-tags) |
 | **RFC 4647** | Matching of Language Tags | [§7.2](#72-language-resolution) |
@@ -963,6 +967,8 @@ Declare the term for how the artwork principally came to exist, or, where a late
 
 An absent `origin` means the packager gave no value and an application MUST NOT read it as an assertion that the artwork is human-made.
 
+A [surrogate deck](#69-surrogate-decks) contains no artwork, so its `[deck.origin]` has nothing to describe.
+
 **Per-artwork origin.** A card has the same table under its [`[cards]`](#43-cards) entry, a [variant](#312-card-references-and-the-variant-suffix) under its own entry in the same table, and a [card back design](#42-card_backs) under `[card_backs.designs.<key>]`:
 
 ```toml
@@ -1410,7 +1416,7 @@ The designs a deck has are the union of the stems found across every card back d
 
 - The whole stem is the design key and card backs have no notion of variants.
 - A stem that is not a well-formed [custom name](#32-custom-names) defines no design. Discovery ignores the file, which is reported as a warning rather than an error ([§10.4](#104-validation-rules)), exactly as a raster image outside an image root is ignored.
-- The [extension chain](#674-the-extension-chain) applies. A deck SHOULD supply each design in a [baseline format](#674-the-extension-chain). A card has a reference deck to fall back on and a back does not ([§6.7.7](#677-resolving-a-card-back)), so an application that cannot decode a design substitutes its own generic back and the deck's design is never seen.
+- The [extension chain](#674-the-extension-chain) applies. A deck SHOULD supply each design that has an image in a [baseline format](#674-the-extension-chain). A design whose only assets are [surrogates](#68-surrogate-assets) has no image, and this does not apply to it. A card has a reference deck to fall back on and a back does not ([§6.7.7](#677-resolving-a-card-back)), so an application that cannot decode a design substitutes its own generic back and the deck's design is never seen.
 - An explicit `image` path on `[card_backs.designs.<key>]` overrides discovery for that design in every kind and size.
 - Card backs MAY have different dimensions and aspect ratios from the card fronts.
 
@@ -1564,19 +1570,55 @@ A surrogate file is a TOML document ([§2.3](#23-file-format-and-encoding)) whos
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `palette` | Array of String | No | `[]` | Dominant colors, most prominent first, each an sRGB hex triplet written `#rrggbb` in lower case. |
-| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors). |
+| `palette_snapped` | Array of String | No | `[]` | `palette`, each entry replaced by its [snap](#682-snapping), the nearest [CSS Color 4 named color](https://www.w3.org/TR/css-color-4/#named-colors). |
 | `thumbhash` | String | No | none | A [ThumbHash](https://evanw.github.io/thumbhash/) of the artwork, Base64-encoded. |
 
 An example `surrogate/major_arcana/00.toml`:
 
 ```toml
-# generated by libarcana 0.4.2
+# generated by <tool> <version>
 palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e", "#d9d2c4"]
-palette_snapped = ["wheat", "darkslateblue", "sienna", "lightgray"]
+palette_snapped = ["wheat", "darkslategray", "saddlebrown", "lightgray"]
 thumbhash = "1QcSHQRnh493V4dIh4eXh1h4kJUI"
 ```
 
 Every key is optional and independent. A deck MAY use any combination and MAY use different combinations for different cards. A file with none of them is a well-formed surrogate.
+
+How a palette is extracted from artwork is not specified, and neither is its length. "Most prominent first" is the extractor's own ranking, so two producers' palettes for one card are not expected to agree. Snapping is specified ([§6.8.2](#682-snapping)), so the same palette always snaps to the same names.
+
+#### 6.8.2 Snapping
+
+Entries of `palette_snapped` are positional. That is, entry *i* is the snapped value of entry *i* in `palette`. Two entries MAY snap to the same name.
+
+Every producer MUST compute the snap of an sRGB hex triplet as follows:
+
+1. **Candidates.** CSS Color 4 gives 148 names to 139 colors. Where two names share one value, only the name that sorts first by Unicode code point is a candidate, leaving 139. The nine names that are not candidates are `cyan`, `darkgrey`, `darkslategrey`, `dimgrey`, `grey`, `lightgrey`, `lightslategrey`, `magenta` and `slategrey`.
+2. **Conversion.** The triplet and every candidate's value are converted to Oklab. Each channel $`v`$, an integer from 0 to 255, becomes $`c = v / 255`$ and is linearized by the sRGB transfer function:
+
+   - $`c_{\text{lin}} = c / 12.92`$ where $`c \le 0.04045`$, and
+   - $`c_{\text{lin}} = \left( (c + 0.055) / 1.055 \right)^{2.4}`$ otherwise.
+
+   The linear $`(r, g, b)`$ becomes $`(L, a, b)`$ by the two matrices below, taking the real cube root of each of $`l`$, $`m`$ and $`s`$ between them.
+3. **Distance.** The distance between two colors is the Euclidean distance between their Oklab coordinates, which CSS Color 4 calls $`\Delta E_{\text{OK}}`$:
+
+   $`\Delta E_{\text{OK}} = \sqrt{(L_1 - L_2)^2 + (a_1 - a_2)^2 + (b_1 - b_2)^2}`$
+4. **Selection.** The snap is the candidate at the least distance. Where two candidates are at the same least distance, the snap is the one whose name sorts first by Unicode code point.
+
+The arithmetic is IEEE 754 binary64. The matrices are Oklab's, as updated 2021-01-25:
+
+```text
+l = 0.4122214708 r + 0.5363325363 g + 0.0514459929 b
+m = 0.2119034982 r + 0.6806995451 g + 0.1073969566 b
+s = 0.0883024619 r + 0.2817188376 g + 0.6299787005 b
+
+L = 0.2104542553 l' + 0.7936177850 m' - 0.0040720468 s'
+a = 1.9779984951 l' - 2.4285922050 m' + 0.4505937099 s'
+b = 0.0259040371 l' + 0.7827717662 m' - 0.8086757660 s'
+
+where l' = ∛l, m' = ∛m, s' = ∛s
+```
+
+For example, `#2b4a6f` snaps to `darkslategray` at $`\Delta E_{\text{OK}}`$ 0.062, ahead of `darkslateblue` at 0.075, and `#808080` snaps to `gray` and never to `grey`.
 
 ### 6.9 Surrogate Decks
 
@@ -1589,6 +1631,8 @@ The two differ in who assigns them: `surrogate_for` names a package, and so requ
 A surrogate deck SHOULD NOT invent an `identifier` for a package that does not exist in order to have something for `surrogate_for` to name.
 
 A surrogate deck SHOULD also declare [`[deck].rights_status`](#84-rights-status), and MAY contain a `buy` [link](#411-links) where available.
+
+A surrogate deck's [`content_rating`](#415-content-rating) describes the artwork the surrogates stand in for, which is what a reader who follows its `buy` link will see.
 
 Because [`[deck].license`](#41-deck) covers the card assets in the package ([§8](#8-licensing-and-attribution)), a surrogate deck covers the surrogates rather than the artwork. A surrogate deck SHOULD declare `license`.
 
@@ -2152,8 +2196,8 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every `[card_backs.designs]` table key is a well-formed [custom name](#32-custom-names), and every `image` path declared under it exists. A discovered stem is not covered by this rule. The warning below reports it ([§6.5](#65-card-back-images)). |
 | **W** | Where the deck has more than one card back design and neither `[card_backs].default` nor a design keyed `default` is present, the default rests on collation order ([§4.2](#42-card_backs)). Resolution is well defined, but the packager probably did not choose it. |
 | **W** | A file in a card back directory that discovery ignores, meaning a stem containing a `.`, a stem that is not a custom name, or an extension outside the chain with no `image` path pointing at it. Such a file is usually an intended back that will never be shown. |
-| **W** | A card back design supplied in no [baseline format](#674-the-extension-chain). An application that cannot decode it substitutes its own back and the design is never seen ([§6.5](#65-card-back-images)). |
-| **W** | A card whose every raster asset, across all image roots, is in no [baseline format](#674-the-extension-chain). |
+| **W** | A card back design that has an image and is supplied in no [baseline format](#674-the-extension-chain). An application that cannot decode it substitutes its own back and the design is never seen ([§6.5](#65-card-back-images)). A design whose only assets are surrogates is not reported. |
+| **W** | A card that has at least one raster asset, where every one of them, across all image roots, is in no [baseline format](#674-the-extension-chain). A card with no raster asset is not reported. |
 | **E** | Every custom name matches the `custom-name` grammar of [§3.5](#35-grammar) and is not a name reserved by [§3.2](#32-custom-names), excepting a canonical suit used as a `[suits]` table key. |
 | **E** | `[deck].identifier`, where present, is a well-formed qualified identifier without a fragment ([§3.4](#34-deck-identity)). |
 | **E** | Every `[app]` subtable key is a well-formed realm, in particular one with two labels or more ([§9](#92-the-app-table)). The contents of such a subtable are the owning application's to define and are not validated. |
@@ -2226,6 +2270,7 @@ Each rule is labeled **E** for error or **W** for warning.
 | **E** | Every file in the `surrogate/` root is well-formed TOML 1.0.0 and contains no key this specification does not define for a [surrogate file](#681-the-surrogate-file). |
 | **E** | Every entry of a `palette` is an sRGB hex triplet matching `#` followed by six lower-case hexadecimal digits, every entry of `palette_snapped` is a CSS Color 4 named color. |
 | **W** | A `palette_snapped` whose length differs from that of the `palette` beside it. The two are meant to be the same colors in the same order ([§6.8.1](#681-the-surrogate-file)). |
+| **W** | A `palette_snapped` entry that is one of the nine names [§6.8.2](#682-snapping) excludes as candidates. It is a CSS Color 4 named color, but it compares unequal to every correctly snapped entry for the same color. |
 | **W** | A surrogate deck that declares neither a [`surrogate_for`](#4122-surrogate_for) relation nor any [`[deck.product_ids]`](#414-product-identifiers) entry. Nothing can then connect it to the deck it describes, and an application holding both cannot merge them ([§6.9](#69-surrogate-decks)). |
 | **W** | A surrogate deck with no `buy` link and no `[deck].rights_status`. It describes artwork the reader cannot see, without saying why or where to get it ([§6.9](#69-surrogate-decks)). |
 | **E** | In a [container](#24-deck-containers), the archive holds `deck.toml` at its root rather than inside a wrapping directory, and no entry name is absolute, names a drive, or contains a `..`, `.` or empty segment ([§2.4](#24-deck-containers)). |
@@ -2540,9 +2585,9 @@ With a surrogate for The Fool:
 
 ```toml
 # surrogate/major_arcana/00.toml
-# generated by libarcana 0.4.2
+# generated by <tool> <version>
 palette = ["#e8d5a3", "#2b4a6f", "#8c3b2e"]
-palette_snapped = ["wheat", "darkslateblue", "sienna"]
+palette_snapped = ["wheat", "darkslategray", "saddlebrown"]
 thumbhash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 ```
 
@@ -2675,6 +2720,10 @@ An application MAY support 1.0 decks alongside 2.0 ones. Where it does, it reads
 - Clarified the intention of  [`[deck].tags`](#418-tags).
 - Defined what [`[app]`](#92-the-app-table) is for and reserved top-level table names outside it.
 - Lifted deck [ordering](#5-ordering) out of the `[cards]` field reference into a section of its own, beside the other two resolution algorithms ([§6.7](#67-card-image-resolution), [§7.3](#73-display-name-resolution)). The rules are unchanged.
+
+**Since Release Candidate 1.**
+
+- [Snapping](#682-snapping) is specified in greater detail to address potential divergence with multiple implementations.
 
 ## Appendix F. Features at Risk
 
